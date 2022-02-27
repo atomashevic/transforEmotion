@@ -42,7 +42,7 @@ Environment for the classifier to be saved for repeated use.
 Defaults to the global environment}
 }
 \value{
-Returns a message either specifying help or enables Python
+Returns probabilities for the text classes
 }
 \description{
 Checkpoint for \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} trained on the

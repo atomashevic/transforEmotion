@@ -10,9 +10,6 @@
 #' @return Returns a message either specifying help or enables Python
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
-#'
-#' @examples
-#' python_setup()
 #' 
 #' @export
 #'

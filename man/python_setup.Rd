@@ -18,10 +18,6 @@ Returns a message either specifying help or enables Python
 \description{
 Sets up Python
 }
-\examples{
-python_setup()
-
-}
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>
 }

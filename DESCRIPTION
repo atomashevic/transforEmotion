@@ -7,7 +7,7 @@ Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gma
 Maintainer: Alexander Christensen <alexpaulchristensen@gmail.com>
 Description: Implements sentiment analysis using Facebook's BART Large zero-shot classification model <https://huggingface.co/facebook/bart-large-mnli> trained on the MultiNLI dataset <https://huggingface.co/datasets/multi_nli>. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models <https://arxiv.org/abs/1909.00161>. Also implements the emoxicon package's strategy for computing scores.
 Depends: R (>= 3.5.0)
-License: GPL (>= 3.0)
+License: GPL (>= 3.0) + file LICENSE
 Encoding: UTF-8
 Imports: reticulate, emoxicon, pbapply
 Suggests: markdown, knitr, rmarkdown

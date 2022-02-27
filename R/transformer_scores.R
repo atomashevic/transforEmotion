@@ -31,7 +31,7 @@
 #' Environment for the classifier to be saved for repeated use.
 #' Defaults to the global environment
 #'
-#' @return Returns a message either specifying help or enables Python
+#' @return Returns probabilities for the text classes
 #' 
 #' @details This function requires that you have both Python and the 
 #' "transformers" module installed on your computer. For help installing Python 
@@ -67,7 +67,7 @@
 #' 
 #' @export
 #'
-# Setup Python
+# Transformer Scores
 # Updated 27.02.2022
 transformer_scores <- function(
   text, classes,

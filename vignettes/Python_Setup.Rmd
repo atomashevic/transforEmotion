@@ -28,6 +28,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+<!-- Silent load 'transforEmotion -->
+```{r load, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+library(transforEmotion)
+```
+
 ## 1. Getting Started with Python
 
 If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
@@ -81,35 +86,6 @@ reticulate::py_config()
 
 To make R aware of your Python installation, you can use the following code:
 
-```{r python_setup_function, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
-python_setup <- function(path_to_python = NULL)
-{
-  
-  if(is.null(path_to_python)){
-    
-    if(reticulate::py_available(TRUE)){
-      path_to_python <- reticulate::py_config()$python
-    }else{
-      message("\nNo path to python configured.\n\nPlease see `browseVignettes(\"transforEmotion\")`: 'Python Setup'")
-      return(NULL)
-    }
-    
-  }
-  
-  # Use python
-  reticulate::use_python(path_to_python)
-  
-  # Message
-  message(
-    paste("Using Python path:", path_to_python)
-  )
-  
-  # Return path
-  return(path_to_python)
-  
-}
-```
-
 ```{r python_setup, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 python_setup()
 ```
@@ -125,7 +101,7 @@ Before installing the `transformers` module, a few other packages need to be ins
 
 PyTorch can be installed by following the instructions on the website: https://pytorch.org/. Select the “Stable” build and your operating system. You will most likely use the “Pip” package for install but “Conda” is another common package if you’re using Anaconda or miniconda (see https://www.anaconda.com/). Language should be “Python” and platform can be “CPU.” “CUDA” is used for GPU processing but it is not necessary and requires additional steps for setting up CUDA.
 
-From the command line, here are the installs for different operating systems:
+From the command line, here are the installs for different operating systems
 
 Windows <br>
 `pip install torch torchvision torchaudio`
@@ -136,7 +112,7 @@ Macs <br>
 Linux <br>
 `pip install torch==1.10.1+cpu torchvision==0.11.2+cpu torchaudio==0.10.1+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html`
 
-TensorFlow can be install using similar instructions (https://www.tensorflow.org/install) but it is much more straightforward. From the command line, you can use:
+TensorFlow can be install using similar instructions (https://www.tensorflow.org/install) but it is much more straightforward. From the command line, you can use
 
 `pip install tensorflow`
 
@@ -144,7 +120,7 @@ Finally, you can install the `transformers` module:
 
 `python -m pip install transformers`
 
-To check that the `transformers` module was properly installed, the following code can be run:
+To check that the `transformers` module was properly installed, the following code can be run
 
 ```{r transformers_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("'transformers' module installed?")
@@ -160,78 +136,7 @@ At this point, the `transformers` module should be ready-to-go on your computer.
 
 ## 4. Downloading Facebook BART Large
 
-The final step is to download the \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} transformer model. The simplest way is to run our `transformer_scores` function with an example:
-
-```{r transformers_scores_function, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
-transformer_scores <- function(
-  text, classes,
-  multiple_classes = FALSE,
-  path_to_python = NULL,
-  keep_in_env = TRUE
-)
-{
-  # Check that input is text
-  if(!is.character(text)){
-    stop("Text expected for input into 'text' argument")
-  }
-  
-  # Check for classes
-  if(missing(classes)){
-    stop("Classes to classify text must be specified using the 'classes' argument")
-  }
-
-  # Setup Python
-  path <- python_setup(path_to_python)
-  
-  # If path is NULL, error
-  if(is.null(path)){
-    return(NULL)
-  }
-  
-  # Check if 'transformers' module is available
-  if(!reticulate::py_module_available("transformers")){
-    message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`")
-  }else{
-    # Import transformers
-    message("Importing transformers...")
-    transformers <- reticulate::import("transformers")
-  }
-  
-  # Load pipeline
-  classifier <- transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
-  
-  # Message
-  message("Obtaining scores...")
-  
-  # Apply through text
-  scores <- pbapply::pblapply(text, function(x){
-    
-    # Classify
-    scores <- classifier(
-      x, classes, multi_label = multiple_classes
-    )
-    
-    # Re-organize output
-    names(scores$scores) <- scores$labels
-    scores$labels <- NULL
-    
-    # Return
-    return(scores$scores)
-    
-  })
-  
-  # Rename lists
-  if(!is.list(text)){
-    names(scores) <- text
-  }else{
-    names(scores) <- unlist(text)
-  }
-  
-  # Return scores
-  return(scores)
-  
-}
-```
+The final step is to download the \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} transformer model. The simplest way is to run our `transformer_scores` function with an example
 
 ```{r transformers_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 transformer_scores(
