@@ -1,0 +1,263 @@
+---
+title: "Python Setup"
+author: "Alexander P. Christensen and Hudson Golino"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    keep_tex: true
+vignette: >
+  %\VignetteIndexEntry{Python Setup}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  \usepackage[utf8]{inputenc}
+header-includes:
+- |
+  ```{=latex}
+  \usepackage[sfdefault]{cabin}
+  \usepackage{hyperref}
+  \hypersetup{
+    colorlinks = true,
+    allcolors = blue
+  }
+  ```
+---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#"
+)
+```
+
+## 1. Getting Started with Python
+
+If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
+
+The first step is to download Python. The recommended version is 3.9.7: https://www.python.org/downloads/release/python-397/. Below are the recommended settings when installing Python:
+
++ Check the "Add Python VERSION.NUMBER to PATH"
+
++ Then, select "Customize installation"
+
++ Make sure all "Optional Features" are checked and click "Next"
+
++ For "Advanced Options," check "Precompile standard library" and click "Install"
+
+Feel free to choose a custom install location. The `python_setup()` function will automatically detect where the path to your Python installation is. You can also
+enter this install location manually.
+
+After Python is finished installing, you should check whether it's been installed properly.
+
+## 2. Check Python Installation
+
+The following code will check if Python is installed and where Python is installed:
+
+```{r python_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+print("Is Python installed?")
+reticulate::py_available(TRUE)
+```
+
+```{r python_install_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+print("Is Python installed?")
+reticulate::py_available(TRUE)
+```
+
+If `FALSE`, then try the following steps:
+
++ Restart your computer and try the above code again
+
++ If still `FALSE`, then go back to section 1 and try re-installing Python on your computer following the instructions
+
+If `TRUE`, then Python has successfully installed on your computer. To find out where, the following code can be used:
+
+```{r python_location, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+print("Where is Python installed?")
+reticulate::py_config()
+```
+
+```{r python_location_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+print("Where is Python installed?")
+reticulate::py_config()
+```
+
+To make R aware of your Python installation, you can use the following code:
+
+```{r python_setup_function, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+python_setup <- function(path_to_python = NULL)
+{
+  
+  if(is.null(path_to_python)){
+    
+    if(reticulate::py_available(TRUE)){
+      path_to_python <- reticulate::py_config()$python
+    }else{
+      message("\nNo path to python configured.\n\nPlease see `browseVignettes(\"transforEmotion\")`: 'Python Setup'")
+      return(NULL)
+    }
+    
+  }
+  
+  # Use python
+  reticulate::use_python(path_to_python)
+  
+  # Message
+  message(
+    paste("Using Python path:", path_to_python)
+  )
+  
+  # Return path
+  return(path_to_python)
+  
+}
+```
+
+```{r python_setup, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+python_setup()
+```
+
+
+## 3. Installing the `transformers` Module
+
+With Python installed, the next step is to install the `transformers` module. To do so, you'll need to open a command line terminal on your computer. Once open, you can start by upgrading `pip`:
+
+`python -m pip install --upgrade pip`
+
+Before installing the `transformers` module, a few other packages need to be installed: `PyTorch` and `Tensorflow`.
+
+PyTorch can be installed by following the instructions on the website: https://pytorch.org/. Select the “Stable” build and your operating system. You will most likely use the “Pip” package for install but “Conda” is another common package if you’re using Anaconda or miniconda (see https://www.anaconda.com/). Language should be “Python” and platform can be “CPU.” “CUDA” is used for GPU processing but it is not necessary and requires additional steps for setting up CUDA.
+
+From the command line, here are the installs for different operating systems:
+
+Windows <br>
+`pip install torch torchvision torchaudio`
+
+Macs <br>
+`pip install torch torchvision torchaudio`
+
+Linux <br>
+`pip install torch==1.10.1+cpu torchvision==0.11.2+cpu torchaudio==0.10.1+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html`
+
+TensorFlow can be install using similar instructions (https://www.tensorflow.org/install) but it is much more straightforward. From the command line, you can use:
+
+`pip install tensorflow`
+
+Finally, you can install the `transformers` module:
+
+`python -m pip install transformers`
+
+To check that the `transformers` module was properly installed, the following code can be run:
+
+```{r transformers_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+print("'transformers' module installed?")
+reticulate::py_module_available("transformers")
+```
+
+```{r transformers_install_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+print("'transformers' module installed?")
+TRUE
+```
+
+At this point, the `transformers` module should be ready-to-go on your computer. If you're having trouble installing modules, then check out this page: https://packaging.python.org/en/latest/tutorials/installing-packages/.
+
+## 4. Downloading Facebook BART Large
+
+The final step is to download the \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} transformer model. The simplest way is to run our `transformer_scores` function with an example:
+
+```{r transformers_scores_function, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+transformer_scores <- function(
+  text, classes,
+  multiple_classes = FALSE,
+  path_to_python = NULL,
+  keep_in_env = TRUE
+)
+{
+  # Check that input is text
+  if(!is.character(text)){
+    stop("Text expected for input into 'text' argument")
+  }
+  
+  # Check for classes
+  if(missing(classes)){
+    stop("Classes to classify text must be specified using the 'classes' argument")
+  }
+
+  # Setup Python
+  path <- python_setup(path_to_python)
+  
+  # If path is NULL, error
+  if(is.null(path)){
+    return(NULL)
+  }
+  
+  # Check if 'transformers' module is available
+  if(!reticulate::py_module_available("transformers")){
+    message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`")
+  }else{
+    # Import transformers
+    message("Importing transformers...")
+    transformers <- reticulate::import("transformers")
+  }
+  
+  # Load pipeline
+  classifier <- transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
+  
+  # Message
+  message("Obtaining scores...")
+  
+  # Apply through text
+  scores <- pbapply::pblapply(text, function(x){
+    
+    # Classify
+    scores <- classifier(
+      x, classes, multi_label = multiple_classes
+    )
+    
+    # Re-organize output
+    names(scores$scores) <- scores$labels
+    scores$labels <- NULL
+    
+    # Return
+    return(scores$scores)
+    
+  })
+  
+  # Rename lists
+  if(!is.list(text)){
+    names(scores) <- text
+  }else{
+    names(scores) <- unlist(text)
+  }
+  
+  # Return scores
+  return(scores)
+  
+}
+```
+
+```{r transformers_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+transformer_scores(
+    text = "I like to go to parties",
+    classes = c("sociable", "warm", "assertive", "positive"),
+    multiple_classes = FALSE,
+    keep_in_env = TRUE
+)
+```
+
+```{r transformers_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+$`I like to go to parties`
+  sociable  assertive   positive       warm 
+0.81750941 0.09567241 0.04745624 0.03936200
+```
+
+Compare to the \emph{emoxicon} package output
+
+```{r emoxicon_scores_output, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+# Load 'emoxicon' package
+library(emoxicon)
+
+# Run emoxicon function
+emoxicon("I like to go to parties")[-c(1,2)]
+```
+
+The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called. For repeated usage, the `keep_in_env` argument should be set to `TRUE` (which is the default) to keep the classifier loaded in the environment.
+
+If you've made it this far, then you've successfully obtain sentiment analysis scores from Facebook's BART Large transformer model. Go forth and quantify the qualitative!
