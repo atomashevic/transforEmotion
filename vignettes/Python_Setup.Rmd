@@ -33,11 +33,6 @@ knitr::opts_chunk$set(
 library(transforEmotion)
 ```
 
-<!-- Silent load Python -->
-```{r python_setup_true, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
-python_setup("D:/Python/python.exe")
-```
-
 ## 1. Getting Started with Python
 
 If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
@@ -86,7 +81,7 @@ reticulate::py_config()
 
 To make R aware of your Python installation, you can use the following code:
 
-```{r python_setup, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_setup, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 python_setup()
 ```
 
