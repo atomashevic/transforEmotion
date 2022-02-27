@@ -1,0 +1,328 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Python Setup},
+  pdfauthor={Alexander P. Christensen and Hudson Golino},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage[sfdefault]{cabin}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  allcolors = blue
+}
+
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Python Setup}
+\author{Alexander P. Christensen and Hudson Golino}
+\date{February 27, 2022}
+
+\begin{document}
+\maketitle
+
+\hypertarget{getting-started-with-python}{%
+\subsection{1. Getting Started with
+Python}\label{getting-started-with-python}}
+
+If you have Python already installed on your computer, then skip to
+section 2 to check your Python installation.
+
+If not, then the first step is to download Python. The recommended
+version is 3.9.7:
+\url{https://www.python.org/downloads/release/python-397/}. Below are
+the recommended settings when installing Python:
+
+\begin{itemize}
+\item
+  Check the ``Add Python VERSION.NUMBER to PATH''
+\item
+  Then, select ``Customize installation''
+\item
+  Make sure all ``Optional Features'' are checked and click ``Next''
+\item
+  For ``Advanced Options,'' check ``Precompile standard library'' and
+  click ``Install''
+\end{itemize}
+
+Feel free to choose a custom install location. The
+\texttt{python\_setup()} function will automatically detect where the
+path to your Python installation is. You can also enter this install
+location manually.
+
+After Python is finished installing, you should check whether it's been
+installed properly.
+
+\hypertarget{check-python-installation}{%
+\subsection{2. Check Python
+Installation}\label{check-python-installation}}
+
+The following code will check if Python is installed and where Python is
+installed:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\StringTok{"Is Python installed?"}\NormalTok{)}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"Is Python installed?"}
+\NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_available}\NormalTok{(}\ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\ConstantTok{TRUE}
+\end{Highlighting}
+\end{Shaded}
+
+If \texttt{FALSE}, then try the following steps:
+
+\begin{itemize}
+\item
+  Restart your computer and try the above code again
+\item
+  If still \texttt{FALSE}, then go back to section 1 and try
+  re-installing Python on your computer following the instructions
+\end{itemize}
+
+If \texttt{TRUE}, then Python has successfully installed on your
+computer. To find out where, the following code can be used:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\StringTok{"Where is Python installed?"}\NormalTok{)}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"Where is Python installed?"}
+\NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_config}\NormalTok{()}
+\NormalTok{python}\SpecialCharTok{:}\NormalTok{         D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{python.exe}
+\NormalTok{libpython}\SpecialCharTok{:}\NormalTok{      D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{python39.dll}
+\NormalTok{pythonhome}\SpecialCharTok{:}\NormalTok{     D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}
+\NormalTok{version}\SpecialCharTok{:}        \DecValTok{3}\NormalTok{.}\FloatTok{9.7}\NormalTok{ (default, Sep }\DecValTok{16} \DecValTok{2021}\NormalTok{, }\DecValTok{16}\SpecialCharTok{:}\DecValTok{59}\SpecialCharTok{:}\DecValTok{28}\NormalTok{) [MSC v}\FloatTok{.1916} \DecValTok{64} \FunctionTok{bit}\NormalTok{ (AMD64)]}
+\NormalTok{Architecture}\SpecialCharTok{:}\NormalTok{   64bit}
+\NormalTok{numpy}\SpecialCharTok{:}\NormalTok{          D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{Lib}\SpecialCharTok{/}\NormalTok{site}\SpecialCharTok{{-}}\NormalTok{packages}\SpecialCharTok{/}\NormalTok{numpy}
+\NormalTok{numpy\_version}\SpecialCharTok{:}  \DecValTok{1}\NormalTok{.}\FloatTok{22.2}
+\end{Highlighting}
+\end{Shaded}
+
+To make R aware of your Python installation, you can use the following
+code:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{python\_setup}\NormalTok{()}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"D:/anaconda3/python.exe"}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{installing-the-transformers-module}{%
+\subsection{\texorpdfstring{3. Installing the \texttt{transformers}
+Module}{3. Installing the transformers Module}}\label{installing-the-transformers-module}}
+
+With Python installed, the next step is to install the
+\texttt{transformers} module. To do so, you'll need to open a command
+line terminal on your computer. Once open, you can start by upgrading
+\texttt{pip}:
+
+\texttt{python\ -m\ pip\ install\ -\/-upgrade\ pip}
+
+Before installing the \texttt{transformers} module, a few other packages
+need to be installed: \texttt{PyTorch} and \texttt{Tensorflow}.
+
+PyTorch can be installed by following the instructions on the website:
+\url{https://pytorch.org/}. Select the ``Stable'' build and your
+operating system. You will most likely use the ``Pip'' package for
+install but ``Conda'' is another common package if you're using Anaconda
+or miniconda (see \url{https://www.anaconda.com/}). Language should be
+``Python'' and platform can be ``CPU.'' ``CUDA'' is used for GPU
+processing but it is not necessary and requires additional steps for
+setting up CUDA.
+
+From the command line, here are the installs for different operating
+systems
+
+Windows \newline \texttt{pip\ install\ torch\ torchvision\ torchaudio}
+
+Macs \newline \texttt{pip\ install\ torch\ torchvision\ torchaudio}
+
+Linux \newline
+\texttt{pip\ install\ torch==1.10.1+cpu\ torchvision==0.11.2+cpu\ torchaudio==0.10.1+cpu\ \textbackslash{}newline\ -f\ https://download.pytorch.org/whl/cpu/torch\_stable.html}
+
+TensorFlow can be install using similar instructions
+(\url{https://www.tensorflow.org/install}) but it is much more
+straightforward. From the command line, you can use
+
+\texttt{pip\ install\ tensorflow}
+
+Finally, you can install the \texttt{transformers} module:
+
+\texttt{python\ -m\ pip\ install\ transformers}
+
+To check that the \texttt{transformers} module was properly installed,
+the following code can be run
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\StringTok{"\textquotesingle{}transformers\textquotesingle{} module installed?"}\NormalTok{)}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"\textquotesingle{}transformers\textquotesingle{} module installed?"}
+\NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_module\_available}\NormalTok{(}\StringTok{"transformers"}\NormalTok{)}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\ConstantTok{TRUE}
+\end{Highlighting}
+\end{Shaded}
+
+At this point, the \texttt{transformers} module should be ready-to-go on
+your computer. If you're having trouble installing modules, then check
+out this page:
+\url{https://packaging.python.org/en/latest/tutorials/installing-packages/}.
+
+\hypertarget{downloading-facebook-bart-large}{%
+\subsection{4. Downloading Facebook BART
+Large}\label{downloading-facebook-bart-large}}
+
+The final step is to download the
+\href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+transformer model. The simplest way is to run our
+\texttt{transformer\_scores} function with an example
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load data}
+\FunctionTok{data}\NormalTok{(neo\_ipip\_extraversion)}
+
+\CommentTok{\# Run transformer function}
+\FunctionTok{transformer\_scores}\NormalTok{(}
+    \AttributeTok{text =}\NormalTok{ neo\_ipip\_extraversion}\SpecialCharTok{$}\NormalTok{friendliness[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{], }\CommentTok{\# positively worded items only}
+    \AttributeTok{classes =} \FunctionTok{c}\NormalTok{(}
+      \StringTok{"friendly"}\NormalTok{, }\StringTok{"gregarious"}\NormalTok{, }\StringTok{"assertive"}\NormalTok{,}
+      \StringTok{"active"}\NormalTok{, }\StringTok{"excitement"}\NormalTok{, }\StringTok{"cheerful"}
+\NormalTok{    ),}
+    \AttributeTok{multiple\_classes =} \ConstantTok{FALSE}\NormalTok{,}
+    \AttributeTok{keep\_in\_env =} \ConstantTok{TRUE}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Make friends easily}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.297}      \FloatTok{0.518}      \FloatTok{0.031}      \FloatTok{0.113}      \FloatTok{0.007}      \FloatTok{0.034} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Warm up quickly to others}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.457}      \FloatTok{0.196}      \FloatTok{0.044}      \FloatTok{0.206}      \FloatTok{0.033}      \FloatTok{0.064} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Feel comfortable around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.244}      \FloatTok{0.465}      \FloatTok{0.027}      \FloatTok{0.206}      \FloatTok{0.015}      \FloatTok{0.042} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Act comfortably around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.269}      \FloatTok{0.359}      \FloatTok{0.037}      \FloatTok{0.303}      \FloatTok{0.003}      \FloatTok{0.029} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Cheer people up}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.302}      \FloatTok{0.176}      \FloatTok{0.035}      \FloatTok{0.060}      \FloatTok{0.090}      \FloatTok{0.335} 
+\end{Highlighting}
+\end{Shaded}
+
+The download will take some time: The model is 1.5Gb. The model will
+download to your Python directory \emph{not} R. The model only needs to
+be downloaded once and will be loaded each time the
+\texttt{transformer\_scores} function is called. For repeated usage, the
+\texttt{keep\_in\_env} argument should be set to \texttt{TRUE} (which is
+the default) to keep the classifier loaded in the environment.
+
+If you've made it this far, then you've successfully obtain sentiment
+analysis scores from Facebook's BART Large transformer model. Go forth
+and quantify the qualitative!
+
+\end{document}

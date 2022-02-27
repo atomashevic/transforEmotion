@@ -37,7 +37,7 @@ library(transforEmotion)
 
 If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
 
-The first step is to download Python. The recommended version is 3.9.7: https://www.python.org/downloads/release/python-397/. Below are the recommended settings when installing Python:
+If not, then the first step is to download Python. The recommended version is 3.9.7: https://www.python.org/downloads/release/python-397/. Below are the recommended settings when installing Python:
 
 + Check the "Add Python VERSION.NUMBER to PATH"
 
@@ -56,7 +56,7 @@ After Python is finished installing, you should check whether it's been installe
 
 The following code will check if Python is installed and where Python is installed:
 
-```{r python_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_install, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("Is Python installed?")
 reticulate::py_available(TRUE)
 ```
@@ -69,12 +69,7 @@ If `FALSE`, then try the following steps:
 
 If `TRUE`, then Python has successfully installed on your computer. To find out where, the following code can be used:
 
-```{r python_location, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
-print("Where is Python installed?")
-reticulate::py_config()
-```
-
-```{r python_location_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_location, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("Where is Python installed?")
 reticulate::py_config()
 ```
@@ -97,14 +92,14 @@ PyTorch can be installed by following the instructions on the website: https://p
 
 From the command line, here are the installs for different operating systems
 
-Windows <br>
+Windows \newline
 `pip install torch torchvision torchaudio`
 
-Macs <br>
+Macs \newline
 `pip install torch torchvision torchaudio`
 
-Linux <br>
-`pip install torch==1.10.1+cpu torchvision==0.11.2+cpu torchaudio==0.10.1+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html`
+Linux \newline
+`pip install torch==1.10.1+cpu torchvision==0.11.2+cpu torchaudio==0.10.1+cpu \newline -f https://download.pytorch.org/whl/cpu/torch_stable.html`
 
 TensorFlow can be install using similar instructions (https://www.tensorflow.org/install) but it is much more straightforward. From the command line, you can use
 
@@ -116,14 +111,9 @@ Finally, you can install the `transformers` module:
 
 To check that the `transformers` module was properly installed, the following code can be run
 
-```{r transformers_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r transformers_install, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("'transformers' module installed?")
 reticulate::py_module_available("transformers")
-```
-
-```{r transformers_install_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
-print("'transformers' module installed?")
-TRUE
 ```
 
 At this point, the `transformers` module should be ready-to-go on your computer. If you're having trouble installing modules, then check out this page: https://packaging.python.org/en/latest/tutorials/installing-packages/.
