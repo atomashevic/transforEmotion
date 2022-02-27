@@ -46,7 +46,7 @@ Returns probabilities for the text classes
 }
 \description{
 Checkpoint for \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} trained on the
-\href{https://huggingface.co/datasets/multi_nli}{MultiNLI} dataset. Scores represent
+Multi-Genre Natural Language Inference \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} dataset. Scores represent
 the probabilities that the text corresponds to the specified classes
 }
 \details{
@@ -61,7 +61,7 @@ scores.
 }
 \examples{
 # Example text 
-text <- "I like to go to parties"
+text <- neo_ipip_extraversion$friendliness
 
 \dontrun{
 transformer_scores(

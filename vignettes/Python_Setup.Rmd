@@ -33,6 +33,11 @@ knitr::opts_chunk$set(
 library(transforEmotion)
 ```
 
+<!-- Silent load Python -->
+```{r python_setup_true, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+python_setup("D:/Python/python.exe")
+```
+
 ## 1. Getting Started with Python
 
 If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
@@ -61,11 +66,6 @@ print("Is Python installed?")
 reticulate::py_available(TRUE)
 ```
 
-```{r python_install_show, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
-print("Is Python installed?")
-reticulate::py_available(TRUE)
-```
-
 If `FALSE`, then try the following steps:
 
 + Restart your computer and try the above code again
@@ -86,10 +86,9 @@ reticulate::py_config()
 
 To make R aware of your Python installation, you can use the following code:
 
-```{r python_setup, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_setup, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 python_setup()
 ```
-
 
 ## 3. Installing the `transformers` Module
 
@@ -139,28 +138,41 @@ At this point, the `transformers` module should be ready-to-go on your computer.
 The final step is to download the \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} transformer model. The simplest way is to run our `transformer_scores` function with an example
 
 ```{r transformers_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+# Load data
+data(neo_ipip_extraversion)
+
+# Run transformer function
 transformer_scores(
-    text = "I like to go to parties",
-    classes = c("sociable", "warm", "assertive", "positive"),
+    text = neo_ipip_extraversion$friendliness[1:5], # positively worded items only
+    classes = c(
+      "friendly", "gregarious", "assertive",
+      "active", "excitement", "cheerful"
+    ),
     multiple_classes = FALSE,
     keep_in_env = TRUE
 )
 ```
 
 ```{r transformers_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
-$`I like to go to parties`
-  sociable  assertive   positive       warm 
-0.81750941 0.09567241 0.04745624 0.03936200
-```
+$`Make friends easily`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.297      0.518      0.031      0.113      0.007      0.034 
 
-Compare to the \emph{emoxicon} package output
+$`Warm up quickly to others`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.457      0.196      0.044      0.206      0.033      0.064 
 
-```{r emoxicon_scores_output, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
-# Load 'emoxicon' package
-library(emoxicon)
+$`Feel comfortable around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.244      0.465      0.027      0.206      0.015      0.042 
 
-# Run emoxicon function
-emoxicon("I like to go to parties")[-c(1,2)]
+$`Act comfortably around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.269      0.359      0.037      0.303      0.003      0.029 
+
+$`Cheer people up`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.302      0.176      0.035      0.060      0.090      0.335 
 ```
 
 The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called. For repeated usage, the `keep_in_env` argument should be set to `TRUE` (which is the default) to keep the classifier loaded in the environment.

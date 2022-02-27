@@ -117,6 +117,10 @@
 \begin{document}
 \maketitle
 
+\begin{verbatim}
+[1] "D:/Python/python.exe"
+\end{verbatim}
+
 \hypertarget{getting-started-with-python}{%
 \subsection{1. Getting Started with
 Python}\label{getting-started-with-python}}
@@ -162,11 +166,6 @@ installed:
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-[1] "Is Python installed?"
-[1] TRUE
-\end{verbatim}
-
 If \texttt{FALSE}, then try the following steps:
 
 \begin{itemize}
@@ -189,13 +188,15 @@ computer. To find out where, the following code can be used:
 
 \begin{verbatim}
 [1] "Where is Python installed?"
-python:         D:/anaconda3/python.exe
-libpython:      D:/anaconda3/python39.dll
-pythonhome:     D:/anaconda3
-version:        3.9.7 (default, Sep 16 2021, 16:59:28) [MSC v.1916 64 bit (AMD64)]
+python:         D:/Python/python.exe
+libpython:      D:/Python/python39.dll
+pythonhome:     D:/Python
+version:        3.9.7 (tags/v3.9.7:1016ef3, Aug 30 2021, 20:19:38) [MSC v.1929 64 bit (AMD64)]
 Architecture:   64bit
-numpy:          D:/anaconda3/Lib/site-packages/numpy
-numpy_version:  1.20.3
+numpy:          D:/Python/Lib/site-packages/numpy
+numpy_version:  1.22.2
+
+NOTE: Python version was forced by use_python function
 \end{verbatim}
 
 To make R aware of your Python installation, you can use the following
@@ -204,7 +205,6 @@ code:
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{python\_setup}\NormalTok{()}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"D:/anaconda3/python.exe"}
 \end{Highlighting}
 \end{Shaded}
 
@@ -282,9 +282,16 @@ transformer model. The simplest way is to run our
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{\# Load data}
+\FunctionTok{data}\NormalTok{(neo\_ipip\_extraversion)}
+
+\CommentTok{\# Run transformer function}
 \FunctionTok{transformer\_scores}\NormalTok{(}
-    \AttributeTok{text =} \StringTok{"I like to go to parties"}\NormalTok{,}
-    \AttributeTok{classes =} \FunctionTok{c}\NormalTok{(}\StringTok{"sociable"}\NormalTok{, }\StringTok{"warm"}\NormalTok{, }\StringTok{"assertive"}\NormalTok{, }\StringTok{"positive"}\NormalTok{),}
+    \AttributeTok{text =}\NormalTok{ neo\_ipip\_extraversion}\SpecialCharTok{$}\NormalTok{friendliness[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{], }\CommentTok{\# positively worded items only}
+    \AttributeTok{classes =} \FunctionTok{c}\NormalTok{(}
+      \StringTok{"friendly"}\NormalTok{, }\StringTok{"gregarious"}\NormalTok{, }\StringTok{"assertive"}\NormalTok{,}
+      \StringTok{"active"}\NormalTok{, }\StringTok{"excitement"}\NormalTok{, }\StringTok{"cheerful"}
+\NormalTok{    ),}
     \AttributeTok{multiple\_classes =} \ConstantTok{FALSE}\NormalTok{,}
     \AttributeTok{keep\_in\_env =} \ConstantTok{TRUE}
 \NormalTok{)}
@@ -293,23 +300,25 @@ transformer model. The simplest way is to run our
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{I like to go to parties}\StringTok{\textasciigrave{}}
-\NormalTok{  sociable  assertive   positive       warm }
-\FloatTok{0.81750941} \FloatTok{0.09567241} \FloatTok{0.04745624} \FloatTok{0.03936200}
-\end{Highlighting}
-\end{Shaded}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Make friends easily}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.297}      \FloatTok{0.518}      \FloatTok{0.031}      \FloatTok{0.113}      \FloatTok{0.007}      \FloatTok{0.034} 
 
-Compare to the \emph{emoxicon} package output
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Warm up quickly to others}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.457}      \FloatTok{0.196}      \FloatTok{0.044}      \FloatTok{0.206}      \FloatTok{0.033}      \FloatTok{0.064} 
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{\# Load \textquotesingle{}emoxicon\textquotesingle{} package}
-\FunctionTok{library}\NormalTok{(emoxicon)}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Feel comfortable around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.244}      \FloatTok{0.465}      \FloatTok{0.027}      \FloatTok{0.206}      \FloatTok{0.015}      \FloatTok{0.042} 
 
-\CommentTok{\# Run emoxicon function}
-\FunctionTok{emoxicon}\NormalTok{(}\StringTok{"I like to go to parties"}\NormalTok{)[}\SpecialCharTok{{-}}\FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{)]}
-\NormalTok{  AFRAID AMUSED ANGRY ANNOYED DONT\_CARE HAPPY INSPIRED SAD}
-\DecValTok{1}      \DecValTok{0}      \DecValTok{0}     \DecValTok{0}       \DecValTok{0}         \DecValTok{0}     \DecValTok{0}        \DecValTok{2}   \DecValTok{0}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Act comfortably around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.269}      \FloatTok{0.359}      \FloatTok{0.037}      \FloatTok{0.303}      \FloatTok{0.003}      \FloatTok{0.029} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Cheer people up}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.302}      \FloatTok{0.176}      \FloatTok{0.035}      \FloatTok{0.060}      \FloatTok{0.090}      \FloatTok{0.335} 
 \end{Highlighting}
 \end{Shaded}
 
