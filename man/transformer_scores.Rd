@@ -60,6 +60,9 @@ function will automatically download the necessary model to compute the
 scores.
 }
 \examples{
+# Load data
+data(neo_ipip_extraversion)
+
 # Example text 
 text <- neo_ipip_extraversion$friendliness
 

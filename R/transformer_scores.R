@@ -45,6 +45,9 @@
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
 #' @examples
+#' # Load data
+#' data(neo_ipip_extraversion)
+#' 
 #' # Example text 
 #' text <- neo_ipip_extraversion$friendliness
 #' 
