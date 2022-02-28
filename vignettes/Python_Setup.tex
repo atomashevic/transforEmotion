@@ -99,7 +99,6 @@
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
-\usepackage[sfdefault]{cabin}
 \usepackage{hyperref}
 \hypersetup{
   colorlinks = true,
@@ -112,14 +111,13 @@
 
 \title{Python Setup}
 \author{Alexander P. Christensen and Hudson Golino}
-\date{February 27, 2022}
+\date{February 28, 2022}
 
 \begin{document}
 \maketitle
 
-\hypertarget{getting-started-with-python}{%
-\subsection{1. Getting Started with
-Python}\label{getting-started-with-python}}
+\hypertarget{section_1}{%
+\subsection{1. Getting Started with Python}\label{section_1}}
 
 If you have Python already installed on your computer, then skip to
 section 2 to check your Python installation.
@@ -154,16 +152,19 @@ installed properly.
 Installation}\label{check-python-installation}}
 
 The following code will check if Python is installed and where Python is
-installed:
+installed
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{print}\NormalTok{(}\StringTok{"Is Python installed?"}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"Is Python installed?"}
 \NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_available}\NormalTok{(}\ConstantTok{TRUE}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\ConstantTok{TRUE}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{verbatim}
+[1] "Is Python installed?"
+[1] TRUE
+\end{verbatim}
 
 If \texttt{FALSE}, then try the following steps:
 
@@ -171,35 +172,39 @@ If \texttt{FALSE}, then try the following steps:
 \item
   Restart your computer and try the above code again
 \item
-  If still \texttt{FALSE}, then go back to section 1 and try
-  re-installing Python on your computer following the instructions
+  If still \texttt{FALSE}, then go back to
+  \protect\hyperlink{section_1}{1.} and try re-installing Python on your
+  computer following the instructions
 \end{itemize}
 
 If \texttt{TRUE}, then Python has successfully installed on your
-computer. To find out where, the following code can be used:
+computer. To find out where, the following code can be used
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{print}\NormalTok{(}\StringTok{"Where is Python installed?"}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"Where is Python installed?"}
 \NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_config}\NormalTok{()}
-\NormalTok{python}\SpecialCharTok{:}\NormalTok{         D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{python.exe}
-\NormalTok{libpython}\SpecialCharTok{:}\NormalTok{      D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{python39.dll}
-\NormalTok{pythonhome}\SpecialCharTok{:}\NormalTok{     D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}
-\NormalTok{version}\SpecialCharTok{:}        \DecValTok{3}\NormalTok{.}\FloatTok{9.7}\NormalTok{ (default, Sep }\DecValTok{16} \DecValTok{2021}\NormalTok{, }\DecValTok{16}\SpecialCharTok{:}\DecValTok{59}\SpecialCharTok{:}\DecValTok{28}\NormalTok{) [MSC v}\FloatTok{.1916} \DecValTok{64} \FunctionTok{bit}\NormalTok{ (AMD64)]}
-\NormalTok{Architecture}\SpecialCharTok{:}\NormalTok{   64bit}
-\NormalTok{numpy}\SpecialCharTok{:}\NormalTok{          D}\SpecialCharTok{:}\ErrorTok{/}\NormalTok{anaconda3}\SpecialCharTok{/}\NormalTok{Lib}\SpecialCharTok{/}\NormalTok{site}\SpecialCharTok{{-}}\NormalTok{packages}\SpecialCharTok{/}\NormalTok{numpy}
-\NormalTok{numpy\_version}\SpecialCharTok{:}  \DecValTok{1}\NormalTok{.}\FloatTok{22.2}
 \end{Highlighting}
 \end{Shaded}
 
+\begin{verbatim}
+[1] "Where is Python installed?"
+python:         D:/Python/python.exe
+libpython:      D:/Python/python39.dll
+pythonhome:     D:/Python
+version:        3.9.7 (tags/v3.9.7:1016ef3, Aug 30 2021, 20:19:38) [MSC v.1929 64 bit (AMD64)]
+Architecture:   64bit
+numpy:          D:/Python/Lib/site-packages/numpy
+numpy_version:  1.22.2
+\end{verbatim}
+
 To make R aware of your Python installation, you can use the following
-code:
+code
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{python\_setup}\NormalTok{()}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"D:/anaconda3/python.exe"}
+\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"D:/Python/python.exe"}
 \end{Highlighting}
 \end{Shaded}
 
@@ -210,7 +215,7 @@ Module}{3. Installing the transformers Module}}\label{installing-the-transformer
 With Python installed, the next step is to install the
 \texttt{transformers} module. To do so, you'll need to open a command
 line terminal on your computer. Once open, you can start by upgrading
-\texttt{pip}:
+\texttt{pip}
 
 \texttt{python\ -m\ pip\ install\ -\/-upgrade\ pip}
 
@@ -219,8 +224,8 @@ need to be installed: \texttt{PyTorch} and \texttt{Tensorflow}.
 
 PyTorch can be installed by following the instructions on the website:
 \url{https://pytorch.org/}. Select the ``Stable'' build and your
-operating system. You will most likely use the ``Pip'' package for
-install but ``Conda'' is another common package if you're using Anaconda
+operating system. You will most likely use the ``pip'' package for
+install but ``conda'' is another common package if you're using Anaconda
 or miniconda (see \url{https://www.anaconda.com/}). Language should be
 ``Python'' and platform can be ``CPU.'' ``CUDA'' is used for GPU
 processing but it is not necessary and requires additional steps for
@@ -252,11 +257,14 @@ the following code can be run
 \begin{Shaded}
 \begin{Highlighting}[]
 \FunctionTok{print}\NormalTok{(}\StringTok{"\textquotesingle{}transformers\textquotesingle{} module installed?"}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\StringTok{"\textquotesingle{}transformers\textquotesingle{} module installed?"}
 \NormalTok{reticulate}\SpecialCharTok{::}\FunctionTok{py\_module\_available}\NormalTok{(}\StringTok{"transformers"}\NormalTok{)}
-\NormalTok{[}\DecValTok{1}\NormalTok{] }\ConstantTok{TRUE}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{verbatim}
+[1] "'transformers' module installed?"
+[1] TRUE
+\end{verbatim}
 
 At this point, the \texttt{transformers} module should be ready-to-go on
 your computer. If you're having trouble installing modules, then check
@@ -317,9 +325,10 @@ transformer model. The simplest way is to run our
 The download will take some time: The model is 1.5Gb. The model will
 download to your Python directory \emph{not} R. The model only needs to
 be downloaded once and will be loaded each time the
-\texttt{transformer\_scores} function is called. For repeated usage, the
-\texttt{keep\_in\_env} argument should be set to \texttt{TRUE} (which is
-the default) to keep the classifier loaded in the environment.
+\texttt{transformer\_scores} function is called in a new R session. For
+repeated usage, the \texttt{keep\_in\_env} argument should be set to
+\texttt{TRUE} (which is the default) to keep the classifier loaded in
+the environment.
 
 If you've made it this far, then you've successfully obtain sentiment
 analysis scores from Facebook's BART Large transformer model. Go forth

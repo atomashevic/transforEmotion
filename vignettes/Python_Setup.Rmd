@@ -13,7 +13,6 @@ vignette: >
 header-includes:
 - |
   ```{=latex}
-  \usepackage[sfdefault]{cabin}
   \usepackage{hyperref}
   \hypersetup{
     colorlinks = true,
@@ -33,7 +32,7 @@ knitr::opts_chunk$set(
 library(transforEmotion)
 ```
 
-## 1. Getting Started with Python
+## 1. Getting Started with Python {#section_1}
 
 If you have Python already installed on your computer, then skip to section 2 to check your Python installation.
 
@@ -54,9 +53,14 @@ After Python is finished installing, you should check whether it's been installe
 
 ## 2. Check Python Installation
 
-The following code will check if Python is installed and where Python is installed:
+The following code will check if Python is installed and where Python is installed
 
-```{r python_install, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+print("Is Python installed?")
+reticulate::py_available(TRUE)
+```
+
+```{r python_install_eval, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
 print("Is Python installed?")
 reticulate::py_available(TRUE)
 ```
@@ -65,16 +69,21 @@ If `FALSE`, then try the following steps:
 
 + Restart your computer and try the above code again
 
-+ If still `FALSE`, then go back to section 1 and try re-installing Python on your computer following the instructions
++ If still `FALSE`, then go back to [1.](#section_1) and try re-installing Python on your computer following the instructions
 
-If `TRUE`, then Python has successfully installed on your computer. To find out where, the following code can be used:
+If `TRUE`, then Python has successfully installed on your computer. To find out where, the following code can be used
 
-```{r python_location, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r python_location, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("Where is Python installed?")
 reticulate::py_config()
 ```
 
-To make R aware of your Python installation, you can use the following code:
+```{r python_location_eval, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+print("Where is Python installed?")
+reticulate::py_config()
+```
+
+To make R aware of your Python installation, you can use the following code
 
 ```{r python_setup, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 python_setup()
@@ -82,13 +91,13 @@ python_setup()
 
 ## 3. Installing the `transformers` Module
 
-With Python installed, the next step is to install the `transformers` module. To do so, you'll need to open a command line terminal on your computer. Once open, you can start by upgrading `pip`:
+With Python installed, the next step is to install the `transformers` module. To do so, you'll need to open a command line terminal on your computer. Once open, you can start by upgrading `pip`
 
 `python -m pip install --upgrade pip`
 
 Before installing the `transformers` module, a few other packages need to be installed: `PyTorch` and `Tensorflow`.
 
-PyTorch can be installed by following the instructions on the website: https://pytorch.org/. Select the “Stable” build and your operating system. You will most likely use the “Pip” package for install but “Conda” is another common package if you’re using Anaconda or miniconda (see https://www.anaconda.com/). Language should be “Python” and platform can be “CPU.” “CUDA” is used for GPU processing but it is not necessary and requires additional steps for setting up CUDA.
+PyTorch can be installed by following the instructions on the website: https://pytorch.org/. Select the “Stable” build and your operating system. You will most likely use the “pip” package for install but “conda” is another common package if you’re using Anaconda or miniconda (see https://www.anaconda.com/). Language should be “Python” and platform can be “CPU.” “CUDA” is used for GPU processing but it is not necessary and requires additional steps for setting up CUDA.
 
 From the command line, here are the installs for different operating systems
 
@@ -111,9 +120,14 @@ Finally, you can install the `transformers` module:
 
 To check that the `transformers` module was properly installed, the following code can be run
 
-```{r transformers_install, eval = TRUE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+```{r transformers_install, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 print("'transformers' module installed?")
 reticulate::py_module_available("transformers")
+```
+
+```{r transformers_install_eval, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+print("'transformers' module installed?")
+TRUE
 ```
 
 At this point, the `transformers` module should be ready-to-go on your computer. If you're having trouble installing modules, then check out this page: https://packaging.python.org/en/latest/tutorials/installing-packages/.
@@ -160,6 +174,6 @@ $`Cheer people up`
      0.302      0.176      0.035      0.060      0.090      0.335 
 ```
 
-The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called. For repeated usage, the `keep_in_env` argument should be set to `TRUE` (which is the default) to keep the classifier loaded in the environment.
+The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session. For repeated usage, the `keep_in_env` argument should be set to `TRUE` (which is the default) to keep the classifier loaded in the environment.
 
 If you've made it this far, then you've successfully obtain sentiment analysis scores from Facebook's BART Large transformer model. Go forth and quantify the qualitative!
