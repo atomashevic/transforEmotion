@@ -1,7 +1,7 @@
 Package: transforEmotion
 Title: Sentiment Analysis for Text and Qualitative Data
 Version: 0.0.1
-Date: 2022-02-27
+Date: 2022-02-28
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9798-7037")),
 	     person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut", comment = c(ORCID = "0000-0002-1601-1447")))
 Maintainer: Alexander Christensen <alexpaulchristensen@gmail.com>
