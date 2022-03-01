@@ -129,6 +129,7 @@ transformer_scores <- function(
   # Message
   message("Obtaining scores...")
   
+  
   # Apply through text
   scores <- pbapply::pblapply(text, function(x){
     
