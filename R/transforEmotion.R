@@ -7,7 +7,7 @@
 #' (MultiNLI) dataset. Using similar models, zero-shot classification transformers have 
 #' demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, 2019).
 #' All other zero-shot classification model pipelines can be implemented using
-#' their model name from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{https://huggingface.co/models?pipeline_tag=zero-shot-classification}
+#' their model name from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{https://huggingface.co/models?pipeline_tag=zero-shot-classification}.
 #' 
 #' @references
 #' Yin, W., Hay, J., & Roth, D. (2019).
