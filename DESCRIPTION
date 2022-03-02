@@ -5,12 +5,11 @@ Date: 2022-03-02
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9798-7037")),
 	     person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut", comment = c(ORCID = "0000-0002-1601-1447")))
 Maintainer: Alexander Christensen <alexpaulchristensen@gmail.com>
-Description: 
-Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines. The default pipeline is Facebook's BART Large <https://huggingface.co/facebook/bart-large-mnli> trained on the Multi-Genre Natural Language Inference <https://huggingface.co/datasets/multi_nli> dataset. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models <arXiv:1909.00161>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>}.
+Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines. The default pipeline is Facebook's BART Large <https://huggingface.co/facebook/bart-large-mnli> trained on the Multi-Genre Natural Language Inference <https://huggingface.co/datasets/multi_nli> dataset. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models <arXiv:1909.00161>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>}.
 Depends: R (>= 3.5.0)
 License: GPL (>= 3.0)
 Encoding: UTF-8
 Imports: reticulate, pbapply
-Suggests: markdown, knitr, rmarkdown
+Suggests: markdown, knitr, rmarkdown, rstudioapi
 VignetteBuilder: knitr
 RoxygenNote: 7.1.2
