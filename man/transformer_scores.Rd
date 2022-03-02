@@ -2,12 +2,13 @@
 % Please edit documentation in R/transformer_scores.R
 \name{transformer_scores}
 \alias{transformer_scores}
-\title{Sentiment Analysis Scores from Facebook BART Large}
+\title{Sentiment Analysis Scores}
 \usage{
 transformer_scores(
   text,
   classes,
   multiple_classes = FALSE,
+  transformer = c("facebook-bart", "cross-encoder-distillroberta"),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -24,6 +25,33 @@ Classes to score the text}
 Whether the text can belong to multiple true classes.
 Defaults to \code{FALSE}.
 Set to \code{TRUE} to get scores with multiple classes}
+
+\item{transformer}{Character.
+Specific zero-shot sentiment analysis transformer
+to be used. Default options:
+
+\itemize{
+
+\item{\code{"facebook-bart"}}
+{Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+zero-shot classification model trained on the
+\href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language
+Inference} (MultiNLI) dataset}
+
+\item{\code{"cross-encoder-distilroberta"}}
+{Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
+zero-shot classification model trained on the
+\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+(SNLI) corpus and 
+\href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
+
+}
+
+Defaults to \code{"facebook-bart"}
+
+Also allows any zero-shot classification models with a pipeline
+from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
+to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)}
 
 \item{path_to_python}{Character.
 Path to specify where "python.exe" is located on your computer.
@@ -45,15 +73,14 @@ Defaults to the global environment}
 Returns probabilities for the text classes
 }
 \description{
-Checkpoint for \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} trained on the
-Multi-Genre Natural Language Inference \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} dataset. Scores represent
-the probabilities that the text corresponds to the specified classes
+Uses sentiment analysis pipelines from \href{https://huggingface.co}{huggingface}
+to compute probabilities that the text corresponds to the specified classes
 }
 \details{
 This function requires that you have both Python and the 
 "transformers" module installed on your computer. For help installing Python 
-and Python modules, see \code{browseVignettes("emoxicon")} and click on
-HTML for the "Python Setup" vignette.
+and Python modules, see \code{browseVignettes("transforEmotion")} and click on
+the "Python Setup" vignette.
 
 Once both Python and the "transformers" module are installed, the
 function will automatically download the necessary model to compute the
@@ -64,13 +91,39 @@ scores.
 data(neo_ipip_extraversion)
 
 # Example text 
-text <- neo_ipip_extraversion$friendliness
+text <- neo_ipip_extraversion$friendliness[1:5]
 
 \dontrun{
+# Facebook BART Large
 transformer_scores(
-  text = text,
-  classes = c("sociable", "warm", "assertive", "positive"),
-  multiple_classes = FALSE
+ text = text,
+ classes = c(
+   "friendly", "gregarious", "assertive",
+   "active", "excitement", "cheerful"
+ ),
+ multiple_classes = FALSE
+)
+
+# Cross-Encoder DistillRoBERTa
+transformer_scores(
+ text = text,
+ classes = c(
+   "friendly", "gregarious", "assertive",
+   "active", "excitement", "cheerful"
+ ),
+ multiple_classes = FALSE,
+ transformer = "cross-encoder-distillroberta"
+)
+
+# Directly from huggingface: typeform/distilbert-base-uncased-mnli
+transformer_scores(
+ text = text,
+ classes = c(
+   "friendly", "gregarious", "assertive",
+   "active", "excitement", "cheerful"
+ ),
+ multiple_classes = FALSE,
+ transformer = "typeform/distilbert-base-uncased-mnli"
 )
 }
 
