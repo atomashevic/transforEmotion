@@ -100,8 +100,7 @@ transformer_scores(
  classes = c(
    "friendly", "gregarious", "assertive",
    "active", "excitement", "cheerful"
- ),
- multiple_classes = FALSE
+ )
 )
 
 # Cross-Encoder DistillRoBERTa
@@ -111,7 +110,6 @@ transformer_scores(
    "friendly", "gregarious", "assertive",
    "active", "excitement", "cheerful"
  ),
- multiple_classes = FALSE,
  transformer = "cross-encoder-distillroberta"
 )
 
@@ -122,7 +120,6 @@ transformer_scores(
    "friendly", "gregarious", "assertive",
    "active", "excitement", "cheerful"
  ),
- multiple_classes = FALSE,
  transformer = "typeform/distilbert-base-uncased-mnli"
 )
 }

@@ -3,3 +3,4 @@
 export(punctuate)
 export(python_setup)
 export(transformer_scores)
+importFrom(utils,packageVersion)

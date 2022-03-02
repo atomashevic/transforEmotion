@@ -146,9 +146,7 @@ transformer_scores(
     classes = c(
       "friendly", "gregarious", "assertive",
       "active", "excitement", "cheerful"
-    ),
-    multiple_classes = FALSE,
-    keep_in_env = TRUE
+    )
 )
 ```
 
@@ -174,6 +172,6 @@ $`Cheer people up`
      0.302      0.176      0.035      0.060      0.090      0.335 
 ```
 
-The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session. For repeated usage, the `keep_in_env` argument should be set to `TRUE` (which is the default) to keep the classifier loaded in the environment.
+The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session.
 
 If you've made it this far, then you've successfully obtain sentiment analysis scores from Facebook's BART Large transformer model. Go forth and quantify the qualitative!

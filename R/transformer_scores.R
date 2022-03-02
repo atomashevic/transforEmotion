@@ -84,8 +84,7 @@
 #'  classes = c(
 #'    "friendly", "gregarious", "assertive",
 #'    "active", "excitement", "cheerful"
-#'  ),
-#'  multiple_classes = FALSE
+#'  )
 #')
 #' 
 #' # Cross-Encoder DistillRoBERTa
@@ -95,7 +94,6 @@
 #'    "friendly", "gregarious", "assertive",
 #'    "active", "excitement", "cheerful"
 #'  ),
-#'  multiple_classes = FALSE,
 #'  transformer = "cross-encoder-distillroberta"
 #')
 #' 
@@ -106,7 +104,6 @@
 #'    "friendly", "gregarious", "assertive",
 #'    "active", "excitement", "cheerful"
 #'  ),
-#'  multiple_classes = FALSE,
 #'  transformer = "typeform/distilbert-base-uncased-mnli"
 #')
 #' }
@@ -154,7 +151,7 @@ transformer_scores <- function(
   }
   
   # Check for classifiers in environment
-  if(exists(transformer, envir = globalenv())){
+  if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
     
@@ -170,9 +167,17 @@ transformer_scores <- function(
     if(!reticulate::py_module_available("transformers")){
       message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`")
     }else{
-      # Import transformers
-      message("Importing transformers module...")
-      transformers <- reticulate::import("transformers")
+      
+      # Check for 'transformers' module in environment
+      if(exists("transformers", envir = as.environment(envir))){
+        transformers <- get("transformers", envir = as.environment(envir))
+      }else{
+        
+        # Import 'transformers' module
+        message("Importing transformers module...")
+        transformers <- reticulate::import("transformers")
+        
+      }
         
     }
     
@@ -186,8 +191,9 @@ transformer_scores <- function(
         "cross-encoder-distillroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base")
       )
     
-    }else{ # Custom pipeline from huggingface
+    }else{
       
+      # Custom pipeline from huggingface
       classifier <- transformers$pipeline("zero-shot-classification", model = transformer)
       
     }
@@ -196,6 +202,15 @@ transformer_scores <- function(
 
   # Load into environment
   if(isTRUE(keep_in_env)){
+    
+    # Keep transformer module in environment
+    assign(
+      x = "transformers",
+      value = transformers,
+      envir = as.environment(envir)
+    )
+    
+    # Keep classifier in environment
     assign(
       x = transformer,
       value = classifier,
