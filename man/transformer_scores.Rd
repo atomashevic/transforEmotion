@@ -8,8 +8,7 @@ transformer_scores(
   text,
   classes,
   multiple_classes = FALSE,
-  transformer = c("cross-encoder-deberta", "cross-encoder-distilroberta",
-    "facebook-bart"),
+  transformer = c("cross-encoder-distilroberta", "facebook-bart"),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -32,13 +31,6 @@ Specific zero-shot sentiment analysis transformer
 to be used. Default options:
 
 \itemize{
-
-\item{\code{"cross-encoder-deberta"}}
-{Uses \href{https://huggingface.co/cross-encoder/nli-deberta-v3-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
-zero-shot classification model trained on the
-\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-(SNLI) corpus and 
-\href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 
 \item{\code{"cross-encoder-distilroberta"}}
 {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
@@ -119,16 +111,6 @@ transformer_scores(
    "active", "excitement", "cheerful"
  ),
  transformer = "facebook-bart"
-)
-
-# Cross-Encoder DeBERTa
-transformer_scores(
- text = text,
- classes = c(
-   "friendly", "gregarious", "assertive",
-   "active", "excitement", "cheerful"
- ),
- transformer = "cross-encoder-deberta"
 )
 
 # Directly from huggingface: typeform/distilbert-base-uncased-mnli
