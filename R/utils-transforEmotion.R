@@ -1,4 +1,73 @@
 #%%%%%%%%%%%%%%%%%%%%%%
+# nlp_scores ----
+#%%%%%%%%%%%%%%%%%%%%%%
+
+#' Message to user about bad classes
+#'
+#' @noRd
+#' 
+# Bad Class Message
+bad_classes_message <- function(bad_classes)
+{
+  # Set up rest of message
+  if(length(bad_classes) == 1){
+    
+    # Set up head of message
+    head <- "Class"
+    
+    # Set up body of message
+    body <- paste("'", bad_classes, "'", sep = "")
+    
+    # Set up end of message
+    end <- "was not found in the semantic space.\n\nIt was removed from the NLP analysis."
+    
+  }else if(length(bad_classes) == 2){
+    
+    # Set up head of message
+    head <- "Classes"
+    
+    # Set up body of message
+    body <- paste(
+      "'", bad_classes[1], "' and '", bad_classes[2], "'", sep = ""
+    )
+    
+    # Set up end of message
+    end <- "were not found in the semantic space.\n\nThey were removed from the NLP analysis."
+    
+  }else if(length(bad_classes) > 2){
+    
+    # Set up head of message
+    head <- "Classes"
+    
+    # Set up body of message
+    ## All bad classes except for last
+    body <- paste(
+      "'", bad_classes[-length(bad_classes)], "'", sep = "", collapse = ", "
+    )
+    
+    ## Add last bad class
+    body <- paste(
+      body,
+      ", and '", bad_classes[length(bad_classes)], "'",
+      sep = ""
+    )
+    
+    # Set up end of message
+    end <- "were not found in the semantic space.\n\nThey were removed from the NLP analysis."
+    
+  }
+  
+  # Generate full message
+  message(
+    paste(
+      head, body, end
+    )
+  )
+  
+}
+
+
+#%%%%%%%%%%%%%%%%%%%%%%
 # SYSTEM FUNCTIONS ----
 #%%%%%%%%%%%%%%%%%%%%%%
 

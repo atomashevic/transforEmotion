@@ -32,12 +32,6 @@ to be used. Default options:
 
 \itemize{
 
-\item{\code{"facebook-bart"}}
-{Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
-zero-shot classification model trained on the
-\href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language
-Inference} (MultiNLI) dataset}
-
 \item{\code{"cross-encoder-distilroberta"}}
 {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 zero-shot classification model trained on the
@@ -45,9 +39,15 @@ zero-shot classification model trained on the
 (SNLI) corpus and 
 \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 
+\item{\code{"facebook-bart"}}
+{Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+zero-shot classification model trained on the
+\href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language
+Inference} (MultiNLI) dataset}
+
 }
 
-Defaults to \code{"facebook-bart"}
+Defaults to \code{"cross-encoder-distilroberta"}
 
 Also allows any zero-shot classification models with a pipeline
 from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}

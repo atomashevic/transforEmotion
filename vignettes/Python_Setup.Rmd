@@ -134,7 +134,7 @@ At this point, the `transformers` module should be ready-to-go on your computer.
 
 ## 4. Downloading Facebook BART Large
 
-The final step is to download the \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large} transformer model. The simplest way is to run our `transformer_scores` function with an example
+The final step is to download the \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} transformer model. The simplest way is to run our `transformer_scores` function with an example
 
 ```{r transformers_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 # Load data
@@ -153,25 +153,25 @@ transformer_scores(
 ```{r transformers_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 $`Make friends easily`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.297      0.518      0.031      0.113      0.007      0.034 
+     0.530      0.088      0.094      0.088      0.069      0.132 
 
 $`Warm up quickly to others`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.457      0.196      0.044      0.206      0.033      0.064 
+     0.057      0.032      0.176      0.177      0.305      0.252 
 
 $`Feel comfortable around people`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.244      0.465      0.027      0.206      0.015      0.042 
+     0.735      0.033      0.050      0.047      0.020      0.116 
 
 $`Act comfortably around people`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.269      0.359      0.037      0.303      0.003      0.029 
+     0.441      0.049      0.141      0.230      0.027      0.112 
 
 $`Cheer people up`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.302      0.176      0.035      0.060      0.090      0.335 
+     0.083      0.135      0.108      0.074      0.332      0.268
 ```
 
-The download will take some time: The model is 1.5Gb. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session.
+The download will take some time: The model is 333MB. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session.
 
 If you've made it this far, then you've successfully obtain sentiment analysis scores from Facebook's BART Large transformer model. Go forth and quantify the qualitative!

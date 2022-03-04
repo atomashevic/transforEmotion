@@ -8,5 +8,7 @@ o ADD: package startup message
 
 o ADD: `utils-transforEmotion` for internal functions
 
+o ADD: added `nlp_scores` to compute semantic similarities
+
 
 Initial commit version 0.0.1

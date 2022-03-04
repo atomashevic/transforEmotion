@@ -20,11 +20,12 @@
 #' 
 #' \itemize{
 #' 
-#' \item{\code{"facebook-bart"}}
-#' {Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+#' \item{\code{"cross-encoder-deberta"}}
+#' {Uses \href{https://huggingface.co/cross-encoder/nli-deberta-v3-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
 #' zero-shot classification model trained on the
-#' \href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language
-#' Inference} (MultiNLI) dataset}
+#' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+#' (SNLI) corpus and 
+#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 #' 
 #' \item{\code{"cross-encoder-distilroberta"}}
 #' {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
@@ -33,9 +34,15 @@
 #' (SNLI) corpus and 
 #' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 #' 
+#' \item{\code{"facebook-bart"}}
+#' {Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+#' zero-shot classification model trained on the
+#' \href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language
+#' Inference} (MultiNLI) dataset}
+#' 
 #' }
 #' 
-#' Defaults to \code{"facebook-bart"}
+#' Defaults to \code{"cross-encoder-distilroberta"}
 #' 
 #' Also allows any zero-shot classification models with a pipeline
 #' from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
@@ -78,7 +85,7 @@
 #' text <- neo_ipip_extraversion$friendliness[1:5]
 #' 
 #' \dontrun{
-#' # Facebook BART Large
+#' # Cross-Encoder DistilRoBERTa
 #' transformer_scores(
 #'  text = text,
 #'  classes = c(
@@ -87,14 +94,24 @@
 #'  )
 #')
 #' 
-#' # Cross-Encoder DistilRoBERTa
+#' # Facebook BART Large
 #' transformer_scores(
 #'  text = text,
 #'  classes = c(
 #'    "friendly", "gregarious", "assertive",
 #'    "active", "excitement", "cheerful"
 #'  ),
-#'  transformer = "cross-encoder-distilroberta"
+#'  transformer = "facebook-bart"
+#')
+#' 
+#' # Cross-Encoder DeBERTa
+#' transformer_scores(
+#'  text = text,
+#'  classes = c(
+#'    "friendly", "gregarious", "assertive",
+#'    "active", "excitement", "cheerful"
+#'  ),
+#'  transformer = "cross-encoder-deberta"
 #')
 #' 
 #' # Directly from huggingface: typeform/distilbert-base-uncased-mnli
@@ -109,6 +126,10 @@
 #' }
 #' 
 #' @references
+#' He, P., Liu, X., Gao, J., & Chen, W. (2020).
+#' Deberta: Decoding-enhanced bert with disentangled attention.
+#' \emph{arXiv preprint arXiv:2006.03654}.
+#' 
 #' Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 #' Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.
 #' \emph{arXiv preprint arXiv:1910.13461}.
@@ -120,11 +141,15 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 03.03.2022
+# Updated 04.03.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
-  transformer = c("facebook-bart", "cross-encoder-distilroberta"),
+  transformer = c(
+    "cross-encoder-deberta",
+    "cross-encoder-distilroberta",
+    "facebook-bart"
+  ),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -142,7 +167,7 @@ transformer_scores <- function(
   
   # Check for transformer
   if(missing(transformer)){
-    transformer <- "facebook-bart"
+    transformer <- "cross-encoder-distilroberta"
   }
   
   # Check for multiple transformers
@@ -182,13 +207,16 @@ transformer_scores <- function(
     }
     
     # Check for custom transformer
-    if(transformer %in% c("facebook-bart", "cross-encoder-distilroberta")){
+    if(transformer %in% c(
+      "cross-encoder-deberta", "cross-encoder-distilroberta", "facebook-bart"
+    )){
       
       # Load pipeline
       classifier <- switch(
         transformer,
-        "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli"),
-        "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base")
+        "cross-encoder-deberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-deberta-v3-base"),
+        "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base"),
+        "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
       )
     
     }else{
