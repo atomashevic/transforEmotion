@@ -87,14 +87,14 @@
 #'  )
 #')
 #' 
-#' # Cross-Encoder DistillRoBERTa
+#' # Cross-Encoder DistilRoBERTa
 #' transformer_scores(
 #'  text = text,
 #'  classes = c(
 #'    "friendly", "gregarious", "assertive",
 #'    "active", "excitement", "cheerful"
 #'  ),
-#'  transformer = "cross-encoder-distillroberta"
+#'  transformer = "cross-encoder-distilroberta"
 #')
 #' 
 #' # Directly from huggingface: typeform/distilbert-base-uncased-mnli
@@ -120,11 +120,11 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 02.03.2022
+# Updated 03.03.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
-  transformer = c("facebook-bart", "cross-encoder-distillroberta"),
+  transformer = c("facebook-bart", "cross-encoder-distilroberta"),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -147,7 +147,7 @@ transformer_scores <- function(
   
   # Check for multiple transformers
   if(length(transformer) > 1){
-    stop("Only one transformer model can be used at a time.\n\nPlease select either \"facebook-bart\", \"cross-encoder-distillroberta\", or select your own model from huggingface:\n\n<https://huggingface.co/models?pipeline_tag=zero-shot-classification>")
+    stop("Only one transformer model can be used at a time.\n\nPlease select either \"facebook-bart\", \"cross-encoder-distilroberta\", or select your own model from huggingface:\n\n<https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n")
   }
   
   # Check for classifiers in environment
@@ -165,7 +165,7 @@ transformer_scores <- function(
     
     # Check if 'transformers' module is available
     if(!reticulate::py_module_available("transformers")){
-      message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`")
+      message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`\n")
     }else{
       
       # Check for 'transformers' module in environment
@@ -182,13 +182,13 @@ transformer_scores <- function(
     }
     
     # Check for custom transformer
-    if(transformer %in% c("facebook-bart", "cross-encoder-distillroberta")){
+    if(transformer %in% c("facebook-bart", "cross-encoder-distilroberta")){
       
       # Load pipeline
       classifier <- switch(
         transformer,
         "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli"),
-        "cross-encoder-distillroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base")
+        "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base")
       )
     
     }else{

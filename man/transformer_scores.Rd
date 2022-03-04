@@ -8,7 +8,7 @@ transformer_scores(
   text,
   classes,
   multiple_classes = FALSE,
-  transformer = c("facebook-bart", "cross-encoder-distillroberta"),
+  transformer = c("facebook-bart", "cross-encoder-distilroberta"),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -103,14 +103,14 @@ transformer_scores(
  )
 )
 
-# Cross-Encoder DistillRoBERTa
+# Cross-Encoder DistilRoBERTa
 transformer_scores(
  text = text,
  classes = c(
    "friendly", "gregarious", "assertive",
    "active", "excitement", "cheerful"
  ),
- transformer = "cross-encoder-distillroberta"
+ transformer = "cross-encoder-distilroberta"
 )
 
 # Directly from huggingface: typeform/distilbert-base-uncased-mnli
