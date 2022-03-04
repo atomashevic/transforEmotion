@@ -1,7 +1,7 @@
 #' Natural Language Processing Scores
 #'
-#' @description Uses natural language processing corpus to compute
-#' semantic similarities (cosine) of the text corresponds to the specified classes
+#' @description Natural Language Processing using word embeddings to compute
+#' semantic similarities (cosine) of text and specified classes
 #' 
 #' @param text Character vector or list.
 #' Text in a vector or list data format
@@ -130,7 +130,7 @@
 #'  ),
 #'  semantic_space = "tasa"
 #' )
-#'}
+#' }
 #' 
 #' @references
 #' Baroni, M., Dinu, G., & Kruszewski, G. (2014).
@@ -144,6 +144,8 @@
 #' Pennington, J., Socher, R., & Manning, C. D. (2014).
 #' GloVe: Global vectors for word representation.
 #' In \emph{Proceedings of the 2014 conference on empirical methods in natural language processing} (pp. 1532-1543).
+#' 
+#' @importFrom stats na.omit
 #' 
 #' @export
 #'

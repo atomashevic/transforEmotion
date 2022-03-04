@@ -8,9 +8,10 @@
 \description{
 Implements sentiment analysis using \href{https://huggingface.co}{huggingface} transformer
 zero-shot classification model pipelines. The default pipeline is
-\href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
-trained on the \href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language Inference}
-(MultiNLI) dataset. Using similar models, zero-shot classification transformers have 
+\href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa}
+trained on the \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference} (SNLI) and
+ \href{https://huggingface.co/datasets/multi_nli}{Multi-Genre Natural Language Inference}
+(MultiNLI) datasets. Using similar models, zero-shot classification transformers have 
 demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, 2019).
 All other zero-shot classification model pipelines can be implemented using
 their model name from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{https://huggingface.co/models?pipeline_tag=zero-shot-classification}.

@@ -74,8 +74,8 @@ Defaults to the global environment}
 Returns semantic distances for the text classes
 }
 \description{
-Uses natural language processing corpus to compute
-semantic similarities (cosine) of the text corresponds to the specified classes
+Natural Language Processing using word embeddings to compute
+semantic similarities (cosine) of text and specified classes
 }
 \examples{
 # Load data

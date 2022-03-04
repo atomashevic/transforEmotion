@@ -1,6 +1,6 @@
 Changes in version 0.1.0
 
-o ADD: added default options to `transformer_scores`: Facebook's BART Large and Cross-Encoder's distillRoBERTa
+o ADD: added default options to `transformer_scores`: Cross-Encoder's distillRoBERTa and Facebook's BART Large
 
 o ADD: added ability to specify any zero-shot classification pipeline by using specified pipeline's name (see Examples in `transformer_scores`)
 
@@ -8,7 +8,7 @@ o ADD: package startup message
 
 o ADD: `utils-transforEmotion` for internal functions
 
-o ADD: added `nlp_scores` to compute semantic similarities
+o ADD: added `nlp_scores` to compute semantic similarities using Natural Language Processing with word embeddings
 
 
 Initial commit version 0.0.1

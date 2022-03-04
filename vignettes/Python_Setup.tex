@@ -111,7 +111,7 @@
 
 \title{Python Setup}
 \author{Alexander P. Christensen and Hudson Golino}
-\date{March 02, 2022}
+\date{March 04, 2022}
 
 \begin{document}
 \maketitle
@@ -276,7 +276,7 @@ out this page:
 Large}\label{downloading-facebook-bart-large}}
 
 The final step is to download the
-\href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
+\href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa}
 transformer model. The simplest way is to run our
 \texttt{transformer\_scores} function with an example
 
@@ -300,33 +300,30 @@ transformer model. The simplest way is to run our
 \begin{Highlighting}[]
 \SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Make friends easily}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.297}      \FloatTok{0.518}      \FloatTok{0.031}      \FloatTok{0.113}      \FloatTok{0.007}      \FloatTok{0.034} 
+     \FloatTok{0.530}      \FloatTok{0.088}      \FloatTok{0.094}      \FloatTok{0.088}      \FloatTok{0.069}      \FloatTok{0.132} 
 
 \SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Warm up quickly to others}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.457}      \FloatTok{0.196}      \FloatTok{0.044}      \FloatTok{0.206}      \FloatTok{0.033}      \FloatTok{0.064} 
+     \FloatTok{0.057}      \FloatTok{0.032}      \FloatTok{0.176}      \FloatTok{0.177}      \FloatTok{0.305}      \FloatTok{0.252} 
 
 \SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Feel comfortable around people}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.244}      \FloatTok{0.465}      \FloatTok{0.027}      \FloatTok{0.206}      \FloatTok{0.015}      \FloatTok{0.042} 
+     \FloatTok{0.735}      \FloatTok{0.033}      \FloatTok{0.050}      \FloatTok{0.047}      \FloatTok{0.020}      \FloatTok{0.116} 
 
 \SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Act comfortably around people}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.269}      \FloatTok{0.359}      \FloatTok{0.037}      \FloatTok{0.303}      \FloatTok{0.003}      \FloatTok{0.029} 
+     \FloatTok{0.441}      \FloatTok{0.049}      \FloatTok{0.141}      \FloatTok{0.230}      \FloatTok{0.027}      \FloatTok{0.112} 
 
 \SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Cheer people up}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.302}      \FloatTok{0.176}      \FloatTok{0.035}      \FloatTok{0.060}      \FloatTok{0.090}      \FloatTok{0.335} 
+     \FloatTok{0.083}      \FloatTok{0.135}      \FloatTok{0.108}      \FloatTok{0.074}      \FloatTok{0.332}      \FloatTok{0.268}
 \end{Highlighting}
 \end{Shaded}
 
-The download will take some time: The model is 1.5Gb. The model will
+The download will take some time: The model is 333MB. The model will
 download to your Python directory \emph{not} R. The model only needs to
 be downloaded once and will be loaded each time the
-\texttt{transformer\_scores} function is called in a new R session. For
-repeated usage, the \texttt{keep\_in\_env} argument should be set to
-\texttt{TRUE} (which is the default) to keep the classifier loaded in
-the environment.
+\texttt{transformer\_scores} function is called in a new R session.
 
 If you've made it this far, then you've successfully obtain sentiment
 analysis scores from Facebook's BART Large transformer model. Go forth
