@@ -255,6 +255,9 @@ nlp_scores <- function(
 
   }
   
+  # Conver to lowercase
+  text <- lapply(text, tolower)
+  
   # Split sentences into individual Words
   split_list <- lapply(text, strsplit, split = " ")
   
@@ -279,8 +282,8 @@ nlp_scores <- function(
     bad_classes_message(bad_classes)
     
     ### Remove bad classes
-    class_index <- class_index[!is.na(class_index)]
     classes <- classes[!is.na(class_index)]
+    class_index <- class_index[!is.na(class_index)]
     
   }
   ## Shrink space
@@ -299,10 +302,12 @@ nlp_scores <- function(
   scores <- pbapply::pblapply(text, function(x){
     
     # Obtain semantic similarity
-    scores <- LSAfun::multicostring(
-      x = x, # Text
-      y = classes, # Classes
-      tvectors = shrink_space # Semantic space
+    scores <- suppressWarnings(
+      LSAfun::multicostring(
+        x = x, # Text
+        y = classes, # Classes
+        tvectors = shrink_space # Semantic space
+      )
     )
     
     # Re-organize output
