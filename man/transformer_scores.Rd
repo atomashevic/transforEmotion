@@ -8,7 +8,8 @@ transformer_scores(
   text,
   classes,
   multiple_classes = FALSE,
-  transformer = c("facebook-bart", "cross-encoder-distilroberta"),
+  transformer = c("cross-encoder-deberta", "cross-encoder-distilroberta",
+    "facebook-bart"),
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -31,6 +32,13 @@ Specific zero-shot sentiment analysis transformer
 to be used. Default options:
 
 \itemize{
+
+\item{\code{"cross-encoder-deberta"}}
+{Uses \href{https://huggingface.co/cross-encoder/nli-deberta-v3-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
+zero-shot classification model trained on the
+\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+(SNLI) corpus and 
+\href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 
 \item{\code{"cross-encoder-distilroberta"}}
 {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
@@ -94,7 +102,7 @@ data(neo_ipip_extraversion)
 text <- neo_ipip_extraversion$friendliness[1:5]
 
 \dontrun{
-# Facebook BART Large
+# Cross-Encoder DistilRoBERTa
 transformer_scores(
  text = text,
  classes = c(
@@ -103,14 +111,24 @@ transformer_scores(
  )
 )
 
-# Cross-Encoder DistilRoBERTa
+# Facebook BART Large
 transformer_scores(
  text = text,
  classes = c(
    "friendly", "gregarious", "assertive",
    "active", "excitement", "cheerful"
  ),
- transformer = "cross-encoder-distilroberta"
+ transformer = "facebook-bart"
+)
+
+# Cross-Encoder DeBERTa
+transformer_scores(
+ text = text,
+ classes = c(
+   "friendly", "gregarious", "assertive",
+   "active", "excitement", "cheerful"
+ ),
+ transformer = "cross-encoder-deberta"
 )
 
 # Directly from huggingface: typeform/distilbert-base-uncased-mnli
@@ -126,6 +144,10 @@ transformer_scores(
 
 }
 \references{
+He, P., Liu, X., Gao, J., & Chen, W. (2020).
+Deberta: Decoding-enhanced bert with disentangled attention.
+\emph{arXiv preprint arXiv:2006.03654}.
+
 Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.
 \emph{arXiv preprint arXiv:1910.13461}.
