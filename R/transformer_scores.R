@@ -20,13 +20,6 @@
 #' 
 #' \itemize{
 #' 
-#' \item{\code{"cross-encoder-deberta"}}
-#' {Uses \href{https://huggingface.co/cross-encoder/nli-deberta-v3-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
-#' zero-shot classification model trained on the
-#' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-#' (SNLI) corpus and 
-#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
-#' 
 #' \item{\code{"cross-encoder-distilroberta"}}
 #' {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 #' zero-shot classification model trained on the
@@ -104,16 +97,6 @@
 #'  transformer = "facebook-bart"
 #')
 #' 
-#' # Cross-Encoder DeBERTa
-#' transformer_scores(
-#'  text = text,
-#'  classes = c(
-#'    "friendly", "gregarious", "assertive",
-#'    "active", "excitement", "cheerful"
-#'  ),
-#'  transformer = "cross-encoder-deberta"
-#')
-#' 
 #' # Directly from huggingface: typeform/distilbert-base-uncased-mnli
 #' transformer_scores(
 #'  text = text,
@@ -146,7 +129,6 @@ transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
   transformer = c(
-    "cross-encoder-deberta",
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
@@ -208,13 +190,12 @@ transformer_scores <- function(
     
     # Check for custom transformer
     if(transformer %in% c(
-      "cross-encoder-deberta", "cross-encoder-distilroberta", "facebook-bart"
+      "cross-encoder-distilroberta", "facebook-bart"
     )){
       
       # Load pipeline
       classifier <- switch(
         transformer,
-        "cross-encoder-deberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-deberta-v3-base"),
         "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base"),
         "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
       )
