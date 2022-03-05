@@ -20,6 +20,13 @@
 #' 
 #' \itemize{
 #' 
+#' \item{\code{"cross-encoder-deberta"}}
+#' {Uses \href{https://huggingface.co/cross-encoder/nli-deberta-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
+#' zero-shot classification model trained on the
+#' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+#' (SNLI) corpus and 
+#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
+#' 
 #' \item{\code{"cross-encoder-distilroberta"}}
 #' {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 #' zero-shot classification model trained on the
@@ -109,13 +116,20 @@
 #' }
 #' 
 #' @references
+#' # DeBERTa
 #' He, P., Liu, X., Gao, J., & Chen, W. (2020).
 #' Deberta: Decoding-enhanced bert with disentangled attention.
 #' \emph{arXiv preprint arXiv:2006.03654}.
 #' 
+#' # BART
 #' Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 #' Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.
 #' \emph{arXiv preprint arXiv:1910.13461}.
+#' 
+#' # RoBERTa
+#' Liu, Y., Ott, M., Goyal, N., Du, J., Joshi, M., Chen, D., ... & Stoyanov, V. (2019).
+#' Roberta: A robustly optimized bert pretraining approach.
+#' \emph{arXiv preprint arXiv:1907.11692}.
 #' 
 #' Yin, W., Hay, J., & Roth, D. (2019).
 #' Benchmarking zero-shot text classification: Datasets, evaluation and entailment approach.
@@ -129,6 +143,7 @@ transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
   transformer = c(
+    "cross-encoder-deberta",
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
@@ -190,7 +205,7 @@ transformer_scores <- function(
     
     # Check for custom transformer
     if(transformer %in% c(
-      "cross-encoder-distilroberta", "facebook-bart"
+      "cross-encoder-deberta", "cross-encoder-distilroberta", "facebook-bart"
     )){
       
       # Load pipeline
@@ -253,6 +268,9 @@ transformer_scores <- function(
       envir = as.environment(envir)
     )
   }
+  
+  # Conver to lowercase
+  text <- lapply(text, tolower)
   
   # Message
   message("Obtaining scores...")

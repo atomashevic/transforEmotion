@@ -9,6 +9,9 @@
 # Non-text Warning
 non_text_warning <- function(text)
 {
+  # Clear na.action attribute
+  attr(text, "na.action") <- NULL
+  
   # Check that input is vector or list
   if(!is.vector(text)){
     
