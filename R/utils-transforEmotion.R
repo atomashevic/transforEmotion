@@ -1,6 +1,106 @@
-#%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%
+# 'text' input check ----
+#%%%%%%%%%%%%%%%%%%%%%%%%
+
+#'Warning to user about non-text input
+#'
+#' @noRd
+#' 
+# Non-text Warning
+non_text_warning <- function(text)
+{
+  # Check that input is vector or list
+  if(!is.vector(text)){
+    
+    # Send error if not a vector or list
+    stop(
+      paste(
+        "The 'text' argument expects a 'vector' or 'list'. Instead, class(text) = ",
+        paste("'", class(text), "'", sep = "", collapse = ", ")
+      )
+    )
+    
+  }else{
+    
+    # Check for text
+    text_index <- unlist(lapply(text, is.character))
+    
+    # Check for all text
+    if(!all(text_index)){
+      
+      # Obtain bad indices
+      bad_index <- which(!text_index)
+      
+      # Remove non-text
+      text <- text[-bad_index]
+      
+      # Check if all elements were removed
+      if(length(text) == 0){
+        stop(
+          "All elements of 'text' object were not identified as 'character' type.\n\nPlease check for whether your text is 'character' type: `is.character(text)`" 
+        )
+      }
+      
+      # Adjust warning for number of non-character types
+      if(length(bad_index) == 1){
+        
+        # Set up head of warning
+        head <- "Index"
+        
+        # Set up body of warning
+        body <- paste(bad_index, sep = "")
+        
+        # Set up end of warning
+        end <- "of 'text' object was not identified 'character' type.\n\nThis index was removed from analysis."
+        
+      }else if(length(bad_index) == 2){
+        
+        # Set up head of warning
+        head <- "Indices"
+        
+        # Set up body of warning
+        body <- paste(bad_index[1], "and", bad_index[2])
+        
+        # Set up end of warning
+        end <- "of 'text' object were not identified 'character' type.\n\nThese indices were removed from analysis."
+        
+      }else if(length(bad_index) > 2){
+        
+        # Set up head of warning
+        head <- "Indices"
+        
+        # Set up body of warning
+        ## All bad indices except for last
+        body <- paste(bad_index[-length(bad_index)], sep = "", collapse = ", ")
+        
+        ## Add last bad index
+        body <- paste(
+          body,
+          ", and ", bad_index[length(bad_index)],
+          sep = ""
+        )
+        
+        # Set up end of warning
+        end <- "of 'text' object were not identified 'character' type.\n\nThese indices were removed from analysis."
+        
+      }
+
+      # Provide warning
+      warning(
+        paste(
+          head, body, end
+        )
+      )
+      
+    }
+    
+  }
+  
+}
+
+#%%%%%%%%%%%%%%%%
 # nlp_scores ----
-#%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%
 
 #' Message to user about bad classes
 #'
@@ -9,7 +109,7 @@
 # Bad Class Message
 bad_classes_message <- function(bad_classes)
 {
-  # Set up rest of message
+  # Adjust message for number of bad classes
   if(length(bad_classes) == 1){
     
     # Set up head of message

@@ -161,14 +161,13 @@ nlp_scores <- function(
   envir = 1
 )
 {
-  # Check that input is text
-  if(!is.character(text)){
-    stop("Text expected for input into 'text' argument\n")
-  }
+  # Check that input of 'text' argument is in the
+  # appropriate format for the analysis
+  non_text_warning(text) # see utils-transforEmotion.R for function
   
   # Check for classes
   if(missing(classes)){
-    stop("Classes to classify text must be specified using the 'classes' argument\n")
+    stop("Classes to classify text must be specified using the 'classes' argument (e.g., `classes = c(\"positive\", \"negative\")`)\n")
   }
   
   # Check for semantic space

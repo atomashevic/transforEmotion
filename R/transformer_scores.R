@@ -124,7 +124,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 04.03.2022
+# Updated 05.03.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
@@ -137,14 +137,14 @@ transformer_scores <- function(
   envir = 1
 )
 {
-  # Check that input is text
-  if(!is.character(text)){
-    stop("Text expected for input into 'text' argument")
-  }
+  
+  # Check that input of 'text' argument is in the
+  # appropriate format for the analysis
+  non_text_warning(text) # see utils-transforEmotion.R for function
   
   # Check for classes
   if(missing(classes)){
-    stop("Classes to classify text must be specified using the 'classes' argument")
+    stop("Classes to classify text must be specified using the 'classes' argument (e.g., `classes = c(\"positive\", \"negative\")`)\n")
   }
   
   # Check for transformer
@@ -154,7 +154,7 @@ transformer_scores <- function(
   
   # Check for multiple transformers
   if(length(transformer) > 1){
-    stop("Only one transformer model can be used at a time.\n\nPlease select either \"facebook-bart\", \"cross-encoder-distilroberta\", or select your own model from huggingface:\n\n<https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n")
+    stop("Only one transformer model can be used at a time.\n\nSelect one of the default models or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n")
   }
   
   # Check for classifiers in environment
@@ -172,7 +172,7 @@ transformer_scores <- function(
     
     # Check if 'transformers' module is available
     if(!reticulate::py_module_available("transformers")){
-      message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`\n")
+      message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`\n\nFor help, see the \"Python Setup\" vignette in `browseVignettes(\"transforEmotion\")`\n")
     }else{
       
       # Check for 'transformers' module in environment
@@ -196,14 +196,41 @@ transformer_scores <- function(
       # Load pipeline
       classifier <- switch(
         transformer,
+        "cross-encoder-deberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-deberta-base"),
         "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base"),
         "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
+      
       )
     
     }else{
       
       # Custom pipeline from huggingface
-      classifier <- transformers$pipeline("zero-shot-classification", model = transformer)
+      # Try to catch non-existing pipelines
+      pipeline_catch <- try(
+        classifier <- transformers$pipeline("zero-shot-classification", model = transformer),
+        silent = TRUE
+      )
+      
+      # Errors
+      if(any(class(pipeline_catch) == "try-error")){
+        
+        # Model exists but no pipeline
+        if(isTRUE(grepl("Tokenizer class", pipeline_catch))){
+          
+          stop(
+            paste(
+              "Transformer model '",
+              transformer,
+              "' exists but does not have a working pipeline yet.\n\nTry a default model or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n",
+              sep = ""
+            )
+          )
+          
+        }else{
+          stop(pipeline_catch)
+        }
+        
+      }
       
     }
 
@@ -229,7 +256,6 @@ transformer_scores <- function(
   
   # Message
   message("Obtaining scores...")
-  
   
   # Apply through text
   scores <- pbapply::pblapply(text, function(x){
