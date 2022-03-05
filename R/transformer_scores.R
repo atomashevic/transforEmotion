@@ -20,13 +20,6 @@
 #' 
 #' \itemize{
 #' 
-#' \item{\code{"cross-encoder-deberta"}}
-#' {Uses \href{https://huggingface.co/cross-encoder/nli-deberta-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
-#' zero-shot classification model trained on the
-#' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-#' (SNLI) corpus and 
-#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
-#' 
 #' \item{\code{"cross-encoder-distilroberta"}}
 #' {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 #' zero-shot classification model trained on the
@@ -116,11 +109,6 @@
 #' }
 #' 
 #' @references
-#' # DeBERTa
-#' He, P., Liu, X., Gao, J., & Chen, W. (2020).
-#' Deberta: Decoding-enhanced bert with disentangled attention.
-#' \emph{arXiv preprint arXiv:2006.03654}.
-#' 
 #' # BART
 #' Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 #' Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.
@@ -143,7 +131,6 @@ transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
   transformer = c(
-    "cross-encoder-deberta",
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
@@ -205,13 +192,12 @@ transformer_scores <- function(
     
     # Check for custom transformer
     if(transformer %in% c(
-      "cross-encoder-deberta", "cross-encoder-distilroberta", "facebook-bart"
+      "cross-encoder-distilroberta", "facebook-bart"
     )){
       
       # Load pipeline
       classifier <- switch(
         transformer,
-        "cross-encoder-deberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-deberta-base"),
         "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base"),
         "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
       
