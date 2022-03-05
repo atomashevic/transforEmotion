@@ -10,5 +10,9 @@ o ADD: `utils-transforEmotion` for internal functions
 
 o ADD: added `nlp_scores` to compute semantic similarities using Natural Language Processing with word embeddings
 
+o ADD: basic preprocessing functions (internally handled)
+
+o ADD: `stop_words` from the *tm* package for preprocessing
+
 
 Initial commit version 0.0.1

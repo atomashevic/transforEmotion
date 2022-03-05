@@ -8,8 +8,8 @@ transformer_scores(
   text,
   classes,
   multiple_classes = FALSE,
-  transformer = c("cross-encoder-deberta", "cross-encoder-distilroberta",
-    "facebook-bart"),
+  transformer = c("cross-encoder-distilroberta", "facebook-bart"),
+  preprocess = FALSE,
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -33,13 +33,6 @@ to be used. Default options:
 
 \itemize{
 
-\item{\code{"cross-encoder-deberta"}}
-{Uses \href{https://huggingface.co/cross-encoder/nli-deberta-base}{Cross-Encoder's Natural Language Interface DeBERTa Base}
-zero-shot classification model trained on the
-\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-(SNLI) corpus and 
-\href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
-
 \item{\code{"cross-encoder-distilroberta"}}
 {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 zero-shot classification model trained on the
@@ -60,6 +53,16 @@ Defaults to \code{"cross-encoder-distilroberta"}
 Also allows any zero-shot classification models with a pipeline
 from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
 to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)}
+
+\item{preprocess}{Boolean.
+Should basic preprocessing be applied?
+Includes making lowercase, keeping only alphanumeric characters,
+removing escape characters, removing repeated characters,
+and removing white space.
+Defaults to \code{FALSE}.
+Transformers generally are OK without preprocessing and handle
+many of these functions internally. Set to \code{TRUE}
+to be extra cautious}
 
 \item{path_to_python}{Character.
 Path to specify where "python.exe" is located on your computer.
@@ -134,11 +137,6 @@ transformer_scores(
 
 }
 \references{
-# DeBERTa
-He, P., Liu, X., Gao, J., & Chen, W. (2020).
-Deberta: Decoding-enhanced bert with disentangled attention.
-\emph{arXiv preprint arXiv:2006.03654}.
-
 # BART
 Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.

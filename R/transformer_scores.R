@@ -41,6 +41,16 @@
 #' from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
 #' to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
 #' 
+#' @param preprocess Boolean.
+#' Should basic preprocessing be applied?
+#' Includes making lowercase, keeping only alphanumeric characters,
+#' removing escape characters, removing repeated characters,
+#' and removing white space.
+#' Defaults to \code{FALSE}.
+#' Transformers generally are OK without preprocessing and handle
+#' many of these functions internally. Set to \code{TRUE}
+#' to be extra cautious
+#' 
 #' @param path_to_python Character.
 #' Path to specify where "python.exe" is located on your computer.
 #' Defaults to \code{NULL}, which will use \code{\link[reticulate]{py_available}}
@@ -134,6 +144,7 @@ transformer_scores <- function(
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
+  preprocess = FALSE,
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -255,8 +266,13 @@ transformer_scores <- function(
     )
   }
   
-  # Conver to lowercase
-  text <- lapply(text, tolower)
+  # Basic preprocessing
+  if(isTRUE(preprocess)){
+    text <- preprocess_text( # Internal function. See `utils-transforEmotion`
+      text,
+      remove_stop = FALSE # Transformers will remove stop words
+    )
+  }
   
   # Message
   message("Obtaining scores...")

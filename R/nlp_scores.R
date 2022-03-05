@@ -49,6 +49,18 @@
 #' 
 #' }
 #' 
+#' @param preprocess Boolean.
+#' Should basic preprocessing be applied?
+#' Includes making lowercase, keeping only alphanumeric characters,
+#' removing escape characters, removing repeated characters,
+#' and removing white space.
+#' Defaults to \code{TRUE}
+#' 
+#' @param remove_stop Boolean.
+#' Should \code{\link[transforEmotion]{stop_words}}
+#' be removed?
+#' Defaults to \code{TRUE}
+#' 
 #' @param keep_in_env Boolean.
 #' Whether the classifier should be kept in your global environment.
 #' Defaults to \code{TRUE}.
@@ -150,13 +162,15 @@
 #' @export
 #'
 # NLP Scores
-# Updated 04.03.2022
+# Updated 05.03.2022
 nlp_scores <- function(
   text, classes,
   semantic_space = c(
     "baroni", "cbow", "cbow_ukwac",
     "en100", "glove", "tasa"
   ),
+  preprocess = TRUE,
+  remove_stop = TRUE,
   keep_in_env = TRUE,
   envir = 1
 )
@@ -256,8 +270,12 @@ nlp_scores <- function(
 
   }
   
-  # Conver to lowercase
-  text <- lapply(text, tolower)
+  # Basic preprocessing
+  if(isTRUE(preprocess)){
+    text <- preprocess_text( # Internal function. See `utils-transforEmotion`
+      text, remove_stop = remove_stop
+    )
+  }
   
   # Split sentences into individual Words
   split_list <- lapply(text, strsplit, split = " ")

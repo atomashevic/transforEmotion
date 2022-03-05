@@ -8,6 +8,8 @@ nlp_scores(
   text,
   classes,
   semantic_space = c("baroni", "cbow", "cbow_ukwac", "en100", "glove", "tasa"),
+  preprocess = TRUE,
+  remove_stop = TRUE,
   keep_in_env = TRUE,
   envir = 1
 )
@@ -58,6 +60,18 @@ documents (uses cosine similarity)}
 Uses co-occurrence of words in text documents (uses cosine similarity)}
 
 }}
+
+\item{preprocess}{Boolean.
+Should basic preprocessing be applied?
+Includes making lowercase, keeping only alphanumeric characters,
+removing escape characters, removing repeated characters,
+and removing white space.
+Defaults to \code{TRUE}}
+
+\item{remove_stop}{Boolean.
+Should \code{\link[transforEmotion]{stop_words}}
+be removed?
+Defaults to \code{TRUE}}
 
 \item{keep_in_env}{Boolean.
 Whether the classifier should be kept in your global environment.

@@ -1,12 +1,13 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%
-# 'text' input check ----
-#%%%%%%%%%%%%%%%%%%%%%%%%
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Preprocessing functions ----
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#'Warning to user about non-text input
-#'
+#' Warning to user about non-text input
+#' 
 #' @noRd
 #' 
 # Non-text Warning
+# Updated 05.03.2022
 non_text_warning <- function(text)
 {
   # Clear na.action attribute
@@ -101,6 +102,205 @@ non_text_warning <- function(text)
   
 }
 
+#' Alphanumeric characters
+#' 
+#' @noRd
+#' 
+# Alphanumeric characters
+# Updated 05.03.2022
+keep_alphanumeric <- function(text)
+{
+  # Remove non-alphanumeric characters
+  alphanum_text <- lapply(text, function(x){
+    gsub("[^[:alnum:][:space:][:punct:]]", "", x)
+  })
+  
+  return(alphanum_text)
+  
+}
+
+#' Reduces characters repeated more than twice to single character
+#' 
+#' @noRd
+#'
+# Remove repeated characters
+# Updated 05.03.2022
+remove_repeated <- function(text)
+{
+  # Repeated characters (more than 2) reduced to 1
+  repeated_text <- lapply(text, function(x){
+    gsub('([[:alnum:]])\\1{2,}', '\\1', x)
+  })
+  
+  # Repeated punctuations reduced to 1
+  repeated_text <- lapply(text, function(x){
+    gsub('([[:punct:]])\\1+', '\\1', x)
+  })
+  
+  return(repeated_text)
+  
+}
+
+#' Remove escaped characters
+#' 
+#' @noRd
+#' 
+# Removes escaped characters
+# Updated 05.03.2022
+remove_escapes <- function(text)
+{
+  # Escapes removed
+  escape_text <- lapply(text, function(x){
+    
+    # Remove new line
+    x <- gsub("\\n", " ", x)
+    # Remove tab
+    x <- gsub("\\t", " ", x)
+    # Remove quote
+    x <- gsub('\\"', " ", x)
+    # Remove single backslash
+    x <- gsub("\\\\", " ", x)
+    
+    return(x)
+    
+  })
+  
+  return(escape_text)
+  
+}
+
+#' Ensures proper spacing for punctuations
+#' 
+#' @noRd
+#' 
+# Proper punctuation spacing
+# Updated 05.03.2022
+punctuation_spaces <- function(text)
+{
+  # Converge spaces next to punctuation
+  converge_text <- lapply(text, function(x){
+    
+    # Find punctuation
+    punct_index <- grep("[[:punct:]]", x)
+    
+    # Punctuation with only one character
+    punct_index <- punct_index[nchar(x[punct_index]) == 1]
+    
+    # Ensure their are punctuations
+    if(length(punct_index) != 0){
+      
+      # Loop through punctuations
+      replace_punct <- unlist(
+        lapply(punct_index, function(i){
+          paste(x[i-1], x[i], sep = "")
+        })
+      )
+      
+      # Replace punctuations in text
+      x[punct_index] <- replace_punct
+      
+      # Remove previous word in text
+      x <- x[-(punct_index-1)]
+      
+    }
+    
+    return(x)
+  
+  })
+  
+  return(converge_text)
+  
+}
+
+#' Remove all white space between words
+#' (correctly spaces punctuations as well)
+#' 
+#' @noRd
+#' 
+# Removes white space
+# Updated 05.03.2022
+remove_whitespace <- function(text)
+{
+  # Split and trimmed text
+  split_text <- lapply(text, function(x){
+    trimws(unlist(strsplit(x, split = " ")))
+  })
+  
+  # Remove blank text
+  blank_text <- lapply(split_text, function(x){
+    na.omit(ifelse(x == "", NA, x))
+  })
+  
+  # Proper spaces for punctuations
+  punct_text <- punctuation_spaces(blank_text)
+  
+  # Re-paste text together
+  repaste_text <- lapply(punct_text, function(x){
+    paste(x, collapse = " ")
+  })
+  
+  return(repaste_text)
+  
+}
+
+#' Remove stop words from text
+#' 
+#' @importFrom utils data
+#' 
+#' @noRd
+#' 
+# Removes stop words
+# Updated 05.03.2022
+remove_stop_words <- function(text)
+{
+  # Load stop words
+  stop_words <- get(data("stop_words", envir = environment()))
+  
+  # Format stop words for `gsub` function
+  stop_format <- paste("\\b", stop_words, "\\b", sep = "", collapse = "|")
+  
+  # Remove stop words
+  stop_text <- lapply(text, function(x){
+    gsub(stop_format, "", x)
+  })
+  
+  return(stop_text)
+  
+}
+
+#' Basic preprocessing
+#' 
+#' @noRd
+#' 
+# Preprocessing
+# Updated 05.03.2022
+preprocess_text <- function(text, remove_stop = FALSE)
+{
+  
+  # Convert to lowercase
+  text <- lapply(text, tolower)
+  
+  # Keep alphanumeric and punctuation characters
+  text <- keep_alphanumeric(text)
+  
+  # Remove escaped text
+  text <- remove_escapes(text)
+  
+  # Remove repeated text
+  text <- remove_repeated(text)
+  
+  # Remove stop words
+  if(isTRUE(remove_stop)){
+    text <- remove_stop_words(text)
+  }
+  
+  # Remove white space (with proper punctuation spaces)
+  text <- remove_whitespace(text)
+  
+  return(text)
+  
+}
+
 #%%%%%%%%%%%%%%%%
 # nlp_scores ----
 #%%%%%%%%%%%%%%%%
@@ -110,6 +310,7 @@ non_text_warning <- function(text)
 #' @noRd
 #' 
 # Bad Class Message
+# Updated 05.03.2022
 bad_classes_message <- function(bad_classes)
 {
   # Adjust message for number of bad classes
@@ -168,7 +369,6 @@ bad_classes_message <- function(bad_classes)
   )
   
 }
-
 
 #%%%%%%%%%%%%%%%%%%%%%%
 # SYSTEM FUNCTIONS ----
