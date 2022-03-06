@@ -132,7 +132,7 @@ TRUE
 
 At this point, the `transformers` module should be ready-to-go on your computer. If you're having trouble installing modules, then check out this page: https://packaging.python.org/en/latest/tutorials/installing-packages/.
 
-## 4. Downloading Facebook BART Large
+## 4. Downloading Cross-Encoder's DistilRoBERTa
 
 The final step is to download the \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} transformer model. The simplest way is to run our `transformer_scores` function with an example
 
@@ -140,9 +140,12 @@ The final step is to download the \href{https://huggingface.co/cross-encoder/nli
 # Load data
 data(neo_ipip_extraversion)
 
+# Example text
+text <- neo_ipip_extraversion$friendliness[1:5] # positively worded items only
+
 # Run transformer function
 transformer_scores(
-    text = neo_ipip_extraversion$friendliness[1:5], # positively worded items only
+    text = text,
     classes = c(
       "friendly", "gregarious", "assertive",
       "active", "excitement", "cheerful"
@@ -151,27 +154,67 @@ transformer_scores(
 ```
 
 ```{r transformers_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
-$`Make friends easily`
+$`make friends easily`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.530      0.088      0.094      0.088      0.069      0.132 
+     0.579      0.075      0.070      0.071      0.050      0.155 
 
-$`Warm up quickly to others`
+$`warm up quickly to others`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.057      0.032      0.176      0.177      0.305      0.252 
+     0.151      0.063      0.232      0.242      0.152      0.160 
 
-$`Feel comfortable around people`
+$`feel comfortable around people`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.735      0.033      0.050      0.047      0.020      0.116 
+     0.726      0.044      0.053      0.042      0.020      0.115 
 
-$`Act comfortably around people`
+$`act comfortably around people`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.441      0.049      0.141      0.230      0.027      0.112 
+     0.524      0.062      0.109      0.183      0.019      0.103 
 
-$`Cheer people up`
+$`cheer people up`
   friendly gregarious  assertive     active excitement   cheerful 
-     0.083      0.135      0.108      0.074      0.332      0.268
+     0.071      0.131      0.156      0.190      0.362      0.089
 ```
 
 The download will take some time: The model is 333MB. The model will download to your Python directory *not* R. The model only needs to be downloaded once and will be loaded each time the `transformer_scores` function is called in a new R session.
 
-If you've made it this far, then you've successfully obtain sentiment analysis scores from Facebook's BART Large transformer model. Go forth and quantify the qualitative!
+We can compare these results with a more basic natural language processing approach: continuous bag of words. This approach can be implemented using the `nlp_scores()` function
+
+```{r nlp_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+# Run NLP function
+nlp_scores(
+    text = text,
+    classes = c(
+      "friendly", "gregarious", "assertive",
+      "active", "excitement", "cheerful"
+    ),
+    semantic_space = "cbow"
+)
+```
+
+```{r nlp_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+$`make friends easily`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.192      0.279      0.151      0.036      0.081      0.089 
+
+$`warm quickly others`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.126      0.276      0.072      0.150      0.141      0.176 
+
+$`feel comfortable around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.222      0.353      0.247      0.117      0.214      0.133 
+
+$`act comfortably around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.198      0.365      0.157      0.092      0.183      0.122 
+
+$`cheer people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.225      0.229      0.168      0.034      0.204      0.279 
+```
+
+Similarly, this function will take some time because the semantic space (249MB) needs to be downloaded. The semantic space will need to be downloaded during each R session.
+
+The `nlp_scores()` function returns semantic similarity between the text and classes rather than probabilities (like `transformer_scrores()`).
+
+If you've made it this far, then you've successfully obtain sentiment analysis scores from \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} transformer model. Go forth and quantify the qualitative!

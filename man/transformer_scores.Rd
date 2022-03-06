@@ -9,7 +9,7 @@ transformer_scores(
   classes,
   multiple_classes = FALSE,
   transformer = c("cross-encoder-distilroberta", "facebook-bart"),
-  preprocess = FALSE,
+  preprocess = TRUE,
   path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
@@ -59,10 +59,10 @@ Should basic preprocessing be applied?
 Includes making lowercase, keeping only alphanumeric characters,
 removing escape characters, removing repeated characters,
 and removing white space.
-Defaults to \code{FALSE}.
+Defaults to \code{TRUE}.
 Transformers generally are OK without preprocessing and handle
-many of these functions internally. Set to \code{TRUE}
-to be extra cautious}
+many of these functions internally, so setting to \code{FALSE}
+will not change performance much}
 
 \item{path_to_python}{Character.
 Path to specify where "python.exe" is located on your computer.

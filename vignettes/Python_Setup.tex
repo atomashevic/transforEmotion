@@ -111,7 +111,7 @@
 
 \title{Python Setup}
 \author{Alexander P. Christensen and Hudson Golino}
-\date{March 04, 2022}
+\date{March 06, 2022}
 
 \begin{document}
 \maketitle
@@ -271,9 +271,9 @@ your computer. If you're having trouble installing modules, then check
 out this page:
 \url{https://packaging.python.org/en/latest/tutorials/installing-packages/}.
 
-\hypertarget{downloading-facebook-bart-large}{%
-\subsection{4. Downloading Facebook BART
-Large}\label{downloading-facebook-bart-large}}
+\hypertarget{downloading-cross-encoders-distilroberta}{%
+\subsection{4. Downloading Cross-Encoder's
+DistilRoBERTa}\label{downloading-cross-encoders-distilroberta}}
 
 The final step is to download the
 \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa}
@@ -285,9 +285,12 @@ transformer model. The simplest way is to run our
 \CommentTok{\# Load data}
 \FunctionTok{data}\NormalTok{(neo\_ipip\_extraversion)}
 
+\CommentTok{\# Example text}
+\NormalTok{text }\OtherTok{\textless{}{-}}\NormalTok{ neo\_ipip\_extraversion}\SpecialCharTok{$}\NormalTok{friendliness[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{] }\CommentTok{\# positively worded items only}
+
 \CommentTok{\# Run transformer function}
 \FunctionTok{transformer\_scores}\NormalTok{(}
-    \AttributeTok{text =}\NormalTok{ neo\_ipip\_extraversion}\SpecialCharTok{$}\NormalTok{friendliness[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{], }\CommentTok{\# positively worded items only}
+    \AttributeTok{text =}\NormalTok{ text,}
     \AttributeTok{classes =} \FunctionTok{c}\NormalTok{(}
       \StringTok{"friendly"}\NormalTok{, }\StringTok{"gregarious"}\NormalTok{, }\StringTok{"assertive"}\NormalTok{,}
       \StringTok{"active"}\NormalTok{, }\StringTok{"excitement"}\NormalTok{, }\StringTok{"cheerful"}
@@ -298,25 +301,25 @@ transformer model. The simplest way is to run our
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Make friends easily}\StringTok{\textasciigrave{}}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{make friends easily}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.530}      \FloatTok{0.088}      \FloatTok{0.094}      \FloatTok{0.088}      \FloatTok{0.069}      \FloatTok{0.132} 
+     \FloatTok{0.579}      \FloatTok{0.075}      \FloatTok{0.070}      \FloatTok{0.071}      \FloatTok{0.050}      \FloatTok{0.155} 
 
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Warm up quickly to others}\StringTok{\textasciigrave{}}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{warm up quickly to others}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.057}      \FloatTok{0.032}      \FloatTok{0.176}      \FloatTok{0.177}      \FloatTok{0.305}      \FloatTok{0.252} 
+     \FloatTok{0.151}      \FloatTok{0.063}      \FloatTok{0.232}      \FloatTok{0.242}      \FloatTok{0.152}      \FloatTok{0.160} 
 
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Feel comfortable around people}\StringTok{\textasciigrave{}}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{feel comfortable around people}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.735}      \FloatTok{0.033}      \FloatTok{0.050}      \FloatTok{0.047}      \FloatTok{0.020}      \FloatTok{0.116} 
+     \FloatTok{0.726}      \FloatTok{0.044}      \FloatTok{0.053}      \FloatTok{0.042}      \FloatTok{0.020}      \FloatTok{0.115} 
 
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Act comfortably around people}\StringTok{\textasciigrave{}}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{act comfortably around people}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.441}      \FloatTok{0.049}      \FloatTok{0.141}      \FloatTok{0.230}      \FloatTok{0.027}      \FloatTok{0.112} 
+     \FloatTok{0.524}      \FloatTok{0.062}      \FloatTok{0.109}      \FloatTok{0.183}      \FloatTok{0.019}      \FloatTok{0.103} 
 
-\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Cheer people up}\StringTok{\textasciigrave{}}
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{cheer people up}\StringTok{\textasciigrave{}}
 \NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
-     \FloatTok{0.083}      \FloatTok{0.135}      \FloatTok{0.108}      \FloatTok{0.074}      \FloatTok{0.332}      \FloatTok{0.268}
+     \FloatTok{0.071}      \FloatTok{0.131}      \FloatTok{0.156}      \FloatTok{0.190}      \FloatTok{0.362}      \FloatTok{0.089}
 \end{Highlighting}
 \end{Shaded}
 
@@ -325,8 +328,59 @@ download to your Python directory \emph{not} R. The model only needs to
 be downloaded once and will be loaded each time the
 \texttt{transformer\_scores} function is called in a new R session.
 
+We can compare these results with a more basic natural language
+processing approach: continuous bag of words. This approach can be
+implemented using the \texttt{nlp\_scores()} function
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Run NLP function}
+\FunctionTok{nlp\_scores}\NormalTok{(}
+    \AttributeTok{text =}\NormalTok{ text,}
+    \AttributeTok{classes =} \FunctionTok{c}\NormalTok{(}
+      \StringTok{"friendly"}\NormalTok{, }\StringTok{"gregarious"}\NormalTok{, }\StringTok{"assertive"}\NormalTok{,}
+      \StringTok{"active"}\NormalTok{, }\StringTok{"excitement"}\NormalTok{, }\StringTok{"cheerful"}
+\NormalTok{    ),}
+    \AttributeTok{semantic\_space =} \StringTok{"cbow"}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{make friends easily}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.192}      \FloatTok{0.279}      \FloatTok{0.151}      \FloatTok{0.036}      \FloatTok{0.081}      \FloatTok{0.089} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{warm quickly others}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.126}      \FloatTok{0.276}      \FloatTok{0.072}      \FloatTok{0.150}      \FloatTok{0.141}      \FloatTok{0.176} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{feel comfortable around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.222}      \FloatTok{0.353}      \FloatTok{0.247}      \FloatTok{0.117}      \FloatTok{0.214}      \FloatTok{0.133} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{act comfortably around people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.198}      \FloatTok{0.365}      \FloatTok{0.157}      \FloatTok{0.092}      \FloatTok{0.183}      \FloatTok{0.122} 
+
+\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{cheer people}\StringTok{\textasciigrave{}}
+\NormalTok{  friendly gregarious  assertive     active excitement   cheerful }
+     \FloatTok{0.225}      \FloatTok{0.229}      \FloatTok{0.168}      \FloatTok{0.034}      \FloatTok{0.204}      \FloatTok{0.279} 
+\end{Highlighting}
+\end{Shaded}
+
+Similarly, this function will take some time because the semantic space
+(249MB) needs to be downloaded. The semantic space will need to be
+downloaded during each R session.
+
+The \texttt{nlp\_scores()} function returns semantic similarity between
+the text and classes rather than probabilities (like
+\texttt{transformer\_scrores()}).
+
 If you've made it this far, then you've successfully obtain sentiment
-analysis scores from Facebook's BART Large transformer model. Go forth
-and quantify the qualitative!
+analysis scores from
+\href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa}
+transformer model. Go forth and quantify the qualitative!
 
 \end{document}
