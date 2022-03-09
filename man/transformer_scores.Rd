@@ -47,7 +47,7 @@ zero-shot classification model trained on the
 \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
 (SNLI) corpus and 
 \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets. The DistilRoBERTa
-is intended to be a smaller, more lightweight version of \code{"cross-encoder-roberta},
+is intended to be a smaller, more lightweight version of \code{"cross-encoder-roberta"},
 that sacrifices some accuracy for much faster speed (see 
 \href{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli}{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli})}
 
