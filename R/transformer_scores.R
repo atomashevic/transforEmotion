@@ -20,12 +20,22 @@
 #' 
 #' \itemize{
 #' 
+#' \item{\code{"cross-encoder-roberta"}}
+#' {Uses \href{https://huggingface.co/cross-encoder/nli-roberta-base}{Cross-Encoder's Natural Language Interface RoBERTa Base}
+#' zero-shot classification model trained on the
+#' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+#' (SNLI) corpus and 
+#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
+#' 
 #' \item{\code{"cross-encoder-distilroberta"}}
 #' {Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 #' zero-shot classification model trained on the
 #' \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
 #' (SNLI) corpus and 
-#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
+#' \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets. The DistilRoBERTa
+#' is intended to be a smaller, more lightweight version of \code{"cross-encoder-roberta},
+#' that sacrifices some accuracy for much faster speed (see 
+#' \href{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli}{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli})}
 #' 
 #' \item{\code{"facebook-bart"}}
 #' {Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
@@ -136,11 +146,12 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 06.03.2022
+# Updated 09.03.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
   transformer = c(
+    "cross-encoder-roberta",
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
@@ -203,12 +214,13 @@ transformer_scores <- function(
     
     # Check for custom transformer
     if(transformer %in% c(
-      "cross-encoder-distilroberta", "facebook-bart"
+      "cross-encoder-roberta", "cross-encoder-distilroberta", "facebook-bart"
     )){
       
       # Load pipeline
       classifier <- switch(
         transformer,
+        "cross-encoder-roberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-roberta-base"),
         "cross-encoder-distilroberta" = transformers$pipeline("zero-shot-classification", model = "cross-encoder/nli-distilroberta-base"),
         "facebook-bart" = transformers$pipeline("zero-shot-classification", model = "facebook/bart-large-mnli")
       
