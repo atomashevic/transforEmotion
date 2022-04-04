@@ -4,10 +4,11 @@
 \alias{emoxicon_scores}
 \title{Emoxicon Scores}
 \usage{
-emoxicon_scores(text, lexicon = emotions, exclude)
+emoxicon_scores(text, lexicon, exclude)
 }
 \arguments{
-\item{text}{A dataframe containing texts to be scored (one text per row).}
+\item{text}{Matrix or data frame.
+A data frame containing texts to be scored (one text per row)}
 
 \item{lexicon}{The lexicon used to score the words. The default is the \code{\link{emotions}} dataset,
 a modification of the lexicon developed by Araque, Gatti, Staiano, and Guerini (2018).
@@ -29,32 +30,24 @@ the lexicon compiled by Araque, Gatti, Staiano, and Guerini (2018).
 }
 \examples{
 
-\dontrun{
-# To use the emoxicon_scores function:
- # If the emoxicon package is not installed, follow the instructions below:
- # Install remotes package if necessary
-  if(!requireNamespace("remotes", quietly = TRUE)){
-   install.packages("remotes")
-   }
- # Install the stable development version from GitHub
-  if(!requireNamespace("emoxicon", quietly = TRUE)){
-  remotes::install_github("tvall/emoxicon")
-  } 
-# Load the tinytrolls data
- require(emoxicon)
- data(tinytrolls)
+# Obtain "emotions" data
+data("emotions")
 
-emotions.tinytrolls <- emoxicon_scores(text = tinyTrolls$content, lexicon = emotions)
-}
+# Obtain "tinytrolls" data
+data("tinytrolls")
+
+# Obtain emoxicon scores for first 10 tweets
+emotions_tinytrolls <- emoxicon_scores(text = tinytrolls$content[1:10], lexicon = emotions)
+
 }
 \references{
 Araque, O., Gatti, L., Staiano, J., and Guerini, M. (2018).
-DepecheMood++: a Bilingual Emotion Lexicon Built Through Simple Yet Powerful Techniques.
-\emph{ArXiv} preprint is available at https://arxiv.org/abs/1810.03660.
+DepecheMood++: A bilingual emotion lexicon built through simple yet powerful techniques.
+\emph{ArXiv}
 }
 \seealso{
 \code{\link{emotions}}, where we describe how we modified the original DepecheMood++ lexicon.
 }
 \author{
-Tara Valladares <tls8vx at virginia.edu>, Hudson F. Golino <hfg9s at virginia.edu>
+Tara Valladares <tls8vx at virginia.edu> and Hudson F. Golino <hfg9s at virginia.edu>
 }

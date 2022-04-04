@@ -1,7 +1,7 @@
 Package: transforEmotion
 Title: Sentiment Analysis for Text and Qualitative Data
 Version: 0.1.0
-Date: 2022-04-02
+Date: 2022-04-04
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9798-7037")),
 	     person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut", comment = c(ORCID = "0000-0002-1601-1447")))
 Maintainer: Alexander Christensen <alexpaulchristensen@gmail.com>
@@ -9,7 +9,7 @@ Description: Implements sentiment analysis using huggingface <https://huggingfac
 Depends: R (>= 3.5.0)
 License: GPL (>= 3.0)
 Encoding: UTF-8
-Imports: reticulate, pbapply, osfr, LSAfun
+Imports: reticulate, pbapply, osfr, LSAfun, dplyr, remotes
 Suggests: markdown, knitr, rmarkdown, rstudioapi
 VignetteBuilder: knitr
 RoxygenNote: 7.1.2

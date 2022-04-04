@@ -3,7 +3,8 @@
 #' @description A bag-of-words approach for computing emotions in text data using
 #' the lexicon compiled by Araque, Gatti, Staiano, and Guerini (2018).
 #' 
-#' @param text A dataframe containing texts to be scored (one text per row).
+#' @param text Matrix or data frame.
+#' A data frame containing texts to be scored (one text per row)
 #'
 #' @param lexicon The lexicon used to score the words. The default is the \code{\link{emotions}} dataset,
 #' a modification of the lexicon developed by Araque, Gatti, Staiano, and Guerini (2018).
@@ -19,60 +20,66 @@
 #' For example, the words "clinton" and "trump" are present in the lexicon and are both associated with the emotion 'AMUSED'.
 #' Excluding these words when analyzing political opinions may produce more accurate results.
 #'
-#' @author Tara Valladares <tls8vx at virginia.edu>, Hudson F. Golino <hfg9s at virginia.edu>
+#' @author Tara Valladares <tls8vx at virginia.edu> and Hudson F. Golino <hfg9s at virginia.edu>
 #'
 #' @examples
 #' 
-#' \dontrun{
-#' # To use the emoxicon_scores function:
-#'  # If the emoxicon package is not installed, follow the instructions below:
-#'  # Install remotes package if necessary
-#'   if(!requireNamespace("remotes", quietly = TRUE)){
-#'    install.packages("remotes")
-#'    }
-#'  # Install the stable development version from GitHub
-#'   if(!requireNamespace("emoxicon", quietly = TRUE)){
-#'   remotes::install_github("tvall/emoxicon")
-#'   } 
-#' # Load the tinytrolls data
-#'  require(emoxicon)
-#'  data(tinytrolls)
+#' # Obtain "emotions" data
+#' data("emotions")
 #' 
-#' emotions.tinytrolls <- emoxicon_scores(text = tinyTrolls$content, lexicon = emotions)
-#' }
+#' # Obtain "tinytrolls" data
+#' data("tinytrolls")
+#' 
+#' # Obtain emoxicon scores for first 10 tweets
+#' emotions_tinytrolls <- emoxicon_scores(text = tinytrolls$content[1:10], lexicon = emotions)
+#' 
 #' @seealso \code{\link{emotions}}, where we describe how we modified the original DepecheMood++ lexicon.
 #'
 #' @references
 #' Araque, O., Gatti, L., Staiano, J., and Guerini, M. (2018).
-#' DepecheMood++: a Bilingual Emotion Lexicon Built Through Simple Yet Powerful Techniques.
-#' \emph{ArXiv} preprint is available at https://arxiv.org/abs/1810.03660.
+#' DepecheMood++: A bilingual emotion lexicon built through simple yet powerful techniques.
+#' \emph{ArXiv}
 #'
 #' @importFrom dplyr left_join
 #' @importFrom stats aggregate
+#' @importFrom utils install.packages installed.packages
 #'
 #' @export
 #'
 #'
 # Emoxicon Function
 # Updated 04.02.2022
-emoxicon_scores <- function(text, lexicon = emotions, exclude) {
-  # Install remotes package if necessary
-  if(!requireNamespace("remotes", quietly = TRUE)){
+emoxicon_scores <- function(text, lexicon, exclude) {
+  
+  # Check for install packages
+  installed_packages <- row.names(installed.packages())
+  
+  # Install 'remotes' package (if necessary)
+  if(!"remotes" %in% installed_packages){
     install.packages("remotes")
   }
   
-  # Install the stable development version from GitHub
-  
-  if(!requireNamespace("emoxicon", quietly = TRUE)){
+  # Install 'emoxicon' package from GitHub
+  if(!"emoxicon" %in% installed_packages){
     remotes::install_github("tvall/emoxicon")
   } 
   
-  if("emoxicon" %in% class(lexicon)) {
+  # Check that input of 'text' argument is in the
+  # appropriate format for the analysis
+  non_text_warning(text) # see utils-transforEmotion.R for function
+  
+  # Check for missing lexicon
+  if(missing(lexicon)){
+    lexicon <- get(data("emotions", envir = environment()))
+  }
+  
+  # Check for lexicon with "emoxicon" class
+  if(any("emoxicon" %in% class(lexicon))){
     default.lexicon <- TRUE
   }else{default.lexicon <- FALSE}
   
   if(!missing(exclude)){
-    lexicon<-lexicon[!(lexicon[,1] %in% tolower(exclude)),]
+    lexicon <- lexicon[!(lexicon[,1] %in% tolower(exclude)),]
     message("Removing tokens in 'exclude' from the lexicon")
   }
   
@@ -121,5 +128,7 @@ emoxicon_scores <- function(text, lexicon = emotions, exclude) {
   if(default.lexicon){
     class(results) <- append(class(results),"emotions")
   }
+  
   results
+  
 }
