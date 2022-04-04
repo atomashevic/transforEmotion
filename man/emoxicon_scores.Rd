@@ -36,8 +36,10 @@ data("emotions")
 # Obtain "tinytrolls" data
 data("tinytrolls")
 
+\dontrun{
 # Obtain emoxicon scores for first 10 tweets
-emotions_tinytrolls <- emoxicon_scores(text = tinytrolls$content[1:10], lexicon = emotions)
+emotions_tinytrolls <- emoxicon_scores(text = tinytrolls$content, lexicon = emotions)
+}
 
 }
 \references{
