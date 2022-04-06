@@ -129,19 +129,25 @@
 #' }
 #' 
 #' @references
-#' # BART
+#' # BART \cr
 #' Lewis, M., Liu, Y., Goyal, N., Ghazvininejad, M., Mohamed, A., Levy, O., ... & Zettlemoyer, L. (2019).
 #' Bart: Denoising sequence-to-sequence pre-training for natural language generation, translation, and comprehension.
 #' \emph{arXiv preprint arXiv:1910.13461}.
 #' 
-#' # RoBERTa
+#' # RoBERTa \cr
 #' Liu, Y., Ott, M., Goyal, N., Du, J., Joshi, M., Chen, D., ... & Stoyanov, V. (2019).
 #' Roberta: A robustly optimized bert pretraining approach.
 #' \emph{arXiv preprint arXiv:1907.11692}.
 #' 
+#' # Zero-shot classification \cr
 #' Yin, W., Hay, J., & Roth, D. (2019).
 #' Benchmarking zero-shot text classification: Datasets, evaluation and entailment approach.
 #' \emph{arXiv preprint arXiv:1909.00161}.
+#' 
+#' # MultiNLI dataset \cr
+#' Williams, A., Nangia, N., & Bowman, S. R. (2017).
+#' A broad-coverage challenge corpus for sentence understanding through inference.
+#' \emph{arXiv preprint arXiv:1704.05426}. 
 #' 
 #' @export
 #'
