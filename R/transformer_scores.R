@@ -61,11 +61,6 @@
 #' many of these functions internally, so setting to \code{FALSE}
 #' will not change performance much
 #' 
-#' @param path_to_python Character.
-#' Path to specify where "python.exe" is located on your computer.
-#' Defaults to \code{NULL}, which will use \code{\link[reticulate]{py_available}}
-#' to find available Python or Anaconda
-#' 
 #' @param keep_in_env Boolean.
 #' Whether the classifier should be kept in your global environment.
 #' Defaults to \code{TRUE}.
@@ -78,15 +73,6 @@
 #' Defaults to the global environment
 #'
 #' @return Returns probabilities for the text classes
-#' 
-#' @details This function requires that you have both Python and the 
-#' "transformers" module installed on your computer. For help installing Python 
-#' and Python modules, see \code{browseVignettes("transforEmotion")} and click on
-#' the "Python Setup" vignette.
-#' 
-#' Once both Python and the "transformers" module are installed, the
-#' function will automatically download the necessary model to compute the
-#' scores. 
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
@@ -152,7 +138,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 09.03.2022
+# Updated 13.04.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
@@ -162,7 +148,6 @@ transformer_scores <- function(
     "facebook-bart"
   ),
   preprocess = TRUE,
-  path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
 )
@@ -192,17 +177,19 @@ transformer_scores <- function(
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
     
-    # Setup Python
-    path <- python_setup(path_to_python)
-    
-    # If path is NULL, error
-    if(is.null(path)){
-      return(NULL)
-    }
+    # Run setup for miniconda
+    setup_miniconda()
     
     # Check if 'transformers' module is available
     if(!reticulate::py_module_available("transformers")){
-      message("'transformers' module is not available.\n\nPlease install in Python: `pip install transformers`\n\nFor help, see the \"Python Setup\" vignette in `browseVignettes(\"transforEmotion\")`\n")
+      
+      # Run setup for modules
+      setup_modules()
+      
+      # Import 'transformers' module
+      message("Importing transformers module...")
+      transformers <- reticulate::import("transformers")
+      
     }else{
       
       # Check for 'transformers' module in environment
@@ -217,6 +204,8 @@ transformer_scores <- function(
       }
         
     }
+    
+    
     
     # Check for custom transformer
     if(transformer %in% c(

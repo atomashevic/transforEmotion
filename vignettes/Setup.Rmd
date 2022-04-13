@@ -1,0 +1,92 @@
+---
+title: "Setup"
+author: "Alexander P. Christensen and Hudson Golino"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    keep_tex: true
+vignette: >
+  %\VignetteIndexEntry{Python Setup}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  \usepackage[utf8]{inputenc}
+header-includes:
+- |
+  ```{=latex}
+  \usepackage{hyperref}
+  \hypersetup{
+    colorlinks = true,
+    allcolors = blue
+  }
+  ```
+---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#"
+)
+```
+
+<!-- Silent load 'transforEmotion -->
+```{r load, eval = TRUE, echo = FALSE, comment = NA, warning = FALSE, message = FALSE}
+library(transforEmotion)
+```
+
+## 1. Miniconda + Modules {#section_1}
+
+*transforEmotion* uses the *reticulate* package to automatically install a standalone miniconda version on your computer. The first time you run the `transformer_scores` function miniconda will begin installing. By having a standalone miniconda installed through *transforEmotion*, you should not have any conflicts between miniconda and existing Python installations. The miniconda installation takes a few minutes to complete. At some points it might seem like the installer is stuck but give it a few moments and the installer should complete its process in no time.
+
+After installing miniconda, there are several Python modules that need to be installed. Once again, *transforEmotion* will download these modules to your miniconda installation to avoid conflicts with previous Python installations. The modules should install in a few minutes.
+
+## 2. huggingface Transformers {#section_2}
+
+You can use any number of \href{https://huggingface.co}{huggingface} text classification transformers. *transforEmotion* currently implements the zero-shot classification models only. Future updates to the package may include opportunities to train and fine-tune these models but for now there are several options that work well for most classification tasks straight out-of-the-box. You can view different transformers that can be used in *transforEmotion* here: https://huggingface.co/models?pipeline_tag=zero-shot-classification.
+
+## 3. Using `transformer_scores` {#section_3}
+
+As mentioned in section [1](#section_1), the first time you run `transformer_scores` miniconda and the necessary modules will be installed. Next, \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} transformer model will be downloaded. So, the easiest way to get started is by using an example
+
+```{r transformers_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+# Load data
+data(neo_ipip_extraversion)
+
+# Example text
+text <- neo_ipip_extraversion$friendliness[1:5] # positively worded items only
+
+# Run transformer function
+transformer_scores(
+    text = text,
+    classes = c(
+      "friendly", "gregarious", "assertive",
+      "active", "excitement", "cheerful"
+    )
+)
+```
+
+The downloads will take some time. Once you have miniconda and the modules installed, you won't have to install them again. The same goes for the transformer models: You will only need to download them once. Assuming all goes well with the above code, you should see output that looks like this
+
+```{r transformers_scores_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
+$`make friends easily`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.579      0.075      0.070      0.071      0.050      0.155 
+
+$`warm up quickly to others`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.151      0.063      0.232      0.242      0.152      0.160 
+
+$`feel comfortable around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.726      0.044      0.053      0.042      0.020      0.115 
+
+$`act comfortably around people`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.524      0.062      0.109      0.183      0.019      0.103 
+
+$`cheer people up`
+  friendly gregarious  assertive     active excitement   cheerful 
+     0.071      0.131      0.156      0.190      0.362      0.089
+```
+
+If you want to run `transformer_scores` over additional text, then you can simply enter that text into the `text` argument of the function. The transformer models that you've used during your R session will remain in R's environment until you exit R or remove them from your environment.
+
+That's it! You've successfully obtained sentiment analysis scores from \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} transformer model. Now, go forth and quantify the qualitative!

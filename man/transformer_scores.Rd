@@ -11,7 +11,6 @@ transformer_scores(
   transformer = c("cross-encoder-roberta", "cross-encoder-distilroberta",
     "facebook-bart"),
   preprocess = TRUE,
-  path_to_python = NULL,
   keep_in_env = TRUE,
   envir = 1
 )
@@ -75,11 +74,6 @@ Transformers generally are OK without preprocessing and handle
 many of these functions internally, so setting to \code{FALSE}
 will not change performance much}
 
-\item{path_to_python}{Character.
-Path to specify where "python.exe" is located on your computer.
-Defaults to \code{NULL}, which will use \code{\link[reticulate]{py_available}}
-to find available Python or Anaconda}
-
 \item{keep_in_env}{Boolean.
 Whether the classifier should be kept in your global environment.
 Defaults to \code{TRUE}.
@@ -97,16 +91,6 @@ Returns probabilities for the text classes
 \description{
 Uses sentiment analysis pipelines from \href{https://huggingface.co}{huggingface}
 to compute probabilities that the text corresponds to the specified classes
-}
-\details{
-This function requires that you have both Python and the 
-"transformers" module installed on your computer. For help installing Python 
-and Python modules, see \code{browseVignettes("transforEmotion")} and click on
-the "Python Setup" vignette.
-
-Once both Python and the "transformers" module are installed, the
-function will automatically download the necessary model to compute the
-scores.
 }
 \examples{
 # Load data

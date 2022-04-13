@@ -6,11 +6,11 @@ bibentry(
 	title	= "transforEmotion: Sentiment analysis for text and qualitative data",
 	author	= c(person("Christensen,", "Alexander P"),
 		    person("Golino,", "Hudson")),
-	year	= "2021",
-	note    = "R package version 0.0.1",
+	year	= "2022",
+	note    = "R package version 0.1.1",
 
   textVersion  =
   paste0("Christensen, A. P., & Golino, H. (2022). ",
         "transforEmotion: Sentiment analysis for text and qualitative data. ",
-	"R package version 0.0.1.")
+	"R package version 0.1.1.")
 )
