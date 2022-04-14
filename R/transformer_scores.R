@@ -56,9 +56,9 @@
 #' Includes making lowercase, keeping only alphanumeric characters,
 #' removing escape characters, removing repeated characters,
 #' and removing white space.
-#' Defaults to \code{TRUE}.
+#' Defaults to \code{FALSE}.
 #' Transformers generally are OK without preprocessing and handle
-#' many of these functions internally, so setting to \code{FALSE}
+#' many of these functions internally, so setting to \code{TRUE}
 #' will not change performance much
 #' 
 #' @param keep_in_env Boolean.
@@ -138,7 +138,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 13.04.2022
+# Updated 14.04.2022
 transformer_scores <- function(
   text, classes,
   multiple_classes = FALSE,
@@ -147,7 +147,7 @@ transformer_scores <- function(
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
-  preprocess = TRUE,
+  preprocess = FALSE,
   keep_in_env = TRUE,
   envir = 1
 )
