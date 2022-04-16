@@ -10,7 +10,7 @@ transformer_scores(
   multiple_classes = FALSE,
   transformer = c("cross-encoder-roberta", "cross-encoder-distilroberta",
     "facebook-bart"),
-  preprocess = TRUE,
+  preprocess = FALSE,
   keep_in_env = TRUE,
   envir = 1
 )
@@ -69,9 +69,9 @@ Should basic preprocessing be applied?
 Includes making lowercase, keeping only alphanumeric characters,
 removing escape characters, removing repeated characters,
 and removing white space.
-Defaults to \code{TRUE}.
+Defaults to \code{FALSE}.
 Transformers generally are OK without preprocessing and handle
-many of these functions internally, so setting to \code{FALSE}
+many of these functions internally, so setting to \code{TRUE}
 will not change performance much}
 
 \item{keep_in_env}{Boolean.
