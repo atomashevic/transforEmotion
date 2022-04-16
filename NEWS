@@ -1,14 +1,23 @@
+Changes in version 0.1.1
+
+o CHANGE: default `preprocess` set to `FALSE`; working out current issues that appear with non-standard ASCII text
+
+o CHANGE: miniconda + modules are now installed as standalone for the package (replaces the need for Python and avoids conflicting versions)
+
+o UPDATE: vignette reflects miniconda + module installation change 
+
+
 Changes in version 0.1.0
 
-o ADD: added default options to `transformer_scores`: Cross-Encoder's RoBERTa and distillRoBERTa as well as Facebook's BART Large
+o ADD: default options to `transformer_scores`: Cross-Encoder's RoBERTa and distillRoBERTa as well as Facebook's BART Large
 
-o ADD: added ability to specify any zero-shot classification pipeline by using specified pipeline's name (see Examples in `transformer_scores`)
+o ADD: ability to specify any zero-shot classification pipeline by using specified pipeline's name (see Examples in `transformer_scores`)
 
 o ADD: package startup message
 
 o ADD: `utils-transforEmotion` for internal functions
 
-o ADD: added `nlp_scores` to compute semantic similarities using Natural Language Processing with word embeddings
+o ADD: `nlp_scores` to compute semantic similarities using Natural Language Processing with word embeddings
 
 o ADD: basic preprocessing functions (internally handled)
 
