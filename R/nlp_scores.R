@@ -325,16 +325,18 @@ nlp_scores <- function(
   scores <- pbapply::pblapply(text, function(x){
     
     # Obtain semantic similarity
-    scores <- unlist(
-      lapply(classes, function(y){
-        suppressWarnings(
-          LSAfun::costring(
-            x = x, # Text
-            y = y, # Classes
-            tvectors = shrink_space # Semantic space
+    sink <- capture.output(
+      scores <- unlist(
+        lapply(classes, function(y){
+          suppressWarnings(
+            LSAfun::costring(
+              x = x, # Text
+              y = y, # Classes
+              tvectors = shrink_space # Semantic space
+            )
           )
-        )
-      })
+        })
+      )
     )
     
     # Re-organize output
