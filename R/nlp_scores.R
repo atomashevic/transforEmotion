@@ -162,7 +162,7 @@
 #' @export
 #'
 # NLP Scores
-# Updated 05.03.2022
+# Updated 13.05.2022
 nlp_scores <- function(
   text, classes,
   semantic_space = c(
@@ -199,45 +199,31 @@ nlp_scores <- function(
   # Check for semantic space in environment
   if(!exists(semantic_space, envir = as.environment(envir))){
     
-    # Identify OSF link
-    osf_link <- switch(
+    # Identify Google Drive link
+    drive_link <- switch(
       semantic_space,
-      "baroni" = "ztxjc",
-      "cbow" = "3nfha",
-      "cbow_ukwac" = "zxkjb",
-      "en100" = "f2jv5",
-      "glove" = "e3js4",
-      "tasa" = "3kvmq"
+      "baroni" = "1bsDJDs11sBJxc3g2jIcHx7CRZLCPp0or",
+      "cbow" = "16XV3wkSG9Gkki35kGTDz8ulwKZgVMi90",
+      "cbow_ukwac" = "1kQBIkpJS0wHU3l_N-R8K4nFVWDFeCvYt",
+      "en100" = "1Ii98-iBgd_bscXJNxX1QRI18Y11QUMYn",
+      "glove" = "1FMqS0GiIL1KXG5HQFns62IUeYtcP1bKC",
+      "tasa" = "16ISxg7IiQk1LGX6dZkVMbM_cxG9CP1DS"
     )
     
-    # Check if semantic space exists
-    if(
-      !paste(semantic_space, "rdata", sep = ".") %in% # Saved semantic space
-      tolower(list.files(tempdir())) # Temporary directory
-    ){
-      
-      # Download semantic space (if not found)
-      space_file <- suppressMessages(
-        osfr::osf_download(
-          osfr::osf_retrieve_file(
-            osf_link
-          ),
-          path = tempdir(),
-          progress = TRUE
-        )
+    # Let user know semantic space is downloading
+    message("Downloading semantic space...", appendLF = FALSE)
+    
+    # Download semantic space
+    space_file <- suppressMessages(
+      googledrive::drive_download(
+        googledrive::as_id(drive_link),
+        path = paste(tempdir(), semantic_space, sep = "\\"),
+        overwrite = TRUE
       )
-      
-    }else{
-      
-      # Create dummy space file list
-      space_file <- list()
-      space_file$local_path <- paste(
-        tempdir(), "\\",
-        semantic_space, ".RData",
-        sep = ""
-      )
-      
-    }
+    )
+    
+    # Let user know downloading is finished
+    message("done")
     
     # Let user know semantic space is loading
     message("Loading semantic space...", appendLF = FALSE)

@@ -1,3 +1,8 @@
+Changes in version 0.1.2
+
+o CHANGE: uses *googledrive* rather than *osfr* to import semantic spaces for `nlp_scores`
+
+
 Changes in version 0.1.1
 
 o CHANGE: default `preprocess` set to `FALSE`; working out current issues that appear with non-standard ASCII text
