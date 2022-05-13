@@ -200,6 +200,9 @@ nlp_scores <- function(
   # Check for semantic space in environment
   if(!exists(semantic_space, envir = as.environment(envir))){
     
+    # Authorize Google Drive
+    googledrive::drive_auth()
+    
     # Identify Google Drive link
     drive_link <- switch(
       semantic_space,
