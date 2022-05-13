@@ -2,6 +2,8 @@ Changes in version 0.1.2
 
 o CHANGE: uses *googledrive* rather than *osfr* to import semantic spaces for `nlp_scores`
 
+o CHANGE: uses `LSAfun::costring` to compute `nlp_scores` rather than `LSAfun::multicostring`
+
 
 Changes in version 0.1.1
 

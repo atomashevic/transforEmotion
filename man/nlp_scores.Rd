@@ -89,7 +89,8 @@ Returns semantic distances for the text classes
 }
 \description{
 Natural Language Processing using word embeddings to compute
-semantic similarities (cosine) of text and specified classes
+semantic similarities (cosine; see
+\code{\link[LSAfun]{costring}}) of text and specified classes
 }
 \examples{
 # Load data

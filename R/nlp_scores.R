@@ -1,7 +1,8 @@
 #' Natural Language Processing Scores
 #'
 #' @description Natural Language Processing using word embeddings to compute
-#' semantic similarities (cosine) of text and specified classes
+#' semantic similarities (cosine; see
+#' \code{\link[LSAfun]{costring}}) of text and specified classes
 #' 
 #' @param text Character vector or list.
 #' Text in a vector or list data format
@@ -264,37 +265,51 @@ nlp_scores <- function(
   }
   
   # Split sentences into individual Words
-  split_list <- lapply(text, strsplit, split = " ")
+  split_text <- lapply(text, strsplit, split = " ")
+  
+  # Perform basic preprocessing on classes
+  if(isTRUE(preprocess)){
+    classes <- preprocess_text( # Internal function. See `utils-transforEmotion`
+      classes, remove_stop = remove_stop
+    )
+  }
+  
+  # Split sentences into individual words
+  split_classes <- lapply(classes, strsplit, split = " ")
   
   # Shrink semantic space to only unique words
   ## Obtain unique words
-  unique_words <- unique(unlist(split_list))
+  unique_words <- unique(
+    c(
+      unlist(split_text),
+      unlist(split_classes)
+    )
+  )
   ## Obtain words that exist in space
   space_index <- na.omit(match(
     unique_words, row.names(space)
   ))
-  ## Obtain classes that exist in space
-  class_index <- match(
-    classes, row.names(space)
-  )
-  ## Report if any classes are not in semantic space
-  if(any(is.na(class_index))){
-    
-    ### Bad classes
-    bad_classes <- classes[is.na(class_index)]
-    
-    ### Message about bad classes
-    bad_classes_message(bad_classes)
-    
-    ### Remove bad classes
-    classes <- classes[!is.na(class_index)]
-    class_index <- class_index[!is.na(class_index)]
-    
-  }
+  # ## Obtain classes that exist in space
+  # class_index <- match(
+  #   classes, row.names(space)
+  # )
+  # ## Report if any classes are not in semantic space
+  # if(any(is.na(class_index))){
+  #   
+  #   ### Bad classes
+  #   bad_classes <- classes[is.na(class_index)]
+  #   
+  #   ### Message about bad classes
+  #   bad_classes_message(bad_classes)
+  #   
+  #   ### Remove bad classes
+  #   classes <- classes[!is.na(class_index)]
+  #   class_index <- class_index[!is.na(class_index)]
+  #   
+  # }
   ## Shrink space
   shrink_space <- space[c(
-    space_index, # Words in text
-    class_index # Words in classes
+    space_index # Words in text and classes
   ),]
   
   # Remove space
@@ -307,12 +322,16 @@ nlp_scores <- function(
   scores <- pbapply::pblapply(text, function(x){
     
     # Obtain semantic similarity
-    scores <- suppressWarnings(
-      LSAfun::multicostring(
-        x = x, # Text
-        y = classes, # Classes
-        tvectors = shrink_space # Semantic space
-      )
+    scores <- unlist(
+      lapply(classes, function(y){
+        suppressWarnings(
+          LSAfun::costring(
+            x = x, # Text
+            y = y, # Classes
+            tvectors = shrink_space # Semantic space
+          )
+        )
+      })
     )
     
     # Re-organize output
