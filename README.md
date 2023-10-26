@@ -12,7 +12,7 @@ if(!"devtools" %in% row.names(installed.packages())){
   install.packages("devtools")
 }
 
-devtools::install_github("AlexChristensen/transforEmotion")
+devtools::install_github("atomashevic/transforEmotion")
 ```
 
 ## How to Use
