@@ -1,6 +1,4 @@
 # Simulation of emotion data based on Damped Linear Oscillator (DLO) model
-# Dependencies: EGAnet package 2.0.2
-library(EGAnet)
 
 #' @title Dynamics function of the DLO model
 #' @description This function calculates the dynamics of a system using the DLO (Damped Linear Oscillator) model based on Equation 1 (Ollero et al., 2023).
