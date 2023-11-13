@@ -10,16 +10,16 @@ generate_observables(X, num_steps, num_obs, error, loadings = 0.8)
 \item{X}{Matrix or Data frame.
 The (num_steps X 2) matrix of latent variable scores.}
 
-\item{num_steps:}{Numeric integer.
+\item{num_steps}{Numeric integer.
 Number of time steps.}
 
-\item{num_obs:}{Numeric integer.
+\item{num_obs}{Numeric integer.
 The number of observable variables per latent factor.}
 
-\item{error:}{Numeric.
+\item{error}{Numeric.
 Measurement error variance.}
 
-\item{loadings:}{Numeric (default = 0.8).
+\item{loadings}{Numeric (default = 0.8).
 The default initial loading of the latent variable on the observable variable.}
 }
 \value{
@@ -31,8 +31,4 @@ The function takes in the latent variable scores, the number of time steps, the 
 and the measurement error variance. It returns a matrix of observable data.
 The factor loadings are not the same for all observable variables. They have uniform random noise added to them (between -0.15 and 0.15).
 The loadings are scaled so that the sum of the loadings for each latent factor is 2, to introduce a ceiling effect and to differentiate the dynamics of specific emotions. This is further empahsized by adding small noise to the measurement error variance for each observed variable (between -0.01 and 0.01).
-}
-\examples{
-generate_observables(latent_scores, 100, 4, 0.05)
-Updated: 26.10.2023.
 }

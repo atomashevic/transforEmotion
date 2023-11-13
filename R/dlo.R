@@ -26,9 +26,7 @@
 #'  Characterizing affect dynamics with a damped linear oscillator model: Theoretical considerations and recommendations for individual-level applications. 
 #'  \emph{Psychological Methods}. 
 #' \url{https://doi.org/10.1037/met0000615}
-#' @examples
-#' dlo_dynamics(c(0, 0), c(0, 0), 0.1, 0.01, 0.5, 0.1)
-# Updated: 30.10.2023.
+# Updated: 13.11.2023.
 dlo_dynamics <- function(x, dxdt, q, dt, eta, zeta){
   dxdt_new <- dxdt
   dx2dt <- eta * x + zeta * dxdt + q
@@ -72,9 +70,7 @@ MASS_mvrnorm <- function(n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISPA
 #' @param sigma_q Numeric. 
 #' Standard deviation of the Dynamic Error/
 #' @return A (num_steps X 3) matrix of Dynamic Error values for neutral, negative and positive emotion latent score.
-#' @examples
-#' generate_q(100, 0.5)
-#' Updated: 26.10.2023.
+# Updated: 26.10.2023.
 generate_q <- function(num_steps, sigma_q) {
   q <- matrix(rnorm(3 * num_steps, mean = c(0, 0, 0), sd = sigma_q), ncol = 3)
   return(q)
@@ -82,14 +78,12 @@ generate_q <- function(num_steps, sigma_q) {
 
 #' @title  Calculate the moving average for a time series
 #' @description This function calculates the moving average for a time series.
-#' @param data: Matrix or Data frame 
+#' @param data Matrix or Data frame.
 #' The time series data
-#' @param window_size: Numeric integer.
+#' @param window_size Numeric integer.
 #' The size of the moving average window.
 #' @return Matrix or Data frame containing the moving average values.
-#' @examples
-#' calculate_moving_average(c(1,2,3,4,5), 2)
-#' Updated: 26.10.2023.
+# Updated: 13.11.2023.
 calculate_moving_average <- function(data, window_size) {
   n <- length(data)
   ma <- numeric(n)
@@ -115,18 +109,16 @@ calculate_moving_average <- function(data, window_size) {
 #' 
 #' @param X Matrix or Data frame.
 #' The (num_steps X 2) matrix of latent variable scores.
-#' @param num_steps: Numeric integer.
+#' @param num_steps Numeric integer.
 #' Number of time steps.
-#' @param num_obs: Numeric integer.
+#' @param num_obs Numeric integer.
 #' The number of observable variables per latent factor.
-#' @param error: Numeric.
+#' @param error Numeric.
 #' Measurement error variance.
-#' @param loadings: Numeric (default = 0.8).
+#' @param loadings Numeric (default = 0.8).
 #' The default initial loading of the latent variable on the observable variable.
 #' @return A (num_steps X num_obs) Matrix or Data frame containing the observable variables.
-#' @examples
-#' generate_observables(latent_scores, 100, 4, 0.05)
-#' Updated: 26.10.2023.
+# Updated: 13.11.2023.
 generate_observables <- function(X, num_steps, num_obs, error, loadings=0.8){
   loads <- lapply(rep(loadings, 2), rep, num_obs)
   loads <- lapply(loads, function(x){x + runif(length(x), -0.15, 0.15)}) # add noise to loadings
@@ -177,8 +169,9 @@ generate_observables <- function(X, num_steps, num_obs, error, loadings=0.8){
 #' @return A data frame (num_steps X (6 + num_observables)) containing the latent scores for neutral score, positive emotions, negative emotions and their derivatives, as well as smoothed versions of the observables.
 #' @export
 #' @examples
-#' simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, window_size = 10)
-#' Updated: 13.11.2023.
+#' simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)
+# Updated: 13.11.2023.
+
 simulate_video <- function(dt, num_steps, num_observables, eta_n, zeta_n, eta, zeta, sigma_q, sd_observable, loadings, window_size, emph = FALSE, emph.dur = 10, emph.prob = 0.5){
   # Initial condition for neutral state
   n_0 <- 0.5
@@ -270,20 +263,18 @@ simulate_video <- function(dt, num_steps, num_observables, eta_n, zeta_n, eta, z
 
 #' @title Generate and emphasize sudden jumps in emotion scores
 #' @description This function generates and emphasizes the effect of strong emotions expressions during the period where the derivative of the latent variable is high. The observable value of the strongest emotion from the positive or negative group will spike in the next k time steps. The probability of this happening is p at each time step in which the derivative of the latent variable is greater than 0.2. The jump is proportionate to the derivative of the latent variable and the sum of the observable values of the other emotions.
-#' @param data: Data frame.
+#' @param data Data frame.
 #' The data frame containing the latent and observable variables created by the \code{simulate_video} function.
-#' @param num_observables: Numeric integer.
+#' @param num_observables Numeric integer.
 #' The number of observable variables per latent factor.
-#' @param num_steps: Numeric integer.
+#' @param num_steps Numeric integer.
 #' The number of time steps used in the simulation.
-#' @param k: Numeric integer.
+#' @param k Numeric integer.
 #' The mumber of time steps to emphasize the effect of strong emotions on future emotions (default is 10). Alternatively: the length of a strong emotional episode.
-#' @param p: Numeric.
+#' @param p Numeric.
 #' The probability of the strongest emotion being emphasized in the next k time steps (default is 0.5).
 #' @return A data frame containing the updated observable variables.
-#' @examples
-#' emphasize(sim_results, 10, 0.5)
-#' Updated: 26.10.2023.
+# Updated: 26.10.2023.
 emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
   # emphasize negative emotions
   neg_col <- 6+num_observables
@@ -324,14 +315,14 @@ emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
 }
 #' @title Plot the latent or the observable emotion scores.
 #' @description Function to plot the latent or the observable emotion scores.
-#' @param df: Data frame.
+#' @param df Data frame.
 #' The data frame containing the latent and observable variables created by the \code{simulate_video} function.
-#' @param mode: Character.
+#' @param mode Character.
 #' The mode of the plot. Can be either 'latent', 'positive' or 'negative'.
+#' @param title Character.
+#' The title of the plot. Default is an empty title, ' '.
 #' @return A plot of the latent or the observable emotion scores.
-#' @examples
-#' plot_sim_emotions(sim_results, 'latent')
-#' Updated: 26.10.2023.
+# Updated: 26.10.2023.
 plot_sim_emotions <- function(df, mode = 'latent', title = ' '){
   n_obs <- (ncol(df)-6)/2
   cols = rainbow(2*n_obs)

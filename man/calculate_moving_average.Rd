@@ -7,10 +7,10 @@
 calculate_moving_average(data, window_size)
 }
 \arguments{
-\item{data:}{Matrix or Data frame 
+\item{data}{Matrix or Data frame.
 The time series data}
 
-\item{window_size:}{Numeric integer.
+\item{window_size}{Numeric integer.
 The size of the moving average window.}
 }
 \value{
@@ -18,8 +18,4 @@ Matrix or Data frame containing the moving average values.
 }
 \description{
 This function calculates the moving average for a time series.
-}
-\examples{
-calculate_moving_average(c(1,2,3,4,5), 2)
-Updated: 26.10.2023.
 }

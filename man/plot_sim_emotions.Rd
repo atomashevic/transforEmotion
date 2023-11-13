@@ -7,19 +7,18 @@
 plot_sim_emotions(df, mode = "latent", title = " ")
 }
 \arguments{
-\item{df:}{Data frame.
+\item{df}{Data frame.
 The data frame containing the latent and observable variables created by the \code{simulate_video} function.}
 
-\item{mode:}{Character.
+\item{mode}{Character.
 The mode of the plot. Can be either 'latent', 'positive' or 'negative'.}
+
+\item{title}{Character.
+The title of the plot. Default is an empty title, ' '.}
 }
 \value{
 A plot of the latent or the observable emotion scores.
 }
 \description{
 Function to plot the latent or the observable emotion scores.
-}
-\examples{
-plot_sim_emotions(sim_results, 'latent')
-Updated: 26.10.2023.
 }

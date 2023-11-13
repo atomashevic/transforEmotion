@@ -15,7 +15,10 @@ simulate_video(
   sigma_q,
   sd_observable,
   loadings,
-  window_size
+  window_size,
+  emph = FALSE,
+  emph.dur = 10,
+  emph.prob = 0.5
 )
 }
 \arguments{
@@ -51,6 +54,15 @@ The default initial loading of the latent variable on the observable variable.}
 
 \item{window_size}{Numeric integer.
 The window size for smoothing the observables.}
+
+\item{emph}{Logical.
+Whether to emphasize the effect of dominant emotion (default is FALSE).}
+
+\item{emph.dur}{Numeric integer.
+The duration of the emphasis (default is 10).}
+
+\item{emph.prob}{Numeric.
+The probability of the dominant emotion being emphasized (default is 0.5).}
 }
 \value{
 A data frame (num_steps X (6 + num_observables)) containing the latent scores for neutral score, positive emotions, negative emotions and their derivatives, as well as smoothed versions of the observables.
@@ -60,6 +72,5 @@ This function simulates emotions in a video using the DLO model implemented as c
 The initial state of the video is always the same. Neutral score is 0.5 and both positive and negative emotion score is 0.25. They always sum up to 1. The derivative of the neutral score is higher initially, as there is strong tendency that some emotional state will be reached. The derivatives of the positive and negative emotions are the same initially.
 }
 \examples{
-simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, window_size = 10)
-Updated: 26.10.2023.
+simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)
 }

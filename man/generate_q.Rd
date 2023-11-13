@@ -19,7 +19,3 @@ A (num_steps X 3) matrix of Dynamic Error values for neutral, negative and posit
 \description{
 This function generates a matrix of Dynamic Error values (q) for the DLO simulation.
 }
-\examples{
-generate_q(100, 0.5)
-Updated: 26.10.2023.
-}

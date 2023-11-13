@@ -7,10 +7,10 @@
 dlo_dynamics(x, dxdt, q, dt, eta, zeta)
 }
 \arguments{
-\item{x}{Numeric (length 2).
+\item{x}{Numeric.
 The current state of the system (value of the latent score).}
 
-\item{dxdt}{Numeric (length 2).
+\item{dxdt}{Numeric.
 The derivative of the state (rate of change of the latent score).}
 
 \item{q}{Numeric. 
@@ -33,9 +33,6 @@ This function calculates the dynamics of a system using the DLO (Damped Linear O
 The DLO model is a second-order differential equation that describes the behavior of a damped harmonic oscillator.
 The function takes in the current state of the system, the derivative of the state, the damping coefficient, the time step,
 and the values of the eta and zeta parameters. It returns the updated derivative of the state.
-}
-\examples{
-dlo_dynamics(c(0, 0), c(0, 0), 0.1, 0.01, 0.5, 0.1)
 }
 \references{
 Ollero, M. J. F., Estrada, E., Hunter, M. D., & Cáncer, P. F. (2023).

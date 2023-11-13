@@ -4,16 +4,22 @@
 \alias{emphasize}
 \title{Generate and emphasize sudden jumps in emotion scores}
 \usage{
-emphasize(data, k = 10, p = 0.5)
+emphasize(data, num_observables, num_steps, k = 10, p = 0.5)
 }
 \arguments{
-\item{data:}{Data frame.
+\item{data}{Data frame.
 The data frame containing the latent and observable variables created by the \code{simulate_video} function.}
 
-\item{k:}{Numeric integer.
+\item{num_observables}{Numeric integer.
+The number of observable variables per latent factor.}
+
+\item{num_steps}{Numeric integer.
+The number of time steps used in the simulation.}
+
+\item{k}{Numeric integer.
 The mumber of time steps to emphasize the effect of strong emotions on future emotions (default is 10). Alternatively: the length of a strong emotional episode.}
 
-\item{p:}{Numeric.
+\item{p}{Numeric.
 The probability of the strongest emotion being emphasized in the next k time steps (default is 0.5).}
 }
 \value{
@@ -21,8 +27,4 @@ A data frame containing the updated observable variables.
 }
 \description{
 This function generates and emphasizes the effect of strong emotions expressions during the period where the derivative of the latent variable is high. The observable value of the strongest emotion from the positive or negative group will spike in the next k time steps. The probability of this happening is p at each time step in which the derivative of the latent variable is greater than 0.2. The jump is proportionate to the derivative of the latent variable and the sum of the observable values of the other emotions.
-}
-\examples{
-emphasize(sim_results, 10, 0.5)
-Updated: 26.10.2023.
 }
