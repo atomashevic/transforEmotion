@@ -5,7 +5,7 @@
 {
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")
     msg <- paste(msg,'\nFor help getting started, type browseVignettes("transforEmotion")\n')
-    msg <- paste(msg,"\nFor bugs and errors, submit an issue to <https://github.com/AlexChristensen/transforEmotion/issues>")
+    msg <- paste(msg,"\nFor bugs and errors, submit an issue to <https://github.com/atomashevic/transforEmotion/issues>")
 
     packageStartupMessage(msg)
 }
