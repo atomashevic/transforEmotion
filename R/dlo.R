@@ -1,5 +1,6 @@
 # Simulation of emotion data based on Damped Linear Oscillator (DLO) model
 
+#' @importFrom Matrix bdiag
 #' @title Dynamics function of the DLO model
 #' @description This function calculates the dynamics of a system using the DLO (Damped Linear Oscillator) model based on Equation 1 (Ollero et al., 2023).
 #' The DLO model is a second-order differential equation that describes the behavior of a damped harmonic oscillator.
