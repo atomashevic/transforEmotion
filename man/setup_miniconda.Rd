@@ -2,16 +2,17 @@
 % Please edit documentation in R/setup_miniconda.R
 \name{setup_miniconda}
 \alias{setup_miniconda}
-\title{Install Miniconda}
+\title{Install Miniconda and activate the transforEmotion environment}
 \usage{
 setup_miniconda()
 }
 \description{
-Installs miniconda
+Installs miniconda and activates the transforEmotion environment
 }
 \details{
-Installs miniconda using \code{\link[reticulate]{install_miniconda}}
+Installs miniconda using \code{\link[reticulate]{install_miniconda}} and activates the transforEmotion environment using \code{\link[reticulate]{use_condaenv}}. If the transforEmotion environment does not exist, it will be created using \code{\link[reticulate]{conda_create}}.
 }
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>
+        Aleksandar Tomasevic <atomashevic@gmail.com>
 }
