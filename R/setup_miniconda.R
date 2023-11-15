@@ -30,7 +30,7 @@ setup_miniconda <- function()
 
   # Create transformEmotion enviroment if it doesn't exist
 
-  if (sum(grepl("transforEmotion", reticulate::conda_list()$name)) == 0){
+  if (!(reticulate::condaenv_exists("transforEmotion"))){
   path_to_env <- try(
     reticulate::conda_create("transforEmotion"),
     silent = TRUE
@@ -56,7 +56,9 @@ setup_miniconda <- function()
   message("\ntransforEmotion Python virtual environment activated")
   } else {
      # throw an error if the environment is not activated
-    stop("Not able to setup and activate transforEmotion Python virtual environemnt")
+    print("Your active Python environment is:")
+    print(reticulate::py_config()$python)
+    stop("Please activate the transforEmotion Python environment instead: `reticulate::use_condaenv(\"transforEmotion\", required = TRUE)`")
   }
 
 }

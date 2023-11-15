@@ -180,8 +180,8 @@ transformer_scores <- function(
     # Run setup for miniconda
     setup_miniconda()
     
-    # Check if 'transformers' module is available
-    if(!reticulate::py_module_available("transformers")){
+    # Check if 'torch' and 'transformers' module are available
+    if(!(reticulate::py_module_available("transformers") & reticulate::py_module_available("torch"))){
       
       # Run setup for modules
       setup_modules()
