@@ -32,7 +32,7 @@ setup_modules <- function()
   Sys.sleep(1) # one second pause before the console explodes with text
   
   # Actually install the modules
-  reticulate::conda_install(
+  reticulate::conda_install("transforEmotion", 
     packages = c(
       "torch", "torchvision",
       "torchaudio", "tensorflow",

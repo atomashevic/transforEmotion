@@ -1,15 +1,16 @@
-#' Install Miniconda
+#' Install Miniconda and activate the transforEmotion environment
 #'
-#' @description Installs miniconda
+#' @description Installs miniconda and activates the transforEmotion environment
 #'
-#' @details Installs miniconda using \code{\link[reticulate]{install_miniconda}}
+#' @details Installs miniconda using \code{\link[reticulate]{install_miniconda}} and activates the transforEmotion environment using \code{\link[reticulate]{use_condaenv}}. If the transforEmotion environment does not exist, it will be created using \code{\link[reticulate]{conda_create}}.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
+#'         Aleksandar Tomasevic <atomashevic@gmail.com>
 #' 
 #' @export
 #'
 # Install miniconda
-# Updated 13.04.2022
+# Updated 15.11.2023
 setup_miniconda <- function()
 {
   
@@ -22,9 +23,42 @@ setup_miniconda <- function()
   # Check for try-error
   if(any(class(path_to_miniconda) != "try-error")){
     
-    # Give user the deets
-    message("\nTo uninstall miniconda, use `reticulate::miniconda_uninstall()`")
+  # Give user the deets
+  message("\nTo uninstall miniconda, use `reticulate::miniconda_uninstall()`")
     
   }
-  
+
+  # Create transformEmotion enviroment if it doesn't exist
+
+  if (!(reticulate::condaenv_exists("transforEmotion"))){
+  path_to_env <- try(
+    reticulate::conda_create("transforEmotion"),
+    silent = TRUE
+  )
+
+  # Check for try-error
+  if(any(class(path_to_env) != "try-error")){
+
+  # Give user the deets
+  message("\nNew Python virtual environment created. To remove it, use: \n `reticulate::conda_remove(\"transforEmotion\")`")
+  }
+
+  }
+
+  # Activate the environment
+
+  Sys.unsetenv("RETICULATE_PYTHON")
+  reticulate::use_condaenv("transforEmotion", required = TRUE)
+
+  # Check if the enviroment is activated
+
+  if (grepl("transforEmotion", reticulate::py_config()$python)){
+  message("\ntransforEmotion Python virtual environment activated")
+  } else {
+     # throw an error if the environment is not activated
+    print("Your active Python environment is:")
+    print(reticulate::py_config()$python)
+    stop("Please activate the transforEmotion Python environment instead: `reticulate::use_condaenv(\"transforEmotion\", required = TRUE)`")
+  }
+
 }
