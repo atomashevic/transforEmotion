@@ -26,7 +26,7 @@
 setup_modules <- function()
 {
   # Check if transforEmotion conda env is being used
-  if (!(reticulate::py_discover_config()$envname == "transforEmotion"))
+  if (!grepl("transforEmotion", reticulate::py_config()$python))
   {
     use_condaenv("transforEmotion", required = TRUE)
   }
