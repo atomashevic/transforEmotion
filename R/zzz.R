@@ -1,5 +1,7 @@
 .onload <- function(libname, pkgname)
-{library.dynam("transforEmotion",package=pkgname,lib.loc=libname)}
+{library.dynam("transforEmotion",package=pkgname,lib.loc=libname)
+Sys.unsetenv("RETICULATE_PYTHON")
+reticulate::use_condaenv("transforEmotion", required = FALSE)}
 
 .onAttach <- function(libname, pkgname)
 {

@@ -25,18 +25,36 @@
 # Updated 13.04.2022
 setup_modules <- function()
 {
+  # Check if transforEmotion conda env is being used
+  if (!(reticulate::py_discover_config()$envname == "transforEmotion"))
+  {
+    use_condaenv("transforEmotion", required = TRUE)
+  }
   
   # Install modules
   message("\nInstalling modules for 'transforEmotion'...")
   
   Sys.sleep(1) # one second pause before the console explodes with text
-  
-  # Actually install the modules
-  reticulate::conda_install("transforEmotion", 
+    reticulate::conda_install("transforEmotion", 
     packages = c(
       "torch", "torchvision",
       "torchaudio", "tensorflow",
-      "transformers"
+      "transformers",
+      "pytube",
+      "face_recognition",
+      "opencv-python"
+    ),
+    pip = TRUE
+  )
+  # Actually install the modules
+  reticulate::conda_install("transforEmotion",
+    packages = c(
+      "torch", "torchvision",
+      "torchaudio", "tensorflow",
+      "transformers",
+      "pytube",
+      "face_recognition",
+      "opencv-python"
     ),
     pip = TRUE
   )
