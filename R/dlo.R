@@ -258,7 +258,7 @@ simulate_video <- function(dt, num_steps, num_observables, eta_n, zeta_n, eta, z
   if (emph){
     results <- emphasize(results, num_observables, num_steps, emph.dur, emph.prob)
   }
-  colnames(results) <- c("Neu","dNeu","N","dN", "P","dP", paste0("N",1:num_observables), paste0("P",1:num_observables))
+  colnames(results) <- c("Nt","dNt","Ng","dNg", "Ps","dPs", paste0("N",1:num_observables), paste0("P",1:num_observables))
   return(results)
 }
 
@@ -330,10 +330,10 @@ plot_sim_emotions <- function(df, mode = 'latent', title = ' '){
   if (mode == 'latent')
   {
     title_label <-  ifelse(title==' ', paste0("Latent Emotion Scores"), title)
-    plot(df$Neu, type = "l", col = "black", ylim = c(0, 1), main = title_label, xlab = "Frames", ylab = "Scores")
-    lines(df$N, col = "red")
-    lines(df$P, col = "blue")
-    legend("topleft", legend = c("Neu","Neg","Pos"), col = c("black","red", "blue"), lty = 1)
+    plot(df$Nt, type = "l", col = "black", ylim = c(0, 1), main = title_label, xlab = "Frames", ylab = "Scores")
+    lines(df$Ng, col = "red")
+    lines(df$Ps, col = "blue")
+    legend("topleft", legend = c("Neutral","Negative","Positive"), col = c("black","red", "blue"), lty = 1)
   }
   else if (mode=='positive') {
      title_label <-  ifelse(title==' ', paste0("Positive Emotion Scores"), title)

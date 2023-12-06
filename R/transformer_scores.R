@@ -186,10 +186,10 @@ transformer_scores <- function(
       # Run setup for modules
       setup_modules()
       
-      # Import 'transformers' module
-      message("Importing transformers module...")
+      # Import 'transformers' and 'torch' module
+      message("Importing transformers and torch modules...")
       transformers <- reticulate::import("transformers")
-      
+      torch <- reticulate::import("torch")
     }else{
       
       # Check for 'transformers' module in environment
