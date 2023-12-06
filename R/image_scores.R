@@ -33,7 +33,9 @@ image_scores <- function(image_file, classes, face_selection = "largest"){
     Sys.sleep(1)
     setup_modules()
   }
-  source_python("inst/python/image.py")
+  
+  source_python(system.file("python", "image.py", package = "transforEmotion"))
+  
   # check if image_file has image file extension
   if(!grepl("\\.(jpg|jpeg|png|bmp)$", image_file)){
     stop("Image file name must have an image file extension: jpg, jpeg, png, bmp")
