@@ -20,5 +20,5 @@ test_that("selecting left and right face produces different results",
   labels =  c("anger", "disgust", "fear", "happiness", "sadness", "surprise", "neutral")
   result_left = image_scores(image, labels, face_selection = "left")
   result_right = image_scores(image, labels, face_selection = "right")
-  expect_false(all.equal(result_left, result_right))
+  expect_equal(sum(result_left ==  result_right), 0 )
 })
