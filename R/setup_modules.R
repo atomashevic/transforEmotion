@@ -28,7 +28,7 @@ setup_modules <- function()
   # Check if transforEmotion conda env is being used
   if (!grepl("transforEmotion", reticulate::py_config()$python))
   {
-    use_condaenv("transforEmotion", required = TRUE)
+    reticulate::use_condaenv("transforEmotion", required = TRUE)
   }
   
   # Install modules

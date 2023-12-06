@@ -36,7 +36,8 @@ def crop_face(image, padding=50, side='largest'):
   # Return the cropped imagef
   return cropped_image
 
-def classify_openai(image,labels,text_embeds_openai):
+def classify_openai(image,labels, face):
+  text_embeds_openai = get_text_embeds(labels)
   with torch.no_grad():
     # if not url
     if not image.startswith('http'):   
@@ -46,26 +47,37 @@ def classify_openai(image,labels,text_embeds_openai):
       # try to get image from url
       try :
         image = requests.get(image, stream=True).raw
+        image = Image.open(image)
       except :
         raise ValueError("Cannot retrieve image from URL")
     image = image.convert('RGB')
-    image = crop_face(image)
-    image_inputs = processor_openai(images=image, return_tensors='pt')
-    image_embeds = model_openai.get_image_features(**image_inputs)
-    image_embeds /= image_embeds.norm(p=2, dim=-1, keepdim=True)
-    logits_per_image = torch.matmul(image_embeds, text_embeds_openai.t()) * model_openai.logit_scale.exp()
-    probs = logits_per_image.softmax(dim=1).squeeze(0).tolist()
-    del logits_per_image
-    del image_inputs
-    del image_embeds
-    torch.cuda.empty_cache()
-    return dict(zip(labels, probs))
+    image = crop_face(image, side=face)
+    # if Image != None
+    if image != None:
+      image_inputs = processor_openai(images=image, return_tensors='pt')
+      image_embeds = model_openai.get_image_features(**image_inputs)
+      image_embeds /= image_embeds.norm(p=2, dim=-1, keepdim=True)
+      logits_per_image = torch.matmul(image_embeds, text_embeds_openai.t()) * model_openai.logit_scale.exp()
+      probs = logits_per_image.softmax(dim=1).squeeze(0).tolist()
+      del logits_per_image
+      del image_inputs
+      del image_embeds
+      torch.cuda.empty_cache()
+      return dict(zip(labels, probs))
+    else :
+      print('No face found in the image')
+      return None
   
 def get_text_embeds(labels):
   global processor_openai
-  processor_openai = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
   global model_openai
-  model_openai = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
+  try :
+    processor_openai
+    model_openai
+  except NameError:
+    print("Loading OpenAI CLIP model ... \n This may take a minute.")
+    processor_openai = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    model_openai = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
   text_inputs_openai = processor_openai(text=labels, return_tensors='pt', padding=True)
   text_embeds_openai = model_openai.get_text_features(**text_inputs_openai)
   text_embeds_openai /= text_embeds_openai.norm(p=2, dim=-1, keepdim=True)

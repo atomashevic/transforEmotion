@@ -54,10 +54,19 @@ image_scores <- function(image_file, classes, face_selection = "largest"){
   if(length(classes) < 2){
     stop("Classes must have at least 2 elements.")
   }
-  if(!exists("text_embeds_openai", envir = .GlobalEnv)){
-    print("Downloading and preparing OpenAI CLIP text embeddings...")
-    text_embeds_openai <<- get_text_embeds(labels = classes)
+
+  # check if face_selection is valid
+  if(!face_selection %in% c("largest", "left", "right")){
+    stop("Argument face_selection must be one of: largest, left, right")
   }
-  result <- classify_openai(image = image_file, labels = classes, text_embeds_openai = text_embeds_openai)
+  # if(!exists("text_embeds_openai", envir = .GlobalEnv)){
+  #   print("Downloading and preparing OpenAI CLIP text embeddings...")
+  #   text_embeds_openai <<- get_text_embeds(labels = classes)
+  # }
+  # if (! "model_openai" %in% py$globals()) {
+  #    print("Downloading and preparing OpenAI CLIP model and generating text embeddings. \n Please be patient, this may take a while...")
+  # }
+  result <- classify_openai(image = image_file, labels = classes, face = face_selection)
+  result <- as.data.frame(result)
   return(result)
 }
