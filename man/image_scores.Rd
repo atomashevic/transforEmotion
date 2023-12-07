@@ -4,10 +4,10 @@
 \alias{image_scores}
 \title{Calculate image scores based on OpenAI CLIP model}
 \usage{
-image_scores(image_file, classes, face_selection = "largest")
+image_scores(image, classes, face_selection = "largest")
 }
 \arguments{
-\item{image_file}{The path to the image file or URL of the image.}
+\item{image}{The path to the image file or URL of the image.}
 
 \item{classes}{A character vector of classes to classify the image into.}
 
