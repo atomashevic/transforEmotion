@@ -46,7 +46,7 @@ video_scores <- function(video, classes, nframes=100,
   }
   ################################################################
   reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
-  reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   if (!grepl("youtu", video)){
     stop("You need to provide a YouTube video URL.")
   }
