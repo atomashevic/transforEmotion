@@ -5,7 +5,7 @@
 #' If there is no face in the image, the function will return NA for all classes.
 #' Function uses reticulate to call the Python functions in the image.py file. If you run this package/function for the first time it will take some time for the package to setup a functioning Python virtual enviroment in the background. This includes installing Python libraries for facial recognition and emotion detection in text, images and video. Please be patient.
 #'
-#' @param image_file The path to the image file or URL of the image.
+#' @param image The path to the image file or URL of the image.
 #' @param classes A character vector of classes to classify the image into.
 #' @param face_selection The method to select the face in the image. Can be "largest" or "left" or "right". Default is "largest" and will select the largest face in the image. "left" and "right" will select the face on the far left or the far right side of the image. Face_selection method is irrelevant if there is only one face in the image.
 #' @return A data frame containing the scores for each class.
@@ -19,7 +19,7 @@
 #' 
 
 
-image_scores <- function(image_file, classes, face_selection = "largest"){
+image_scores <- function(image, classes, face_selection = "largest"){
   if (!(reticulate::condaenv_exists("transforEmotion"))){
     print("Creating and switching to transforEmotion virtual Python environment...")
     Sys.sleep(1)
@@ -36,13 +36,13 @@ image_scores <- function(image_file, classes, face_selection = "largest"){
   
   source_python(system.file("python", "image.py", package = "transforEmotion"))
   
-  # check if image_file has image file extension
-  if(!grepl("\\.(jpg|jpeg|png|bmp)$", image_file)){
+  # check if image has image file extension
+  if(!grepl("\\.(jpg|jpeg|png|bmp)$", image)){
     stop("Image file name must have an image file extension: jpg, jpeg, png, bmp")
   }
   # if not url check if file exists
-  if(!grepl("^http", image_file)){
-    if(!file.exists(image_file)){
+  if(!grepl("^http", image)){
+    if(!file.exists(image)){
       stop("Image file does not exist. If path is an URL make sure it includes http:// or https://")
     }
   }
@@ -66,7 +66,7 @@ image_scores <- function(image_file, classes, face_selection = "largest"){
   # if (! "model_openai" %in% py$globals()) {
   #    print("Downloading and preparing OpenAI CLIP model and generating text embeddings. \n Please be patient, this may take a while...")
   # }
-  result <- classify_openai(image = image_file, labels = classes, face = face_selection)
+  result <- classify_openai(image = image, labels = classes, face = face_selection)
   result <- as.data.frame(result)
   return(result)
 }

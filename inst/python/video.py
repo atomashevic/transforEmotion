@@ -14,17 +14,13 @@ import torchvision.models as models
 from torchvision import transforms
 import torch.nn.functional as F
 from PIL import Image
-import matplotlib.pyplot as plt
 import time
-import shutil
 
 
-def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no', start = 0, end=60, uniform = False, ff = 10, save_video = False, save_frames = False, frame_dir = 'temp/', video_name = 'temp'):
-  text_embeds_openai = get_text_embeds(labels)
+def yt_analyze(url, nframes, labels, side='largest', cut = F, start = 0, end=60, uniform = False, ff = 10, save_video = False, save_frames = False, frame_dir = 'temp/', video_name = 'temp'):
+  nframes = int(nframes)
   start_time = time.time()
   temp_dir =  frame_dir
-  if not os.path.exists(temp_dir):
-    os.makedirs(temp_dir)
   yt = YouTube(url)
   k = 0
   video = None
@@ -53,7 +49,7 @@ def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no
       raise ValueError("Failed to download video after 3 attempts.")
     else:
       cap = cv2.VideoCapture(video_path)
-      if cut == 'no':
+      if not cut:
         num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if uniform:
          frame_interval = math.ceil(num_frames / nframes)
@@ -73,7 +69,6 @@ def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no
             image_path = os.path.join(frame_dir, f"{video_name}-frame-{i}.jpg")
             cv2.imwrite(image_path, frame)
             counter += 1
-            ################################## CONTINUE HERE
       else:
         start_frame = int(start * cap.get(cv2.CAP_PROP_FPS))
         end_frame = int(end * cap.get(cv2.CAP_PROP_FPS))
@@ -95,18 +90,18 @@ def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no
             if not ret:
               print(f"Error reading frame {i}")
               continue
-            image_path = os.path.join(temp_dir, f"frame_{i}.jpg")
+            image_path = os.path.join(frame_dir, f"{video_name}-frame-{i}.jpg")
             cv2.imwrite(image_path, frame)
             counter += 1
       print(f"Total number of saved frames: {counter}")
       n = counter
       
       for i in range(counter):
-        image_path = os.path.join(temp_dir, f"frame_{i}.jpg")
-        image = Image.open(image_path)
-        image = crop_face(image)
+        image = os.path.join(frame_dir, f"{video_name}-frame-{i}.jpg")
+        # image = Image.open(image_path)
+        # image = crop_face(image)
         if not(image is None):
-          emotions = classify_openai(image,labels, text_embeds_openai)
+          emotions = classify_openai(image,labels, face = side)
         else:
           detected_emotions.append([np.nan]*len(labels))
         if emotions:
@@ -115,13 +110,6 @@ def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no
           detected_emotions.append([np.nan]*len(labels))
       df = pd.DataFrame(detected_emotions)
       df.columns = labels
-      if not save_frames:
-        # remove all pngs files from frame dir
-        for file in os.listdir(temp_dir):
-          if file.endswith(".png"):
-            os.remove(os.path.join(temp_dir, file))
-      if not save_video:
-        os.remove(video_path)
       end_time = time.time()
-      print(f"Execution time: {end_time - start_time} seconds")
+      print(f"Done! Execution time: {end_time - start_time} seconds")
       return df 

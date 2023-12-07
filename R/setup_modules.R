@@ -41,6 +41,7 @@ setup_modules <- function()
       "torchaudio", "tensorflow",
       "transformers",
       "pytube",
+      "pytz",
       "face_recognition",
       "opencv-python"
     ),
