@@ -19,10 +19,6 @@
 #' @return A result object containing the analyzed video scores.
 #'
 #' @import reticulate
-#' @importFrom reticulate use_condaenv py_module_available source_python
-#' @importFrom utils dir.exists dir.create
-#' @importFrom stats grep
-#' @importFrom base paste0 file.remove
 #'
 #' @export
 #'
