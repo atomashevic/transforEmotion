@@ -18,8 +18,9 @@ import matplotlib.pyplot as plt
 import time
 import shutil
 
+
 def yt_analyze(url, nframes, labels, probability=True, side='largest', cut = 'no', start = 0, end=60, uniform = False, ff = 10, save_video = False, save_frames = False, frame_dir = 'temp/', video_name = 'temp'):
-  text_embeds_openai = get_text_embeds_openai(labels)
+  text_embeds_openai = get_text_embeds(labels)
   start_time = time.time()
   temp_dir =  frame_dir
   if not os.path.exists(temp_dir):

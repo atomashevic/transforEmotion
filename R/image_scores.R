@@ -20,14 +20,14 @@
 
 
 image_scores <- function(image_file, classes, face_selection = "largest"){
-  #
-  # check if active condaenv is transforEmotion
-   if(grepl("transforEmotion", reticulate::py_config()$python) == FALSE){
+  if (!(reticulate::condaenv_exists("transforEmotion"))){
     print("Creating and switching to transforEmotion virtual Python environment...")
     Sys.sleep(1)
     setup_miniconda()
+  } else
+  {
+    reticulate::use_condaenv("transforEmotion", required = FALSE)
   }
-  # check if transformer library can be loadedd into conda env
   if (!reticulate::py_module_available("transformers") &!reticulate::py_module_available("face_recognition")){
     print("Some Python libraries are not available in the transforEmotion conda environment. We are going to set them up. We need them for facial recognition and emotion detection in text, images and video. This may take a while, please be patient.")
     Sys.sleep(1)
