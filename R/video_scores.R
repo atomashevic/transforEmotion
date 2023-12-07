@@ -33,10 +33,6 @@
 
 video_scores <- function(video, classes, nframes=100,
                          face_selection = "largest", cut = FALSE, start = 0, end = 60, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
-  # Function implementation
-}
-video_scores <- function(video, classes, nframes=100,
-                         face_selection = "largest", cut = FALSE, start = 0, end = 60, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
     ################################################################
     # TODO this piece of code needs to be a function, parametrized by the use of Python libraries: text, image, video
     if (!(reticulate::condaenv_exists("transforEmotion"))){
