@@ -47,17 +47,11 @@ setup_modules <- function()
     ),
     pip = TRUE
   )
-  # Actually install the modules
-  reticulate::conda_install("transforEmotion",
-    packages = c(
-      "torch", "torchvision",
-      "torchaudio", "tensorflow",
-      "transformers",
-      "pytube",
-      "face_recognition",
-      "opencv-python"
-    ),
-    pip = TRUE
-  )
-  
+  if (!check_python_libs())
+  {
+    stop("Not all Python libraries were installed correctly. Please try again.")
+  }
+  else {
+    message("All Python libraries were installed correctly.")
+  }
 }

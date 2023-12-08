@@ -70,3 +70,5 @@ image_scores <- function(image, classes, face_selection = "largest"){
   result <- as.data.frame(result)
   return(result)
 }
+
+#

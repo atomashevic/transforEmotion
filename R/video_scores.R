@@ -31,7 +31,7 @@ video_scores <- function(video, classes, nframes=100,
                          face_selection = "largest", cut = FALSE, start = 0, end = 60, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
     ################################################################
     # TODO this piece of code needs to be a function, parametrized by the use of Python libraries: text, image, video
-    if (!(reticulate::condaenv_exists("transforEmotion"))){
+    if (!conda_check()){
     print("Creating and switching to transforEmotion virtual Python environment...")
     Sys.sleep(1)
     setup_miniconda()
@@ -39,11 +39,12 @@ video_scores <- function(video, classes, nframes=100,
   {
     reticulate::use_condaenv("transforEmotion", required = FALSE)
   }
-  if (!reticulate::py_module_available("transformers") &!reticulate::py_module_available("face_recognition")){
+  if (!check_python_libs()){
     print("Some Python libraries are not available in the transforEmotion conda environment. We are going to set them up. We need them for facial recognition and emotion detection in text, images and video. This may take a while, please be patient.")
     Sys.sleep(1)
     setup_modules()
   }
+  
   ################################################################
   reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
