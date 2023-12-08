@@ -22,11 +22,6 @@
 #'
 #' @export
 #'
-#' @examples
-#' # Not run: 
-#' result <- video_scores("https://www.youtube.com/watch?v=dQw4w9WgXcQ", c("happy", "sad"), nframes = 200, face_selection = "left", cut = TRUE, start = 30, end = 90, uniform = TRUE, ffreq = 10, save_video = TRUE, save_frames = TRUE, save_dir = "output/", video_name = "analysis")
-#'
-
 video_scores <- function(video, classes, nframes=100,
                          face_selection = "largest", cut = FALSE, start = 0, end = 60, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
     ################################################################
@@ -76,7 +71,7 @@ video_scores <- function(video, classes, nframes=100,
     file.remove(paste0(save_dir, video_name, ".mp4"))
   }
   if(!save_frames){
-     file.remove(list.files(save_dir, pattern = ".jpg"))
+     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")))
   }
   return(result)
 }

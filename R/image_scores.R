@@ -10,9 +10,6 @@
 #' @param face_selection The method to select the face in the image. Can be "largest" or "left" or "right". Default is "largest" and will select the largest face in the image. "left" and "right" will select the face on the far left or the far right side of the image. Face_selection method is irrelevant if there is only one face in the image.
 #' @return A data frame containing the scores for each class.
 #'
-#' @examples
-#' \donttest{boris_image = "inst/extdata/boris-1.png"
-#' image_scores(boris_image, c("anger", "disgust", "fear", "happiness", "sadness", "surprise", "neutral"))}
 #' 
 #' @importFrom reticulate source_python
 #' @export
