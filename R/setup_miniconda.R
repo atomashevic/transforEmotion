@@ -9,7 +9,7 @@
 #'
 
 conda_check <- function(){
-  env_list <- system("conda env list", intern = TRUE)
+  env_list <- reticulate::conda_list()$name
   tE_env <- sum(grepl("transforEmotion", env_list))
   return (tE_env!=0)
 }
@@ -19,23 +19,20 @@ conda_check <- function(){
 #' This function checks if a list of required Python libraries are installed in a specified Conda environment.
 #'
 #' @return A logical value indicating whether all the required Python libraries are installed.
-#' 
+#' reticulate::py_module_available("transformers")
 check_python_libs <- function() {
-  conda_env <- "transforEmotion"
-  python_libs <- c("transformers", "torch", "torchvision", "torchaudio", "tensorflow", "pytube", "pytz", "face-recognition", "opencv-python")
-  
-  # Run the 'conda list -n env_name' command and capture the output
-  lib_list <- system(paste("conda list -n", conda_env), intern = TRUE)
+
+  python_libs <- c("transformers", "torch", "torchvision", "torchaudio", "tensorflow", "pytube", "pytz", "face_recognition", "cv2")
 
   # Extract the names of the libraries
-  lib_names <- sapply(strsplit(lib_list, " "), `[`, 1)
+  lib_names <- sapply(strsplit(python_libs, " "), `[`, 1)
   libs_installed <- logical(length(python_libs))
 
   # Check if each Python library is installed
   for (i in seq_along(python_libs)) {
     python_lib <- python_libs[i]
-    if (!(python_lib %in% lib_names)) {
-      print(paste("Python library", python_lib, "is not installed in Conda environment", conda_env))
+    if (!reticulate::py_module_available(python_lib)) {
+      print(paste("Python library", python_lib, "is not installed in Conda environment"))
       libs_installed[i] <- FALSE
     } else{
       libs_installed[i] <- TRUE
@@ -114,3 +111,4 @@ setup_miniconda <- function()
   }
 
 }
+
