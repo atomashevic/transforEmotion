@@ -9,6 +9,7 @@
 #'
 
 conda_check <- function(){
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
   env_list <- reticulate::conda_list()$name
   tE_env <- sum(grepl("transforEmotion", env_list))
   return (tE_env!=0)
@@ -21,8 +22,8 @@ conda_check <- function(){
 #' @return A logical value indicating whether all the required Python libraries are installed.
 #' reticulate::py_module_available("transformers")
 check_python_libs <- function() {
-
-  python_libs <- c("transformers", "torch", "torchvision", "torchaudio", "tensorflow", "pytube", "pytz", "face_recognition", "cv2")
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
+  python_libs <- c("transformers", "torch", "torchvision", "torchaudio", "tensorflow", "pytube", "pytz", "cv2")
 
   # Extract the names of the libraries
   lib_names <- sapply(strsplit(python_libs, " "), `[`, 1)
@@ -56,7 +57,7 @@ check_python_libs <- function() {
 # Updated 15.11.2023
 setup_miniconda <- function()
 {
-
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
   # Install miniconda
   path_to_miniconda <- try(
     reticulate::install_miniconda(),

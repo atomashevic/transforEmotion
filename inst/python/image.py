@@ -1,40 +1,47 @@
 import os
+import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
-import face_recognition
 from transformers import AutoProcessor, AutoModel
 import torch 
 import requests
+import cv2
 from PIL import Image
 
 def crop_face(image, padding=50, side='largest'):
-  # Convert the image to a numpy array
-  image_array = np.array(image)
-  # Find all the faces in the image
-  face_locations = face_recognition.face_locations(image_array)
-  # If no faces are found, return the original image
-  if len(face_locations) == 0:
-    return None
-  # Find the face to crop
-  if side == 'largest':
-    face_location = max(face_locations, key=lambda loc: (loc[2] - loc[0]) * (loc[1] - loc[3]))
-  elif side == 'left':
-    face_location = min(face_locations, key=lambda loc: loc[3])
-  elif side == 'right':
-    face_location = max(face_locations, key=lambda loc: loc[1])
-  else:
-    raise ValueError("Invalid value for 'side' argument")
-  # Add padding to the face bounding box
-  top, right, bottom, left = face_location
-  top = max(0, top - padding)
-  right = min(image_array.shape[1], right + padding)
-  bottom = min(image_array.shape[0], bottom + padding)
-  left = max(0, left - padding)
-  # Crop the image to the selected face
-  cropped_image = Image.fromarray(image_array[top:bottom, left:right])
-  # Return the cropped imagef
-  return cropped_image
+    # image 
+    # from PIL image to cv2 image
+    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    # Convert the image to grayscale
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Load the Haar cascade xml file for face detection
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    # Perform face detection
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    # If no faces are found, return the original image
+    if len(faces) == 0:
+        return image
+
+    # If 'side' is 'largest', find the largest face
+    if side == 'largest':
+        faces = sorted(faces, key=lambda x: x[2] * x[3], reverse=True)
+
+    # Get the bounding box of the first face
+    (x, y, w, h) = faces[0]
+
+    # Crop the face with padding
+    start_x, start_y = max(0, x - padding), max(0, y - padding)
+    end_x, end_y = min(image.shape[1] - 1, x + w + padding), min(image.shape[0] - 1, y + h + padding)
+
+    result = image[start_y:end_y, start_x:end_x]
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+    result = Image.fromarray(result)
+    return result
 
 def classify_openai(image,labels, face):
   text_embeds_openai = get_text_embeds(labels)

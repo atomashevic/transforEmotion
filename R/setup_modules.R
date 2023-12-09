@@ -25,6 +25,7 @@
 # Updated 13.04.2022
 setup_modules <- function()
 {
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
   # Check if transforEmotion conda env is being used
   if (!grepl("transforEmotion", reticulate::py_config()$python))
   {
@@ -42,7 +43,6 @@ setup_modules <- function()
       "transformers",
       "pytube",
       "pytz",
-      "face_recognition",
       "opencv-python"
     ),
     pip = TRUE

@@ -8,6 +8,7 @@ check_python_libs()
 }
 \value{
 A logical value indicating whether all the required Python libraries are installed.
+reticulate::py_module_available("transformers")
 }
 \description{
 This function checks if a list of required Python libraries are installed in a specified Conda environment.

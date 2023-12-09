@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 import pandas as pd
 from pytube import YouTube
-import face_recognition
 from transformers import AutoProcessor, AutoModel
 import torch
 from torch import nn
