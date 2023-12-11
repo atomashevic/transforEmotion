@@ -19,18 +19,12 @@
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #' 
-#' @export
 #'
 # Install modules
-# Updated 13.04.2022
+# Updated 11.12.2023
+
 setup_modules <- function()
 {
-  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
-  # Check if transforEmotion conda env is being used
-  if (!grepl("transforEmotion", reticulate::py_config()$python))
-  {
-    reticulate::use_condaenv("transforEmotion", required = TRUE)
-  }
   
   # Install modules
   message("\nInstalling modules for 'transforEmotion'...")
@@ -43,15 +37,9 @@ setup_modules <- function()
       "transformers",
       "pytube",
       "pytz",
+      "pandas",
       "opencv-python"
     ),
     pip = TRUE
   )
-  if (!check_python_libs())
-  {
-    stop("Not all Python libraries were installed correctly. Please try again.")
-  }
-  else {
-    message("All Python libraries were installed correctly.")
-  }
 }

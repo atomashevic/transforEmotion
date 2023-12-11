@@ -17,6 +17,7 @@ transforEmotion:::conda_check()
 
 transforEmotion:::check_python_libs()
 
+reticulate::import("pandas")
 ##### IMAGE TEST
 
 url = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/330px-Donald_Trump_official_portrait.jpg"
@@ -27,5 +28,6 @@ transforEmotion::image_scores(url, classes) # done
 
 video = "https://www.youtube.com/watch?v=720O_yBLrTs&ab_channel=DonaldJTrump"
 
-transforEmotion::video_scores(video, classes, nframes = 10)
 
+Sys.setenv(RETICULATE_PYTHON_ENV =  "transforEmotion")
+library(reticulate)

@@ -17,18 +17,12 @@
 
 
 image_scores <- function(image, classes, face_selection = "largest"){
-  if (!(reticulate::condaenv_exists("transforEmotion"))){
-    print("Creating and switching to transforEmotion virtual Python environment...")
-    Sys.sleep(1)
-    setup_miniconda()
-  } else
-  {
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
+  if (!conda_check()){
+      stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
+    
   }
-  if (!reticulate::py_module_available("transformers") &!reticulate::py_module_available("face_recognition")){
-    print("Some Python libraries are not available in the transforEmotion conda environment. We are going to set them up. We need them for facial recognition and emotion detection in text, images and video. This may take a while, please be patient.")
-    Sys.sleep(1)
-    setup_modules()
+  else {
+    reticulate::use_condaenv("transforEmotion", required = FALSE)
   }
   
   source_python(system.file("python", "image.py", package = "transforEmotion"))
