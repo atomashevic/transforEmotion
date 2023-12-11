@@ -1,6 +1,5 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import math
 import cv2 
 import numpy as np

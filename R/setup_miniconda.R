@@ -9,7 +9,6 @@
 #'
 
 conda_check <- function(){
-  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
   env_list <- reticulate::conda_list()$name
   tE_env <- sum(grepl("transforEmotion", env_list))
   return (tE_env!=0)
@@ -30,8 +29,7 @@ conda_check <- function(){
 # Updated 15.11.2023
 setup_miniconda <- function()
 {
-  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = '3')
- 
+  
   # Install miniconda
   path_to_miniconda <- try(
     install_miniconda(),

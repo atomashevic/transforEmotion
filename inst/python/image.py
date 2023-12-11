@@ -1,7 +1,6 @@
 import os
 import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 from transformers import AutoProcessor, AutoModel
 import torch 

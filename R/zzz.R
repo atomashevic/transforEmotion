@@ -11,5 +11,5 @@
     packageStartupMessage(msg)
     Sys.unsetenv("RETICULATE_PYTHON")
     Sys.setenv(RETICULATE_PYTHON_ENV =  "transforEmotion")
-    library(reticulate)
+    requireNamespace("reticulate")
 }
