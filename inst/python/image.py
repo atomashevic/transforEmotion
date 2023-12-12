@@ -24,7 +24,7 @@ def crop_face(image, padding=50, side='largest'):
 
     # If no faces are found, return the original image
     if len(faces) == 0:
-        return image
+        return None
 
     # If 'side' is 'largest', find the largest face
     if side == 'largest':
@@ -58,7 +58,6 @@ def classify_openai(image,labels, face):
         raise ValueError("Cannot retrieve image from URL")
     image = image.convert('RGB')
     image = crop_face(image, side=face)
-    # if Image != None
     if image != None:
       image_inputs = processor_openai(images=image, return_tensors='pt')
       image_embeds = model_openai.get_image_features(**image_inputs)
