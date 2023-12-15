@@ -28,7 +28,12 @@ transforEmotion::image_scores(url, classes) # done
 
 video = "https://www.youtube.com/watch?v=720O_yBLrTs&ab_channel=DonaldJTrump"
 
-transforEmotion::video_scores(video, classes)
+transforEmotion::video_scores(video, classes, nframes = 10)
 
 Sys.setenv(RETICULATE_PYTHON_ENV =  "transforEmotion")
 library(reticulate)
+
+video = "lapid.mp4"
+
+transforEmotion::video_scores(video, classes, nframes = 10)
+

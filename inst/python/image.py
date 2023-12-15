@@ -47,8 +47,12 @@ def classify_openai(image,labels, face):
   with torch.no_grad():
     # if not url
     if not image.startswith('http'):   
-      image = os.path.join(image)
-      image = Image.open(image)
+      # check  if image exists
+      if not os.path.exists(image):
+        raise ValueError("Image file does not exist at the specified path")
+      else:
+        image = os.path.join(image)
+        image = Image.open(image)
     else :
       # try to get image from url
       try :
