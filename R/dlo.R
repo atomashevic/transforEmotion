@@ -323,31 +323,44 @@ emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
 #' @param title Character.
 #' The title of the plot. Default is an empty title, ' '.
 #' @return A plot of the latent or the observable emotion scores.
-# Updated: 26.10.2023.
+# Updated: 28.12.2023.
 plot_sim_emotions <- function(df, mode = 'latent', title = ' '){
   n_obs <- (ncol(df)-6)/2
-  cols = rainbow(2*n_obs)
+  if (n_obs > 4) {
+    blues <- colorRampPalette(c("#ade4f7", "#1B1BD0"))(n_obs)
+    reds  <- colorRampPalette(c("lightpink", "#D01B1B"))(n_obs)
+  }
+  else{
+    blues <- c("#1B1BD0", "#ade4f7", "#95D2EC", "#47abd8")
+    reds <- c("#D01B1B", "lightpink", "#FF4242", "#F47A7A")
+
+  }
+  cols = c(reds, blues)
   if (mode == 'latent')
   {
     title_label <-  ifelse(title==' ', paste0("Latent Emotion Scores"), title)
-    plot(df$Nt, type = "l", col = "black", ylim = c(0, 1), main = title_label, xlab = "Frames", ylab = "Scores")
-    lines(df$Ng, col = "red")
-    lines(df$Ps, col = "blue")
-    legend("topleft", legend = c("Neutral","Negative","Positive"), col = c("black","red", "blue"), lty = 1)
+    plot(df$Nt, type = "l", col = "#7C878EB2", ylim = c(0, 1), main = title_label, xlab = "Frames", ylab = "Scores")
+    lines(df$Ng, col = "#D01B1B")
+    lines(df$Ps, col = "#1B1BD0")
+    legend("topleft", legend = c("Neutral","Negative","Positive"), col = c("#7C878EB2","#D01B1B", "#1B1BD0"), lty = 1)
   }
   else if (mode=='positive') {
      title_label <-  ifelse(title==' ', paste0("Positive Emotion Scores"), title)
-     plot(df$P1, type = "l", col = "red", ylim = c(0, 1), main = "Positive emotions", xlab = "Frames", ylab = "Scores")
+     maxy <- max(df[,(6+n_obs+1):(6+2*n_obs)]) + 0.1
+     maxy <- ifelse(maxy > 1, 1, maxy)
+     plot(df$P1, type = "l", col = "#1B1BD0", ylim = c(0, maxy), main = "Positive emotions", xlab = "Frames", ylab = "Scores")
      for (i in 2:n_obs) {
-       lines(df[,6+n_obs+i], col = cols[n_obs+i])
+       lines(df[,6+n_obs+i], col = blues[i])
      }
-      legend("topleft", legend = c(rep(paste0("P",1:n_obs))), col = c("red", "blue", "green", "orange"), lty = 1)
+      legend("topleft", legend = c(rep(paste0("P",1:n_obs))), col = blues, lty = 1)
   } else {
     title_label <-  ifelse(title==' ', paste0("Negative Emotion Scores"), title)
-    plot(df$N1, type = "l", col = "red", ylim = c(0, 1), main = "Negative emotions", xlab = "Frames", ylab = "Scores")
+    maxy <- max(df[,7:(6+n_obs)]) + 0.1
+    maxy <- ifelse(maxy > 1, 1, maxy)
+    plot(df$N1, type = "l", col = "#D01B1B", ylim = c(0, maxy), main = "Negative emotions", xlab = "Frames", ylab = "Scores")
     for (i in 2:n_obs) {
-      lines(df[,6+i], col = sample(cols[i]))
+      lines(df[,6+i], col = reds[i])
     }
-    legend("topleft", legend = c(rep(paste0("N",1:n_obs))), col = c("red", "blue", "green", "orange"), lty = 1)
+    legend("topleft", legend = c(rep(paste0("N",1:n_obs))), col = reds, lty = 1)
   }
 }
