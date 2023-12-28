@@ -15,14 +15,21 @@ from PIL import Image
 import time
 
 
-def yt_analyze(url, nframes, labels, side='largest', cut = F, start = 0, end=60, uniform = False, ff = 10, save_video = False, save_frames = False, frame_dir = 'temp/', video_name = 'temp'):
+def yt_analyze(url, nframes, labels, side='largest', start = 0, end=-1, uniform = False, ff = 10, frame_dir = 'temp/', video_name = 'temp'):
   nframes = int(nframes)
   start_time = time.time()
   temp_dir =  frame_dir
   k = 0
   video = None
   detected_emotions = []
-
+  if end == -1 and start == 0:
+    cut = False
+  else:
+    if end <= start:
+      raise ValueError("End time must be greater than start time.")
+    if end < 0 or start < 0:
+      raise ValueError("Start and end times must be positive.")
+    cut = True
   if "youtu" in url:
     yt = YouTube(url)
     ######### YT processing

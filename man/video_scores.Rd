@@ -9,9 +9,8 @@ video_scores(
   classes,
   nframes = 100,
   face_selection = "largest",
-  cut = FALSE,
   start = 0,
-  end = 60,
+  end = -1,
   uniform = FALSE,
   ffreq = 15,
   save_video = FALSE,
@@ -29,11 +28,9 @@ video_scores(
 
 \item{face_selection}{The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".}
 
-\item{cut}{Logical indicating whether to cut the video to a specific time range. Default is FALSE.}
-
 \item{start}{The start time of the video range to analyze. Default is 0.}
 
-\item{end}{The end time of the video range to analyze. Default is 60.}
+\item{end}{The end time of the video range to analyze. Default is -1 and this means that video won't be cut. If end is a positive number greater than start, the video will be cut from start to end.}
 
 \item{uniform}{Logical indicating whether to uniformly sample frames from the video. Default is FALSE.}
 

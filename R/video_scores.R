@@ -6,9 +6,8 @@
 #' @param classes A character vector specifying the classes to analyze.
 #' @param nframes The number of frames to analyze in the video. Default is 100.
 #' @param face_selection The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".
-#' @param cut Logical indicating whether to cut the video to a specific time range. Default is FALSE.
 #' @param start The start time of the video range to analyze. Default is 0.
-#' @param end The end time of the video range to analyze. Default is 60.
+#' @param end The end time of the video range to analyze. Default is -1 and this means that video won't be cut. If end is a positive number greater than start, the video will be cut from start to end.
 #' @param uniform Logical indicating whether to uniformly sample frames from the video. Default is FALSE.
 #' @param ffreq The frame frequency for sampling frames from the video. Default is 15.
 #' @param save_video Logical indicating whether to save the analyzed video. Default is FALSE.
@@ -23,7 +22,7 @@
 #' @export
 #'
 video_scores <- function(video, classes, nframes=100,
-                         face_selection = "largest", cut = FALSE, start = 0, end = 60, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
+                         face_selection = "largest", start = 0, end = -1, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
   if (!conda_check()){
       stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
     
@@ -66,13 +65,13 @@ video_scores <- function(video, classes, nframes=100,
   }
   
   result = yt_analyze(url = video, nframes = nframes, labels = classes,
-             side= face_selection, cut= cut, start = start, end = end, uniform = uniform, ff = ffreq, save_video = save_video, save_frames = save_frames, frame_dir = save_dir, video_name = video_name)
+             side= face_selection, start = start, end = end, uniform = uniform, ff = ffreq, frame_dir = save_dir, video_name = video_name)
 
   if (!save_video & grepl("youtu", video)){
     file.remove(paste0(save_dir, video_name, ".mp4"))
   }
   if(!save_frames){
-     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")), show)
+     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")))
   }
   return(result)
 }
