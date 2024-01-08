@@ -50,3 +50,6 @@ A result object containing the analyzed video scores.
 \description{
 This function retrieves FER scores a specific number of frames extracted from YouTube video. It uses Python libraries for facial recognition and emotion detection in text, images, and videos.
 }
+\author{
+Aleksandar Tomasevic <atomashevic@gmail.com>
+}

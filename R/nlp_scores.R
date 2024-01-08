@@ -77,6 +77,7 @@
 #' 
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
+#' @importFrom utils capture.output
 #' @examples
 #' # Load data
 #' data(neo_ipip_extraversion)

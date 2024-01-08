@@ -37,7 +37,24 @@ dlo_dynamics <- function(x, dxdt, q, dt, eta, zeta){
 }
 
 # mvrnorm function from MASS package to remove dependency on MASS package
-# Updated: 26.10.2023.
+#' @title  Multivariate Normal (Gaussian) Distribution
+#' @description This function generates a random sample from the multivariate normal distribution with mean mu and covariance matrix Sigma.
+#' @param n Numeric integer.
+#' The number of observations to generate.
+#' @param mu Numeric vector.
+#' The mean vector of the multivariate normal distribution.
+#' @param Sigma Numeric matrix.
+#' The covariance matrix of the multivariate normal distribution.
+#' @param tol Numeric.
+#' Tolerance for checking the positive definiteness of the covariance matrix.
+#' @param empirical Logical.
+#' Whether to return the empirical covariance matrix.
+#' @param EISPACK Logical.
+#' Whether to use the EISPACK routine instead of the LINPACK routine.
+#' @return A (n X p) matrix of random observations from the multivariate normal distribution.
+#' Updated: 26.10.2023.
+#' @importFrom stats rnorm
+
 MASS_mvrnorm <- function(n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISPACK = FALSE){
   p <- length(mu)
   if (!all(dim(Sigma) == c(p, p))) 
@@ -121,6 +138,7 @@ calculate_moving_average <- function(data, window_size) {
 #' @param loadings Numeric (default = 0.8).
 #' The default initial loading of the latent variable on the observable variable.
 #' @return A (num_steps X num_obs) Matrix or Data frame containing the observable variables.
+#' @importFrom stats runif
 # Updated: 13.11.2023.
 generate_observables <- function(X, num_steps, num_obs, error, loadings=0.8){
   loads <- lapply(rep(loadings, 2), rep, num_obs)
@@ -173,7 +191,11 @@ generate_observables <- function(X, num_steps, num_obs, error, loadings=0.8){
 #' @return A data frame (num_steps X (6 + num_observables)) containing the latent scores for neutral score, positive emotions, negative emotions and their derivatives, as well as smoothed versions of the observables.
 #' @export
 #' @examples
-#' simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)
+#' simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, 
+#'                eta_n = 0.5, zeta_n = 0.5,
+#'                eta = 0.5, zeta = 0.5,
+#'                sigma_q = 0.1, sd_observable = 0.1,
+#'                loadings = 0.8, window_size = 10)
 # Updated: 13.11.2023.
 
 simulate_video <- function(dt, num_steps, num_observables, eta_n, zeta_n, eta, zeta, sigma_q, sd_observable, loadings, window_size, emph = FALSE, emph.dur = 10, emph.prob = 0.5){
@@ -278,6 +300,7 @@ simulate_video <- function(dt, num_steps, num_observables, eta_n, zeta_n, eta, z
 #' @param p Numeric.
 #' The probability of the strongest emotion being emphasized in the next k time steps (default is 0.5).
 #' @return A data frame containing the updated observable variables.
+#' @importFrom stats quantile
 # Updated: 26.10.2023.
 emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
   # emphasize negative emotions
@@ -327,6 +350,9 @@ emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
 #' The title of the plot. Default is an empty title, ' '.
 #' @return A plot of the latent or the observable emotion scores.
 #' @export
+#' @importFrom grDevices colorRampPalette
+#' @importFrom graphics legend
+#' @importFrom graphics lines
 # Updated: 8.01.2024.
 plot_sim_emotions <- function(df, mode = 'latent', title = ' '){
   n_obs <- (ncol(df)-6)/2

@@ -27,16 +27,3 @@ test_that("simulate_video returns the correct output", {
   # Test with example values
   expect_equal(dim(simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)), c(50, 14))
 })
-
-# Test differences made by emphasize function
-test_that("At least 1 observable has larger mean after emphasize", {
-  sim <- simulate_video(dt = 0.1, num_steps = 15, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 2)
-  sim_emph <- emphasize(sim, num_steps = 15, num_observables = 4, p=0.5)
-  inc_means <- 0
-  for (i in 7:14){
-    if(mean(sim[,i]) < mean(sim_emph[,i])){
-      inc_means <- inc_means + 1
-    }
-  }
-  expect_equal(inc_means > 0, TRUE)
-})

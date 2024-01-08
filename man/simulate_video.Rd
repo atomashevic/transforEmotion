@@ -73,5 +73,9 @@ The initial state of the video is always the same. Neutral score is 0.5 and both
 To simulate more realistic time series, there is an option of including a sudden jump in the emotion scores. This is done by emphasizing the effect of the dominant emotion during the period where the derivative of the latent variable is high. The observable value of the strongest emotion from the positive or negative group will spike in the next k time step (emph.dur). The probability of this happening is p at each time step in which the derivative of the latent variable is greater than 0.2. The jump is proportionate to the derivative of the latent variable and the sum of the observable values of the other emotions.
 }
 \examples{
-simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)
+simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, 
+               eta_n = 0.5, zeta_n = 0.5,
+               eta = 0.5, zeta = 0.5,
+               sigma_q = 0.1, sd_observable = 0.1,
+               loadings = 0.8, window_size = 10)
 }
