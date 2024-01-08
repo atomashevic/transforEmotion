@@ -4,7 +4,7 @@
 
 ## transforEmotion: Sentiment Analysis for Text, Image and Video Using Transformer Models
 
-![Logo](man/figures/logo.png){width=40%}
+![Logo](man/figures/logo.png| width=40)
 
 With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python*.
 
