@@ -12,5 +12,6 @@ authors:
   orcid: "https://orcid.org/0000-0003-4863-6051"
 title: "transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer models"
 version: 0.1.4
+doi: 10.5281/zenodo.10471355
 date-released: 2024
 url: "https://github.com/atomashevic/transforEmotion"
