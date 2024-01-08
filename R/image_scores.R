@@ -13,7 +13,12 @@
 #' 
 #' @importFrom reticulate source_python
 #' @export
-#' 
+#' @examples
+#' \donttest{
+#' image_url <- "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+#' emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
+#' image_scores(image_url, emotions)
+#' }
 
 
 image_scores <- function(image, classes, face_selection = "largest"){

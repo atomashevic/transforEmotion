@@ -3,14 +3,15 @@ citHeader("To cite transforEmotion in publications use:")
 bibentry(
 	bibtype	= "manual",
 	key	= "transforEmotion",
-	title	= "transforEmotion: Sentiment analysis for text and qualitative data",
+	title	= "transforEmotion: Sentiment analysis for text, image and video using transformer models",
 	author	= c(person("Christensen,", "Alexander P"),
-		    person("Golino,", "Hudson")),
-	year	= "2022",
-	note    = "R package version 0.1.1",
+		    person("Golino,", "Hudson"),
+				person("Tomasevic","Aleksandar")),
+	year	= "2024",
+	note    = "R package version 0.1.4",
 
   textVersion  =
-  paste0("Christensen, A. P., & Golino, H. (2022). ",
-        "transforEmotion: Sentiment analysis for text and qualitative data. ",
-	"R package version 0.1.1.")
+  paste0("Christensen, A. P., Golino, H., Tomasevic, A. (2024). ",
+        "transforEmotion: Sentiment analysis for text, image and video using transformer models.",
+	"R package version 0.1.4.")
 )

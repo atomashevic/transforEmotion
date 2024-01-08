@@ -19,6 +19,8 @@
 #' The eta parameter of the DLO model.
 #' @param zeta Numeric. 
 #' The zeta parameter of the DLO model.
+#' 
+#' @export
 #'
 #' @return A numeric vector containing the updated derivative of the state.
 #'
@@ -137,7 +139,8 @@ generate_observables <- function(X, num_steps, num_obs, error, loadings=0.8){
 
 #' @title Simulate latent and observed emotion scores for a single "video"
 #' @description This function simulates emotions in a video using the DLO model implemented as continuous time state space model. The function takes in several parameters, including the time step, number of steps, number of observables, and various model parameters. It returns a data frame containing the simulated emotions and their derivatives, as well as smoothed versions of the observables.
-#' The initial state of the video is always the same. Neutral score is 0.5 and both positive and negative emotion score is 0.25. They always sum up to 1. The derivative of the neutral score is higher initially, as there is strong tendency that some emotional state will be reached. The derivatives of the positive and negative emotions are the same initially.
+#' The initial state of the video is always the same. Neutral score is 0.5 and both positive and negative emotion score is 0.25. 
+#' To simulate more realistic time series, there is an option of including a sudden jump in the emotion scores. This is done by emphasizing the effect of the dominant emotion during the period where the derivative of the latent variable is high. The observable value of the strongest emotion from the positive or negative group will spike in the next k time step (emph.dur). The probability of this happening is p at each time step in which the derivative of the latent variable is greater than 0.2. The jump is proportionate to the derivative of the latent variable and the sum of the observable values of the other emotions.
 #'
 #' @param dt Numeric real.
 #' The time step for the simulation (in minutes).
@@ -323,7 +326,8 @@ emphasize <- function(data, num_observables, num_steps, k = 10, p = 0.5){
 #' @param title Character.
 #' The title of the plot. Default is an empty title, ' '.
 #' @return A plot of the latent or the observable emotion scores.
-# Updated: 28.12.2023.
+#' @export
+# Updated: 8.01.2024.
 plot_sim_emotions <- function(df, mode = 'latent', title = ' '){
   n_obs <- (ncol(df)-6)/2
   if (n_obs > 4) {

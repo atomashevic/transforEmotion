@@ -69,7 +69,8 @@ A data frame (num_steps X (6 + num_observables)) containing the latent scores fo
 }
 \description{
 This function simulates emotions in a video using the DLO model implemented as continuous time state space model. The function takes in several parameters, including the time step, number of steps, number of observables, and various model parameters. It returns a data frame containing the simulated emotions and their derivatives, as well as smoothed versions of the observables.
-The initial state of the video is always the same. Neutral score is 0.5 and both positive and negative emotion score is 0.25. They always sum up to 1. The derivative of the neutral score is higher initially, as there is strong tendency that some emotional state will be reached. The derivatives of the positive and negative emotions are the same initially.
+The initial state of the video is always the same. Neutral score is 0.5 and both positive and negative emotion score is 0.25. 
+To simulate more realistic time series, there is an option of including a sudden jump in the emotion scores. This is done by emphasizing the effect of the dominant emotion during the period where the derivative of the latent variable is high. The observable value of the strongest emotion from the positive or negative group will spike in the next k time step (emph.dur). The probability of this happening is p at each time step in which the derivative of the latent variable is greater than 0.2. The jump is proportionate to the derivative of the latent variable and the sum of the observable values of the other emotions.
 }
 \examples{
 simulate_video(dt = 0.01, num_steps = 50, num_observables = 4, eta_n = 0.5, zeta_n = 0.5, eta = 0.5, zeta = 0.5, sigma_q = 0.1, sd_observable = 0.1, loadings = 0.8, window_size = 10)
