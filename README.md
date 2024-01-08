@@ -6,9 +6,8 @@
 
 
 <div style="text-align: center;">
-  <img src="man/figures/logo.png" alt="Logo" width="35%">
+  <img src="man/figures/logo.png" alt="Logo" width="35%" style="display: block; margin: 0 auto;">
 </div>
-
 
 With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python*.
 

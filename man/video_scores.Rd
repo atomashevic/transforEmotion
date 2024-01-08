@@ -50,13 +50,3 @@ A result object containing the analyzed video scores.
 \description{
 This function retrieves FER scores a specific number of frames extracted from YouTube video. It uses Python libraries for facial recognition and emotion detection in text, images, and videos.
 }
-\examples{
-\donttest{
-video_url <- "https://www.youtube.com/watch?v=hdYNcv-chgY&ab_channel=Conservatives"
-emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
-video_scores(video_url, classes = emotions, 
-                   nframes = 10, save_video = TRUE,
-                   save_frames = TRUE, video_name = 'boris-johnson',
-                   start = 10, end = 120)
-}
-}

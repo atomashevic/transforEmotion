@@ -20,16 +20,8 @@
 #' @import reticulate
 #'
 #' @export
-#'
-#' @examples
-#' \donttest{
-#' video_url <- "https://www.youtube.com/watch?v=hdYNcv-chgY&ab_channel=Conservatives"
-#' emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
-#' video_scores(video_url, classes = emotions, 
-#'                    nframes = 10, save_video = TRUE,
-#'                    save_frames = TRUE, video_name = 'boris-johnson',
-#'                    start = 10, end = 120)
-#' }
+#
+
 video_scores <- function(video, classes, nframes=100,
                          face_selection = "largest", start = 0, end = -1, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
   if (!conda_check()){

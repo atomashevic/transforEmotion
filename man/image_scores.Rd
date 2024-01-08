@@ -22,10 +22,3 @@ Primary use of the function is to calculate FER scores - Facial Expession Detect
 If there is no face in the image, the function will return NA for all classes.
 Function uses reticulate to call the Python functions in the image.py file. If you run this package/function for the first time it will take some time for the package to setup a functioning Python virtual enviroment in the background. This includes installing Python libraries for facial recognition and emotion detection in text, images and video. Please be patient.
 }
-\examples{
-\donttest{
-image_url <- "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa\%2C_by_Leonardo_da_Vinci\%2C_from_C2RMF_retouched.jpg/402px-Mona_Lisa\%2C_by_Leonardo_da_Vinci\%2C_from_C2RMF_retouched.jpg"
-emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
-image_scores(image_url, emotions)
-}
-}
