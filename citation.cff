@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "To cite transforEmotion in publications use:"
 authors:
-- family-names: ""Christensen
+- family-names: "Christensen"
   given-names: "ALexander P"
   orcid: "https://orcid.org/0000-0002-5601-7982"
 - family-names: "Golino"
