@@ -1,4 +1,4 @@
-### CRAN 0.1.0 | GitHub 0.1.4
+### CRAN 0.1.4 | GitHub 0.1.4
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![Downloads per month](http://cranlogs.r-pkg.org/badges/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://zenodo.org/badge/464199787.svg)](https://zenodo.org/doi/10.5281/zenodo.10471354)
 
@@ -20,6 +20,14 @@ With `transforEmotion` you can use cutting-edge transformer models for zero-shot
 <!-- Implements sentiment analysis using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines. The default pipeline for text is [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). All other zero-shot classification model pipelines can be implemented using their model name from https://huggingface.co/models?pipeline_tag=zero-shot-classification. -->
 
 ## How to Install
+
+You can find the latest stable version on [CRAN](https://cran.r-project.org/package=transforEmotion). Install it in R with:
+
+```R
+install.packages("transforEmotion")
+```
+
+If you want to use the latest development version, you can install it from GitHub using the `devtools` package.
 
 ```R
 if(!"devtools" %in% row.names(installed.packages())){
