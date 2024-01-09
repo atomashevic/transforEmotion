@@ -10,8 +10,9 @@
 #' @param face_selection The method to select the face in the image. Can be "largest" or "left" or "right". Default is "largest" and will select the largest face in the image. "left" and "right" will select the face on the far left or the far right side of the image. Face_selection method is irrelevant if there is only one face in the image.
 #' @return A data frame containing the scores for each class.
 #'
-#' @author Aleksandar Tomasevic <atomashevic@gmail.com>
+#' @author Aleksandar Tomašević <atomashevic@gmail.com>
 #' @importFrom reticulate source_python
+#' @importFrom reticulate py
 #' @export
 
 
@@ -56,7 +57,7 @@ image_scores <- function(image, classes, face_selection = "largest"){
   # if (! "model_openai" %in% py$globals()) {
   #    print("Downloading and preparing OpenAI CLIP model and generating text embeddings. \n Please be patient, this may take a while...")
   # }
-  result <- classify_openai(image = image, labels = classes, face = face_selection)
+  result <- reticulate::py$classify_openai(image = image, labels = classes, face = face_selection)
   result <- as.data.frame(result)
   return(result)
 }

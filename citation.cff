@@ -7,7 +7,7 @@ authors:
 - family-names: "Golino"
   given-names: "Hudson"
   orcid: "https://orcid.org/0000-0002-1601-1447"
-- family-names: "Tomasevic"
+- family-names: "Tomašević"
   given-names: "Aleksandar  "
   orcid: "https://orcid.org/0000-0003-4863-6051"
 title: "transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer models"

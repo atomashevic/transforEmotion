@@ -17,7 +17,7 @@
 #'
 #' @return A result object containing the analyzed video scores.
 #'
-#' @author Aleksandar Tomasevic <atomashevic@gmail.com>
+#' @author Aleksandar Tomašević <atomashevic@gmail.com>
 #' @import reticulate
 #'
 #' @export
@@ -66,7 +66,7 @@ video_scores <- function(video, classes, nframes=100,
   }
   }
   
-  result = yt_analyze(url = video, nframes = nframes, labels = classes,
+  result = reticulate::py$yt_analyze(url = video, nframes = nframes, labels = classes,
              side= face_selection, start = start, end = end, uniform = uniform, ff = ffreq, frame_dir = save_dir, video_name = video_name)
 
   if (!save_video & grepl("youtu", video)){

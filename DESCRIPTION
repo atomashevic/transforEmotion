@@ -1,14 +1,14 @@
 Package: transforEmotion
-Title: transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer models
+Title: transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer Models
 Version: 0.1.4
 Date: 2024-01-08
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com",
-              role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9798-7037")),
+              role = "aut", comment = c(ORCID = "0000-0002-9798-7037")),
 	           person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut",
 	            comment = c(ORCID = "0000-0002-1601-1447")),
-	           person("Aleksandar", "Tomasevic", email = "atomashevic@ff.uns.ac.rs", role = "aut",
+	           person("Aleksandar", "Tomašević", email = "atomashevic@gmail.com", role = c("aut", "cre"),
 	           comment = c(ORCID = "0000-0003-4863-6051")))
-Maintainer: Aleksandar Tomasevic <atomashevic@gmail.com>
+Maintainer: Aleksandar Tomašević <atomashevic@gmail.com>
 Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>.
 License: GPL (>= 3.0)
 Encoding: UTF-8

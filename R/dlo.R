@@ -28,7 +28,7 @@
 #' Ollero, M. J. F., Estrada, E., Hunter, M. D., & Cáncer, P. F. (2023).
 #'  Characterizing affect dynamics with a damped linear oscillator model: Theoretical considerations and recommendations for individual-level applications. 
 #'  \emph{Psychological Methods}. 
-#' \url{https://doi.org/10.1037/met0000615}
+#' \doi{10.1037/met0000615}
 # Updated: 13.11.2023.
 dlo_dynamics <- function(x, dxdt, q, dt, eta, zeta){
   dxdt_new <- dxdt

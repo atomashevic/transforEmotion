@@ -14,5 +14,5 @@ Installs miniconda using \code{\link[reticulate]{install_miniconda}} and activat
 }
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>
-        Aleksandar Tomasevic <atomashevic@gmail.com>
+        Aleksandar Tomašević <atomashevic@gmail.com>
 }

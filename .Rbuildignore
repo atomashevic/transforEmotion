@@ -3,3 +3,5 @@
 ^\.github$
 citation.cff
 LICENSE
+^doc$
+^Meta$

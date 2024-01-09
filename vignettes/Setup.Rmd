@@ -1,6 +1,6 @@
 ---
 title: "Setup and Tutorial"
-author: "Alexander P. Christensen, Hudson Golino, Aleksandar Tomasevic"
+author: "Alexander P. Christensen, Hudson Golino, Aleksandar Tomašević"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   pdf_document:

@@ -50,3 +50,5 @@ rsconnect/
 
 # VSCode folder
 .vscode/
+/doc/
+/Meta/

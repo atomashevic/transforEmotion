@@ -38,5 +38,5 @@ and the values of the eta and zeta parameters. It returns the updated derivative
 Ollero, M. J. F., Estrada, E., Hunter, M. D., & Cáncer, P. F. (2023).
  Characterizing affect dynamics with a damped linear oscillator model: Theoretical considerations and recommendations for individual-level applications. 
  \emph{Psychological Methods}. 
-\url{https://doi.org/10.1037/met0000615}
+\doi{10.1037/met0000615}
 }

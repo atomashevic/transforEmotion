@@ -13,43 +13,34 @@
 #' @param semantic_space Character vector.
 #' The semantic space used to compute the distances between words
 #' (more than one allowed). Here's a list of the semantic spaces:
+#' \describe{
 #' 
-#' \itemize{
-#' 
-#' \item{\code{"baroni"}}
-#' {Combination of British National Corpus, ukWaC corpus, and a 2009
+#' \item{\code{"baroni"}}{Combination of British National Corpus, ukWaC corpus, and a 2009
 #' Wikipedia dump. Space created using continuous bag of words algorithm
 #' using a context window size of 11 words (5 left and right)
 #' and 400 dimensions. Best word2vec model according to
 #' Baroni, Dinu, & Kruszewski (2014)}
 #' 
-#' \item{\code{"cbow"}}
-#' {Combination of British National Corpus, ukWaC corpus, and a 2009
+#' \item{\code{"cbow"}}{Combination of British National Corpus, ukWaC corpus, and a 2009
 #' Wikipedia dump. Space created using continuous bag of words algorithm with
 #' a context window size of 5 (2 left and right) and 300 dimensions}
 #' 
-#' \item{\code{"cbow_ukwac"}}
-#' {ukWaC corpus with the continuous bag of words algorithm with
+#' \item{\code{"cbow_ukwac"}}{ukWaC corpus with the continuous bag of words algorithm with
 #' a context window size of 5 (2 left and right) and 400 dimensions}
 #' 
-#' \item{\code{"en100"}}
-#' {Combination of British National Corpus, ukWaC corpus, and a 2009
+#' \item{\code{"en100"}}{Combination of British National Corpus, ukWaC corpus, and a 2009
 #' Wikipedia dump. 100,000 most frequent words. Uses moving window model
 #' with a size of 5 (2 to the left and right). Positive pointwise mutual
 #' information and singular value decomposition was used to reduce the
 #' space to 300 dimensions}
 #' 
-#' \item{\code{"glove"}}
-#' {\href{https://dumps.wikimedia.org/}{Wikipedia 2014 dump} and \href{https://catalog.ldc.upenn.edu/LDC2011T07}{Gigaword 5} with 400,000
+#' \item{\code{"glove"}}{\href{https://dumps.wikimedia.org/}{Wikipedia 2014 dump} and \href{https://catalog.ldc.upenn.edu/LDC2011T07}{Gigaword 5} with 400,000
 #' words (300 dimensions). Uses co-occurrence of words in text
 #' documents (uses cosine similarity)}
 #' 
-#' \item{\code{"tasa"}}
-#' {Latent Semantic Analysis space from TASA corpus all (300 dimensions).
-#' Uses co-occurrence of words in text documents (uses cosine similarity)}
+#' \item{\code{"tasa"}}{Latent Semantic Analysis space from TASA corpus all (300 dimensions).Uses co-occurrence of words in text documents (uses cosine similarity)}
 #' 
 #' }
-#' 
 #' @param preprocess Boolean.
 #' Should basic preprocessing be applied?
 #' Includes making lowercase, keeping only alphanumeric characters,
