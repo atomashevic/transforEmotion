@@ -10,6 +10,7 @@ transformer_scores(
   multiple_classes = FALSE,
   transformer = c("cross-encoder-roberta", "cross-encoder-distilroberta",
     "facebook-bart"),
+  device = c("auto", "cpu"),
   preprocess = FALSE,
   keep_in_env = TRUE,
   envir = 1
@@ -60,6 +61,12 @@ Defaults to \code{"cross-encoder-distilroberta"}
 Also allows any zero-shot classification models with a pipeline
 from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
 to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)}
+
+\item{device}{Character.
+Whether to use CPU or GPU for inference.
+Defaults to \code{"auto"} which will use
+GPU over CPU (if CUDA-capable GPU is setup).
+Set to \code{"cpu"} to perform over CPU}
 
 \item{preprocess}{Boolean.
 Should basic preprocessing be applied?

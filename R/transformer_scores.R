@@ -48,6 +48,12 @@
 #' from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
 #' to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
 #'
+#' @param device Character.
+#' Whether to use CPU or GPU for inference.
+#' Defaults to \code{"auto"} which will use
+#' GPU over CPU (if CUDA-capable GPU is setup).
+#' Set to \code{"cpu"} to perform over CPU
+#'
 #' @param preprocess Boolean.
 #' Should basic preprocessing be applied?
 #' Includes making lowercase, keeping only alphanumeric characters,
@@ -137,16 +143,14 @@
 # Transformer Scores
 # Updated 23.01.2024
 transformer_scores <- function(
-  text, classes,
-  multiple_classes = FALSE,
+  text, classes, multiple_classes = FALSE,
   transformer = c(
     "cross-encoder-roberta",
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
-  preprocess = FALSE,
-  keep_in_env = TRUE,
-  envir = 1
+  device = c("auto", "cpu"),
+  preprocess = FALSE, keep_in_env = TRUE, envir = 1
 )
 {
 
@@ -172,6 +176,11 @@ transformer_scores <- function(
     stop("Only one transformer model can be used at a time.\n\nSelect one of the default models or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n")
   }
 
+  # Set device
+  if(missing(device)){
+    device <- "auto"
+  }else{device <- tolower(match.arg(device))}
+
   # Check for classifiers in environment
   if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
@@ -192,7 +201,7 @@ transformer_scores <- function(
 
       # Load pipeline
       classifier <- transformers$pipeline(
-        "zero-shot-classification", device_map = "auto",
+        "zero-shot-classification", device_map = device,
         model = switch(
           transformer,
           "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
@@ -207,7 +216,7 @@ transformer_scores <- function(
       # Try to catch non-existing pipelines
       pipeline_catch <- try(
         classifier <- transformers$pipeline(
-          "zero-shot-classification", model = transformer, device_map = "auto"
+          "zero-shot-classification", model = transformer, device_map = device
         ), silent = TRUE
       )
 
