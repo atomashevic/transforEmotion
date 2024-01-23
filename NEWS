@@ -1,11 +1,17 @@
-Changes in version 0.1.2
+# Changes in version 0.1.5
+
+o ADD: basic retrieval-augmented generation in the `rag` function
+
+o ADD: sentiment analysis for images and videos with faces in `image_scores` and `video_scores` (respectively
+
+# Changes in version 0.1.2
 
 o CHANGE: uses *googledrive* rather than *osfr* to import semantic spaces for `nlp_scores`
 
 o CHANGE: uses `LSAfun::costring` to compute `nlp_scores` rather than `LSAfun::multicostring`
 
 
-Changes in version 0.1.1
+# Changes in version 0.1.1
 
 o CHANGE: default `preprocess` set to `FALSE`; working out current issues that appear with non-standard ASCII text
 
@@ -14,7 +20,7 @@ o CHANGE: miniconda + modules are now installed as standalone for the package (r
 o UPDATE: vignette reflects miniconda + module installation change 
 
 
-Changes in version 0.1.0
+# Changes in version 0.1.0
 
 o ADD: default options to `transformer_scores`: Cross-Encoder's RoBERTa and distillRoBERTa as well as Facebook's BART Large
 
@@ -31,4 +37,4 @@ o ADD: basic preprocessing functions (internally handled)
 o ADD: `stop_words` from the *tm* package for preprocessing
 
 
-Initial commit version 0.0.1
+# Initial commit version 0.0.1

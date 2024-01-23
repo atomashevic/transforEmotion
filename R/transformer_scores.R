@@ -156,7 +156,10 @@ transformer_scores <- function(
 
   # Check for classes
   if(missing(classes)){
-    stop("Classes to classify text must be specified using the 'classes' argument (e.g., `classes = c(\"positive\", \"negative\")`)\n")
+    stop(
+      "Classes to classify text must be specified using the 'classes' argument (e.g., `classes = c(\"positive\", \"negative\")`)\n",
+      call. = FALSE
+    )
   }
 
   # Check for transformer
@@ -174,36 +177,13 @@ transformer_scores <- function(
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
 
-    # Run setup for miniconda
-    # If not already set up
-    if(!"transforEmotion" %in% reticulate::conda_list()$name){
-      setup_miniconda()
-    }
+    # Run setup for modules
+    setup_modules()
 
-    # Check if 'torch' and 'transformers' module are available
-    if(!(reticulate::py_module_available("transformers") & reticulate::py_module_available("torch"))){
-
-      # Run setup for modules
-      setup_modules()
-
-      # Import 'transformers' and 'torch' module
-      message("Importing transformers and torch modules...")
-      transformers <- reticulate::import("transformers")
-      torch <- reticulate::import("torch")
-    }else{
-
-      # Check for 'transformers' module in environment
-      if(exists("transformers", envir = as.environment(envir))){
-        transformers <- get("transformers", envir = as.environment(envir))
-      }else{
-
-        # Import 'transformers' module
-        message("Importing transformers module...")
-        transformers <- reticulate::import("transformers")
-
-      }
-
-    }
+    # Import 'transformers' and 'torch' module
+    message("Importing transformers and torch modules...")
+    transformers <- reticulate::import("transformers")
+    torch <- reticulate::import("torch")
 
     # Check for custom transformer
     if(transformer %in% c(
@@ -226,8 +206,9 @@ transformer_scores <- function(
       # Custom pipeline from huggingface
       # Try to catch non-existing pipelines
       pipeline_catch <- try(
-        classifier <- transformers$pipeline("zero-shot-classification", model = transformer, device_map = "auto"),
-        silent = TRUE
+        classifier <- transformers$pipeline(
+          "zero-shot-classification", model = transformer, device_map = "auto"
+        ), silent = TRUE
       )
 
       # Errors
@@ -242,11 +223,11 @@ transformer_scores <- function(
               transformer,
               "' exists but does not have a working pipeline yet.\n\nTry a default model or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n",
               sep = ""
-            )
+            ), call. = FALSE
           )
 
         }else{
-          stop(pipeline_catch)
+          stop(pipeline_catch, call. = FALSE)
         }
 
       }
