@@ -36,16 +36,16 @@ to be used. Default options:
 \item{\code{"cross-encoder-roberta"}}{Uses \href{https://huggingface.co/cross-encoder/nli-roberta-base}{Cross-Encoder's Natural Language Interface RoBERTa Base}
 zero-shot classification model trained on the
 \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-(SNLI) corpus and 
+(SNLI) corpus and
 \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets}
 
 \item{\code{"cross-encoder-distilroberta"}}{Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 zero-shot classification model trained on the
 \href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
-(SNLI) corpus and 
+(SNLI) corpus and
 \href{https://huggingface.co/datasets/multi_nli}{MultiNLI} datasets. The DistilRoBERTa
 is intended to be a smaller, more lightweight version of \code{"cross-encoder-roberta"},
-that sacrifices some accuracy for much faster speed (see 
+that sacrifices some accuracy for much faster speed (see
 \href{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli}{https://www.sbert.net/docs/pretrained_cross-encoders.html#nli})}
 
 \item{\code{"facebook-bart"}}{Uses \href{https://huggingface.co/facebook/bart-large-mnli}{Facebook's BART Large}
@@ -93,7 +93,7 @@ to compute probabilities that the text corresponds to the specified classes
 # Load data
 data(neo_ipip_extraversion)
 
-# Example text 
+# Example text
 text <- neo_ipip_extraversion$friendliness[1:5]
 
 \dontrun{

@@ -20,6 +20,16 @@ Installs modules to compute \code{\link[transforEmotion]{transformer_scores}}. T
 
 \item{transformers}
 
+\item{pytube}
+
+\item{pytx}
+
+\item{pandas}
+
+\item{opencv-python}
+
+\item{accelerate}
+
 }
 }
 \details{
