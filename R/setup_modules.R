@@ -15,7 +15,7 @@ setup_modules <- function()
 
   # Set necessary modules
   modules <- c(
-    "accelerate", "bitsandbytes", "llama-index", "nltk",
+    "accelerate", "llama-index", "nltk",
     "opencv-python", "pandas", "pypdf",
     "pytube", "pytz", "tensorflow",
     "torch", "torchaudio", "torchvision",

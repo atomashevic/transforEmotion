@@ -13,6 +13,14 @@
 #' Path to .pdfs stored locally on your computer.
 #' Defaults to \code{NULL}
 #'
+#' @param transformer Character.
+#' Large language model to use for RAG.
+#' Defaults to \code{"TinyLLAMA"}.
+#' \code{"LLAMA-2"} is superior in its output but is substantially
+#' more difficult to install on Mac and Windows because of the
+#' installation of the {llama-cpp-python} module (Linux has no issues).
+#' For now, \code{"TinyLLAMA"} is recommended for ease of use
+#'
 #' @param prompt Character (length = 1).
 #' Prompt to feed into TinyLLAMA.
 #' Defaults to \code{"You are an expert at extracting emotional themes across many texts"}
@@ -88,6 +96,7 @@
 # Updated 23.01.2024
 rag <- function(
     text = NULL, path = NULL,
+    transformer = c("LLAMA-2", "TinyLLAMA"),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
       "accumulate", "compact", "refine",
@@ -107,7 +116,12 @@ rag <- function(
     stop("Argument 'text' or 'path' must be provided.", call. = FALSE)
   }
 
-  # Check for query
+  # Check for 'transformer'
+  if(missing(transformer)){
+    transformer <- "tinyllama"
+  }else{transformer <- tolower(match.arg(transformer))}
+
+  # Check for 'query'
   if(missing(query)){
     stop("A 'query' must be provided")
   }
@@ -127,23 +141,90 @@ rag <- function(
     message("Importing llama-index module...")
     llama_index <- reticulate::import("llama_index")
 
-    # Pass to service context
-    service_context <- llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = "auto"
-      ),
-      embed_model = "local:BAAI/bge-small-en-v1.5"
-    )
+    # Set service context
+    if(transformer == "tinyllama"){
 
-    # Set global service context
-    llama_index$set_global_service_context(service_context)
+      service_context <- llama_index$ServiceContext$from_defaults(
+        llm = llama_index$llms$HuggingFaceLLM(
+          model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+          tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+          query_wrapper_prompt = llama_index$PromptTemplate(
+            paste0(
+              "<|system|>\n", prompt,
+              "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+            )
+          ), device_map = "auto"
+        ),
+        embed_model = "local:BAAI/bge-small-en-v1.5"
+      )
+
+    }else if(transformer == "llama-2"){
+
+      # Check for {llama-cpp-python} install
+      if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
+
+        # Get operating system
+        OS <- system.check$OS
+
+        # Check for operating system
+        if(OS == "linux"){
+
+          # Should be good to go...
+          reticulate::conda_install(
+            envname = "transforEmotion",
+            packages = "llama-cpp-python",
+            pip = TRUE
+          )
+
+        }else{
+
+          # Try it out...
+          install_try <- try(
+            reticulate::conda_install(
+              envname = "transforEmotion",
+              packages = "llama-cpp-python",
+              pip = TRUE
+            ), silent = TRUE
+          )
+
+          # Catch the error
+          if(is(install_try, "try-error")){
+
+            # Send error on how to install
+            if(OS == "windows"){
+
+              stop(
+                paste0(
+                  "{llama-cpp-python} failed installation. ",
+                  "Follow these instructions and try again:\n\n",
+                  "https://llama-cpp-python.readthedocs.io/"
+                ), call. = FALSE
+              )
+
+            }else{ # Mac
+
+              stop(
+                paste0(
+                  "{llama-cpp-python} failed installation. ",
+                  "Follow these instructions and try again:\n\n",
+                  "https://llama-cpp-python.readthedocs.io/"
+                ), call. = FALSE
+              )
+
+            }
+
+          }
+
+        }
+
+      }
+
+      # Set up LLAMA-2
+      service_context <- llama_index$ServiceContext$from_defaults(
+        embed_model = "local", llm = "local"
+      )
+
+    }
 
   }
 
@@ -176,11 +257,15 @@ rag <- function(
   # Set up query engine
   if(response_mode == "tree_summarize"){
     engine <- index$as_query_engine(
-      similarity_top_k = 5,
-      response_mode = "tree_summarize"
+      similarity_top_k = similarity_top_k,
+      response_mode = "tree_summarize",
+      service_context = service_context
     )
   }else{
-    engine <- index$as_query_engine(response_mode = response_mode)
+    engine <- index$as_query_engine(
+      response_mode = response_mode,
+      service_context = service_context
+    )
   }
 
   # Get query

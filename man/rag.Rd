@@ -7,6 +7,7 @@
 rag(
   text = NULL,
   path = NULL,
+  transformer = c("LLAMA-2", "TinyLLAMA"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "refine", "simple_summarize",
@@ -26,6 +27,14 @@ Defaults to \code{NULL}}
 \item{path}{Character.
 Path to .pdfs stored locally on your computer.
 Defaults to \code{NULL}}
+
+\item{transformer}{Character.
+Large language model to use for RAG.
+Defaults to \code{"TinyLLAMA"}.
+\code{"LLAMA-2"} is superior in its output but is substantially
+more difficult to install on Mac and Windows because of the
+installation of the {llama-cpp-python} module (Linux has no issues).
+For now, \code{"TinyLLAMA"} is recommended for ease of use}
 
 \item{prompt}{Character (length = 1).
 Prompt to feed into TinyLLAMA.
