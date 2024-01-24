@@ -135,11 +135,11 @@ rag <- function(
     response_mode <- "tree_summarize"
   }else{response_mode <- match.arg(response_mode)}
 
+  # Run setup for modules
+  setup_modules()
+
   # Check for classifiers in environment
   if(!exists("llama_index", envir = as.environment(envir))){
-
-    # Run setup for modules
-    setup_modules()
 
     # Import 'llama-index'
     message("Importing llama-index module...")
@@ -168,7 +168,7 @@ rag <- function(
       if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
 
         # Get operating system
-        OS <- system.check$OS
+        OS <- system.check()$OS
 
         # Check for operating system
         if(OS == "linux"){
