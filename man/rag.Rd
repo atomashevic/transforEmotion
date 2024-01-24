@@ -7,7 +7,7 @@
 rag(
   text = NULL,
   path = NULL,
-  transformer = c("LLAMA-2", "TinyLLAMA"),
+  transformer = c("LLAMA-2", "Mistral-7B", "TinyLLAMA"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "refine", "simple_summarize",
@@ -30,11 +30,17 @@ Defaults to \code{NULL}}
 
 \item{transformer}{Character.
 Large language model to use for RAG.
-Defaults to \code{"TinyLLAMA"}.
-\code{"LLAMA-2"} is superior in its output but is substantially
-more difficult to install on Mac and Windows because of the
-installation of the {llama-cpp-python} module (Linux has no issues).
-For now, \code{"TinyLLAMA"} is recommended for ease of use}
+Available models include:
+
+\describe{
+
+\item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the {llama-cpp-python} module. Currently, we do not provide support for Mac and Windows users}
+
+\item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
+
+\item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
+
+}}
 
 \item{prompt}{Character (length = 1).
 Prompt to feed into TinyLLAMA.
@@ -61,11 +67,11 @@ Values will vary based on number of texts but some suggested values might be:
 
 \describe{
 
-\item{40-60 ---}{Comprehensive search across all texts}
+\item{40-60}{Comprehensive search across all texts}
 
-\item{20-40 ---}{Exploratory with good trade-off between comprehensive and speed}
+\item{20-40}{Exploratory with good trade-off between comprehensive and speed}
 
-\item{5-15 ---}{Focused search that should give generally good results}
+\item{5-15}{Focused search that should give generally good results}
 
 }
 

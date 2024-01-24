@@ -15,11 +15,17 @@
 #'
 #' @param transformer Character.
 #' Large language model to use for RAG.
-#' Defaults to \code{"TinyLLAMA"}.
-#' \code{"LLAMA-2"} is superior in its output but is substantially
-#' more difficult to install on Mac and Windows because of the
-#' installation of the {llama-cpp-python} module (Linux has no issues).
-#' For now, \code{"TinyLLAMA"} is recommended for ease of use
+#' Available models include:
+#'
+#' \describe{
+#'
+#' \item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the {llama-cpp-python} module. Currently, we do not provide support for Mac and Windows users}
+#'
+#' \item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
+#'
+#' \item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
+#'
+#' }
 #'
 #' @param prompt Character (length = 1).
 #' Prompt to feed into TinyLLAMA.
@@ -46,11 +52,11 @@
 #'
 #' \describe{
 #'
-#' \item{40-60 ---}{Comprehensive search across all texts}
+#' \item{40-60}{Comprehensive search across all texts}
 #'
-#' \item{20-40 ---}{Exploratory with good trade-off between comprehensive and speed}
+#' \item{20-40}{Exploratory with good trade-off between comprehensive and speed}
 #'
-#' \item{5-15 ---}{Focused search that should give generally good results}
+#' \item{5-15}{Focused search that should give generally good results}
 #'
 #' }
 #'
@@ -93,10 +99,10 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 23.01.2024
+# Updated 24.01.2024
 rag <- function(
     text = NULL, path = NULL,
-    transformer = c("LLAMA-2", "TinyLLAMA"),
+    transformer = c("LLAMA-2", "Mistral-7B", "TinyLLAMA"),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
       "accumulate", "compact", "refine",
@@ -105,8 +111,6 @@ rag <- function(
     keep_in_env = TRUE, envir = 1, progress = TRUE
 )
 {
-
-
 
   # Check that input of 'text' argument is in the appropriate format for the analysis
   non_text_warning(text) # see utils-transforEmotion.R for function
@@ -224,6 +228,32 @@ rag <- function(
         embed_model = "local", llm = "local"
       )
 
+    }else if(transformer == "mistral-7b"){
+
+      # Set up Mistral
+      service_context <- try(
+        llama_index$ServiceContext$from_defaults(
+          embed_model = "local", llm = llama_index$llms$Ollama(
+            model = "mistral", temperature = 0.1
+          )
+        ), silent = TRUE
+      )
+
+      # Check for error (more than likely Ollama is not installed)
+      if(is(service_context, "try-error")){
+
+        # Send error to install Ollama
+        stop(
+          paste0(
+            "There was an error loading Mistral-7B. If you haven't already, ",
+            "make sure you have Ollama installed:\n\n",
+            "https://ollama.ai/download\n\n",
+            "Once installed, restart R/RStudio and try again"
+          ), call. = FALSE
+        )
+
+      }
+
     }
 
   }
@@ -249,23 +279,52 @@ rag <- function(
   message("Indexing documents...")
 
   # Set indices
-  index <- llama_index$VectorStoreIndex(
-    documents, service_context = service_context,
-    show_progress = progress
-  )
+  if(transformer != "mistral-7b"){
+    index <- llama_index$VectorStoreIndex(
+      documents, service_context = service_context,
+      show_progress = progress
+    )
+  }else{
+
+    # Check for storage context
+    if(!exists("storage_context", envir = as.environment(envir))){
+
+      # Import 'qdrant_data'
+      message("Importing qdrant-client module...")
+      qdrant_client <- reticulate::import("qdrant_client")
+
+      # Set up client
+      client <- qdrant_client$QdrantClient(path = tempdir())
+
+      # Create vector
+      vector_store <- llama_index$vector_stores$qdrant$QdrantVectorStore(
+        client = client, collection_name = "temp_vector_store"
+      )
+
+      # Create storage context
+      storage_context <- llama_index$storage$storage_context$StorageContext$from_defaults(
+        vector_store = vector_store
+      )
+
+    }
+
+    # Get indices
+    index <- llama_index$VectorStoreIndex(
+      documents, service_context = service_context,
+      storage_context = storage_context,
+      show_progress = progress
+    )
+
+  }
 
   # Set up query engine
   if(response_mode == "tree_summarize"){
     engine <- index$as_query_engine(
       similarity_top_k = similarity_top_k,
-      response_mode = "tree_summarize",
-      service_context = service_context
+      response_mode = "tree_summarize"
     )
   }else{
-    engine <- index$as_query_engine(
-      response_mode = response_mode,
-      service_context = service_context
-    )
+    engine <- index$as_query_engine(response_mode = response_mode)
   }
 
   # Get query
@@ -287,6 +346,15 @@ rag <- function(
       value = service_context,
       envir = as.environment(envir)
     )
+
+    # Check for storage_context in the environment
+    if(exists("storage_context")){
+      assign(
+        x = "storage_context",
+        value = storage_context,
+        envir = as.environment(envir)
+      )
+    }
 
   }
 

@@ -9,7 +9,7 @@
 #' @noRd
 #'
 # Install modules
-# Updated 23.01.2024
+# Updated 24.01.2024
 setup_modules <- function()
 {
 
@@ -17,9 +17,9 @@ setup_modules <- function()
   modules <- c(
     "accelerate", "llama-index", "nltk",
     "opencv-python", "pandas", "pypdf",
-    "pytube", "pytz", "tensorflow",
-    "torch", "torchaudio", "torchvision",
-    "transformers"
+    "pytube", "pytz", "qdrant-client",
+    "tensorflow", "torch", "torchaudio",
+    "torchvision", "transformers"
   )
 
   # Determine whether any modules need to be installed
