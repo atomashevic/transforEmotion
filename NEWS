@@ -1,8 +1,10 @@
 # Changes in version 0.1.5
 
-o ADD: basic retrieval-augmented generation in the `rag` function (includes LLAMA-2, Mistral-7B, TinyLLAMA)
+o ADD: basic retrieval-augmented generation in the `rag` function (includes LLAMA-2, Mistral-7B, Orca-2, Phi-2, TinyLLAMA)
 
 o ADD: sentiment analysis for images and videos with faces in `image_scores` and `video_scores` (respectively)
+
+o ADD: function to delete models off computer (saves storage): `delete_transformer`
 
 
 # Changes in version 0.1.2

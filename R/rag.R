@@ -23,6 +23,10 @@
 #'
 #' \item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
 #'
+#' \item{"Orca-2"}{More documentation soon...}
+#'
+#' \item{"Phi-2"}{More documentation soon...}
+#'
 #' \item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
 #'
 #' }
@@ -99,16 +103,17 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 24.01.2024
+# Updated 27.01.2024
 rag <- function(
     text = NULL, path = NULL,
-    transformer = c("LLAMA-2", "Mistral-7B", "TinyLLAMA"),
+    transformer = c("LLAMA-2", "Mistral-7B", "Orca-2", "Phi-2", "TinyLLAMA"),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
       "accumulate", "compact", "refine",
       "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
-    keep_in_env = TRUE, envir = 1, progress = TRUE
+    device = c("auto", "cpu"), keep_in_env = TRUE,
+    envir = 1, progress = TRUE
 )
 {
 
@@ -135,128 +140,51 @@ rag <- function(
     response_mode <- "tree_summarize"
   }else{response_mode <- match.arg(response_mode)}
 
+  # Set default for 'device'
+  if(missing(response_mode)){
+    device <- "auto"
+  }else{device <- match.arg(device)}
+
   # Run setup for modules
   setup_modules()
 
-  # Check for classifiers in environment
+  # Check for llama_index in environment
   if(!exists("llama_index", envir = as.environment(envir))){
 
     # Import 'llama-index'
     message("Importing llama-index module...")
     llama_index <- reticulate::import("llama_index")
 
-    # Set service context
-    if(transformer == "tinyllama"){
+  }
 
-      service_context <- llama_index$ServiceContext$from_defaults(
-        llm = llama_index$llms$HuggingFaceLLM(
-          model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-          tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-          query_wrapper_prompt = llama_index$PromptTemplate(
-            paste0(
-              "<|system|>\n", prompt,
-              "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-            )
-          ), device_map = "auto"
-        ),
-        embed_model = "local:BAAI/bge-small-en-v1.5"
-      )
+  # Check for service context
+  if(exists("service_context", envir = as.environment(envir))){
 
-    }else if(transformer == "llama-2"){
-
-      # Check for {llama-cpp-python} install
-      if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
-
-        # Get operating system
-        OS <- system.check()$OS
-
-        # Check for operating system
-        if(OS == "linux"){
-
-          # Should be good to go...
-          reticulate::conda_install(
-            envname = "transforEmotion",
-            packages = "llama-cpp-python",
-            pip = TRUE
-          )
-
-        }else{
-
-          # Try it out...
-          install_try <- try(
-            reticulate::conda_install(
-              envname = "transforEmotion",
-              packages = "llama-cpp-python",
-              pip = TRUE
-            ), silent = TRUE
-          )
-
-          # Catch the error
-          if(is(install_try, "try-error")){
-
-            # Send error on how to install
-            if(OS == "windows"){
-
-              stop(
-                paste0(
-                  "{llama-cpp-python} failed installation. ",
-                  "Follow these instructions and try again:\n\n",
-                  "https://llama-cpp-python.readthedocs.io/"
-                ), call. = FALSE
-              )
-
-            }else{ # Mac
-
-              stop(
-                paste0(
-                  "{llama-cpp-python} failed installation. ",
-                  "Follow these instructions and try again:\n\n",
-                  "https://llama-cpp-python.readthedocs.io/"
-                ), call. = FALSE
-              )
-
-            }
-
-          }
-
-        }
-
-      }
-
-      # Set up LLAMA-2
-      service_context <- llama_index$ServiceContext$from_defaults(
-        embed_model = "local", llm = "local"
-      )
-
-    }else if(transformer == "mistral-7b"){
-
-      # Set up Mistral
-      service_context <- try(
-        llama_index$ServiceContext$from_defaults(
-          embed_model = "local", llm = llama_index$llms$Ollama(
-            model = "mistral", temperature = 0.1
-          )
-        ), silent = TRUE
-      )
-
-      # Check for error (more than likely Ollama is not installed)
-      if(is(service_context, "try-error")){
-
-        # Send error to install Ollama
-        stop(
-          paste0(
-            "There was an error loading Mistral-7B. If you haven't already, ",
-            "make sure you have Ollama installed:\n\n",
-            "https://ollama.ai/download\n\n",
-            "Once installed, restart R/RStudio and try again"
-          ), call. = FALSE
-        )
-
-      }
-
+    # Check for service context LLM
+    if(attr(service_context, which = "transformer") != transformer){
+      rm(service_context, envir = as.environment(envir)); gc(verbose = FALSE)
     }
 
   }
+
+  # Get service context
+  if(!exists("service_context", envir = as.environment(envir))){
+
+    # Set up service context
+    service_context <- switch(
+      transformer,
+      "tinyllama" = setup_tinyllama(prompt, device),
+      "llama-2" = setup_llama2(prompt, device),
+      "mistral-7b" = setup_mistral(prompt, device),
+      "orca-2" = setup_orca2(prompt, device),
+      "phi-2" = setup_phi2(prompt, device),
+      stop(paste0("'", transformer, "' not found"), call. = FALSE)
+    )
+
+  }
+
+  # Add transformer attribute to `service_context`
+  attr(service_context, which = "transformer") <- transformer
 
   # Depending on where documents are, load them
   if(!is.null(path)){
@@ -279,43 +207,10 @@ rag <- function(
   message("Indexing documents...")
 
   # Set indices
-  if(transformer != "mistral-7b"){
-    index <- llama_index$VectorStoreIndex(
-      documents, service_context = service_context,
-      show_progress = progress
-    )
-  }else{
-
-    # Check for storage context
-    if(!exists("storage_context", envir = as.environment(envir))){
-
-      # Import 'qdrant_data'
-      message("Importing qdrant-client module...")
-      qdrant_client <- reticulate::import("qdrant_client")
-
-      # Set up client
-      client <- qdrant_client$QdrantClient(path = tempdir())
-
-      # Create vector
-      vector_store <- llama_index$vector_stores$qdrant$QdrantVectorStore(
-        client = client, collection_name = "temp_vector_store"
-      )
-
-      # Create storage context
-      storage_context <- llama_index$storage$storage_context$StorageContext$from_defaults(
-        vector_store = vector_store
-      )
-
-    }
-
-    # Get indices
-    index <- llama_index$VectorStoreIndex(
-      documents, service_context = service_context,
-      storage_context = storage_context,
-      show_progress = progress
-    )
-
-  }
+  index <- llama_index$VectorStoreIndex(
+    documents, service_context = service_context,
+    show_progress = progress
+  )
 
   # Set up query engine
   if(response_mode == "tree_summarize"){
@@ -347,18 +242,205 @@ rag <- function(
       envir = as.environment(envir)
     )
 
-    # Check for storage_context in the environment
-    if(exists("storage_context")){
-      assign(
-        x = "storage_context",
-        value = storage_context,
-        envir = as.environment(envir)
+  }
+
+  # Store response
+  response <- trimws(extracted_query$response)
+
+  # Set class
+  class(response) <- "rag"
+
+  # Return response
+  return(response)
+
+}
+
+#' S3method 'print'
+#' @exportS3Method
+# Updated 25.01.2024
+print.rag <- function(rag_object){
+  cat(rag_object)
+}
+
+#' S3method 'summary'
+#' @exportS3Method
+# Updated 25.01.2024
+summary.rag <- function(rag_object){
+  cat(rag_object)
+}
+
+#' Set up for TinyLLAMA
+#' @noRd
+# Updated 27.01.2023
+setup_tinyllama <- function(prompt, device)
+{
+
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|system|>\n", prompt,
+            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+          )
+        ), context_window = 2048, device_map = device
+      ),
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+
+}
+
+#' Set up for LLAMA-2
+#' @noRd
+# Updated 27.01.2023
+setup_llama2 <- function(prompt, device)
+{
+
+  # Check for {llama-cpp-python} install
+  if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
+
+    # Get operating system
+    OS <- system.check()$OS
+
+    # Check for operating system
+    if(OS == "linux"){
+
+      # Should be good to go...
+      reticulate::conda_install(
+        envname = "transforEmotion",
+        packages = "llama-cpp-python",
+        pip = TRUE
       )
+
+    }else{
+
+      # Try it out...
+      install_try <- try(
+        reticulate::conda_install(
+          envname = "transforEmotion",
+          packages = "llama-cpp-python",
+          pip = TRUE
+        ), silent = TRUE
+      )
+
+      # Catch the error
+      if(is(install_try, "try-error")){
+
+        # Send error on how to install
+        if(OS == "windows"){
+
+          stop(
+            paste0(
+              "{llama-cpp-python} failed installation. ",
+              "Follow these instructions and try again:\n\n",
+              "https://llama-cpp-python.readthedocs.io/"
+            ), call. = FALSE
+          )
+
+        }else{ # Mac
+
+          stop(
+            paste0(
+              "{llama-cpp-python} failed installation. ",
+              "Follow these instructions and try again:\n\n",
+              "https://llama-cpp-python.readthedocs.io/"
+            ), call. = FALSE
+          )
+
+        }
+
+      }
+
     }
 
   }
 
-  # Send response
-  cat(trimws(extracted_query$response))
+  # Return model
+  return(
+    # Set up LLAMA-2
+    service_context <- llama_index$ServiceContext$from_defaults(
+      embed_model = "local", llm = "local", context_window = 4096
+    )
+  )
 
 }
+
+#' Set up for Mistral-7B
+#' @noRd
+# Updated 27.01.2023
+setup_mistral <- function(prompt, device)
+{
+
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "mistralai/Mistral-7B-v0.1",
+        tokenizer_name = "mistralai/Mistral-7B-v0.1",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|system|>\n", prompt,
+            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+          )
+        ), device_map = device
+      ), context_window = 8192,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+
+}
+
+#' Set up for Orca-2
+#' @noRd
+# Updated 27.01.2023
+setup_orca2 <- function(prompt, device)
+{
+
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "microsoft/Orca-2-7b",
+        tokenizer_name = "microsoft/Orca-2-7b",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|im_start|>system\n", prompt, "<|im_end|>\n",
+            "<|im_start|>user\n{user_message}<|im_end|>\n<|im_start|>assistant"
+          )
+        ), device_map = device
+      ), context_window = 4096,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+
+}
+
+#' Set up for Phi-2
+#' @noRd
+# Updated 27.01.2023
+setup_phi2 <- function(prompt, device)
+{
+
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "microsoft/phi-2",
+        tokenizer_name = "microsoft/phi-2",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|system|>\n", prompt,
+            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+          )
+        ), device_map = device
+      ), context_window = 2048,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+
+}
+
