@@ -28,7 +28,9 @@ This function quickly identifies the models on your computer and
 informs you which ones can be deleted from it to open up storage space
 }
 \examples{
-delete_transformer()
+if(interactive()){
+  delete_transformer()
+}
 
 }
 \author{

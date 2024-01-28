@@ -173,11 +173,11 @@ rag <- function(
     # Set up service context
     service_context <- switch(
       transformer,
-      "tinyllama" = setup_tinyllama(prompt, device),
-      "llama-2" = setup_llama2(prompt, device),
-      "mistral-7b" = setup_mistral(prompt, device),
-      "orca-2" = setup_orca2(prompt, device),
-      "phi-2" = setup_phi2(prompt, device),
+      "tinyllama" = setup_tinyllama(llama_index, prompt, device),
+      "llama-2" = setup_llama2(llama_index, prompt, device),
+      "mistral-7b" = setup_mistral(llama_index, prompt, device),
+      "orca-2" = setup_orca2(llama_index, prompt, device),
+      "phi-2" = setup_phi2(llama_index, prompt, device),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
 
@@ -243,9 +243,11 @@ rag <- function(
     )
 
   }
-
-  # Store response
-  response <- trimws(extracted_query$response)
+  
+  # Clean-up response
+  response <- response_cleanup(
+    extracted_query$response, transformer = transformer
+  )
 
   # Set class
   class(response) <- "rag"
@@ -269,10 +271,36 @@ summary.rag <- function(rag_object){
   cat(rag_object)
 }
 
+#' Clean up response
+#' @noRd
+# Updated 28.01.2024
+response_cleanup <- function(response, transformer){
+  
+  # Trim whitespace first!
+  response <- trimws(response)
+  
+  # Return on switch
+  return(
+    switch(
+      transformer,
+      "tinyllama" = response,
+      "llama-2" = response,
+      "mistral-7b" = gsub(
+        "(\\d+)", "\\\n\\1", 
+        gsub("\n---.*", "", response), 
+        perl = TRUE
+      ),
+      "phi-2" = gsub("\\\n\\\n.*", "", response),
+      "orca-2" = response
+    )
+  )
+  
+}
+
 #' Set up for TinyLLAMA
 #' @noRd
-# Updated 27.01.2023
-setup_tinyllama <- function(prompt, device)
+# Updated 28.01.2023
+setup_tinyllama <- function(llama_index, prompt, device)
 {
 
   # Return model
@@ -286,8 +314,8 @@ setup_tinyllama <- function(prompt, device)
             "<|system|>\n", prompt,
             "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
           )
-        ), context_window = 2048, device_map = device
-      ),
+        ), device_map = device
+      ), context_window = 2048L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
@@ -296,74 +324,86 @@ setup_tinyllama <- function(prompt, device)
 
 #' Set up for LLAMA-2
 #' @noRd
-# Updated 27.01.2023
-setup_llama2 <- function(prompt, device)
+# Updated 28.01.2023
+setup_llama2 <- function(llama_index, prompt, device)
 {
 
-  # Check for {llama-cpp-python} install
-  if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
-
-    # Get operating system
-    OS <- system.check()$OS
-
-    # Check for operating system
-    if(OS == "linux"){
-
-      # Should be good to go...
-      reticulate::conda_install(
-        envname = "transforEmotion",
-        packages = "llama-cpp-python",
-        pip = TRUE
-      )
-
-    }else{
-
-      # Try it out...
-      install_try <- try(
-        reticulate::conda_install(
-          envname = "transforEmotion",
-          packages = "llama-cpp-python",
-          pip = TRUE
-        ), silent = TRUE
-      )
-
-      # Catch the error
-      if(is(install_try, "try-error")){
-
-        # Send error on how to install
-        if(OS == "windows"){
-
-          stop(
-            paste0(
-              "{llama-cpp-python} failed installation. ",
-              "Follow these instructions and try again:\n\n",
-              "https://llama-cpp-python.readthedocs.io/"
-            ), call. = FALSE
-          )
-
-        }else{ # Mac
-
-          stop(
-            paste0(
-              "{llama-cpp-python} failed installation. ",
-              "Follow these instructions and try again:\n\n",
-              "https://llama-cpp-python.readthedocs.io/"
-            ), call. = FALSE
-          )
-
-        }
-
-      }
-
-    }
-
-  }
+  # # Check for {llama-cpp-python} install
+  # if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
+  # 
+  #   # Get operating system
+  #   OS <- system.check()$OS
+  # 
+  #   # Check for operating system
+  #   if(OS == "linux"){
+  # 
+  #     # Should be good to go...
+  #     reticulate::conda_install(
+  #       envname = "transforEmotion",
+  #       packages = "llama-cpp-python",
+  #       pip = TRUE
+  #     )
+  # 
+  #   }else{
+  # 
+  #     # Try it out...
+  #     install_try <- try(
+  #       reticulate::conda_install(
+  #         envname = "transforEmotion",
+  #         packages = "llama-cpp-python",
+  #         pip = TRUE
+  #       ), silent = TRUE
+  #     )
+  # 
+  #     # Catch the error
+  #     if(is(install_try, "try-error")){
+  # 
+  #       # Send error on how to install
+  #       if(OS == "windows"){
+  # 
+  #         stop(
+  #           paste0(
+  #             "{llama-cpp-python} failed installation. ",
+  #             "Follow these instructions and try again:\n\n",
+  #             "https://llama-cpp-python.readthedocs.io/"
+  #           ), call. = FALSE
+  #         )
+  # 
+  #       }else{ # Mac
+  # 
+  #         stop(
+  #           paste0(
+  #             "{llama-cpp-python} failed installation. ",
+  #             "Follow these instructions and try again:\n\n",
+  #             "https://llama-cpp-python.readthedocs.io/"
+  #           ), call. = FALSE
+  #         )
+  # 
+  #       }
+  # 
+  #     }
+  # 
+  #   }
+  # 
+  # }
 
   # Return model
   return(
-    # Set up LLAMA-2
-    service_context <- llama_index$ServiceContext$from_defaults(
-      embed_model = "local", llm = "local", context_window = 4096
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "TheBloke/Llama-2-7b-Chat-AWQ",
+        tokenizer_name = "TheBloke/Llama-2-7b-Chat-AWQ",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|system|>\n", prompt,
+            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+          )
+        ), device_map = device,
+        generate_kwargs = list(
+          "temperature" = as.double(0.1), do_sample = TRUE
+        )
+      ), context_window = 8192L,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
 
@@ -371,8 +411,8 @@ setup_llama2 <- function(prompt, device)
 
 #' Set up for Mistral-7B
 #' @noRd
-# Updated 27.01.2023
-setup_mistral <- function(prompt, device)
+# Updated 28.01.2023
+setup_mistral <- function(llama_index, prompt, device)
 {
 
   # Return model
@@ -381,13 +421,12 @@ setup_mistral <- function(prompt, device)
       llm = llama_index$llms$HuggingFaceLLM(
         model_name = "mistralai/Mistral-7B-v0.1",
         tokenizer_name = "mistralai/Mistral-7B-v0.1",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = device
-      ), context_window = 8192,
+        device_map = device,
+        generate_kwargs = list(
+          "temperature" = as.double(0.1), do_sample = TRUE,
+          pad_token_id = 2L, eos_token_id = 2L
+        )
+      ), context_window = 8192L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
@@ -396,8 +435,8 @@ setup_mistral <- function(prompt, device)
 
 #' Set up for Orca-2
 #' @noRd
-# Updated 27.01.2023
-setup_orca2 <- function(prompt, device)
+# Updated 28.01.2023
+setup_orca2 <- function(llama_index, prompt, device)
 {
 
   # Return model
@@ -406,13 +445,11 @@ setup_orca2 <- function(prompt, device)
       llm = llama_index$llms$HuggingFaceLLM(
         model_name = "microsoft/Orca-2-7b",
         tokenizer_name = "microsoft/Orca-2-7b",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|im_start|>system\n", prompt, "<|im_end|>\n",
-            "<|im_start|>user\n{user_message}<|im_end|>\n<|im_start|>assistant"
-          )
-        ), device_map = device
-      ), context_window = 4096,
+        device_map = device,
+        generate_kwargs = list(
+          "temperature" = as.double(0.1), do_sample = TRUE
+        )
+      ), context_window = 4096L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
@@ -421,8 +458,8 @@ setup_orca2 <- function(prompt, device)
 
 #' Set up for Phi-2
 #' @noRd
-# Updated 27.01.2023
-setup_phi2 <- function(prompt, device)
+# Updated 28.01.2023
+setup_phi2 <- function(llama_index, prompt, device)
 {
 
   # Return model
@@ -431,13 +468,12 @@ setup_phi2 <- function(prompt, device)
       llm = llama_index$llms$HuggingFaceLLM(
         model_name = "microsoft/phi-2",
         tokenizer_name = "microsoft/phi-2",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = device
-      ), context_window = 2048,
+        device_map = device,
+        generate_kwargs = list(
+          "temperature" = as.double(0.1), do_sample = TRUE,
+          pad_token_id = 2L, eos_token_id = 2L
+        )
+      ), context_window = 2048L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )

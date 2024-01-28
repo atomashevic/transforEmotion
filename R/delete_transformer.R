@@ -21,7 +21,11 @@
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
 #' @examples
-#' delete_transformer()
+#' if(interactive()){
+#'   delete_transformer()
+#' }
+#' 
+#' @importFrom methods is
 #'
 #' @export
 #'
