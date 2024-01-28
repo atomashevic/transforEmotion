@@ -109,14 +109,14 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 27.01.2024
+# Updated 28.01.2024
 rag <- function(
     text = NULL, path = NULL,
     transformer = c("LLAMA-2", "Mistral-7B", "Orca-2", "Phi-2", "TinyLLAMA"),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
-      "accumulate", "compact", "refine",
-      "simple_summarize", "tree_summarize"
+      "accumulate", "compact", "no_text",
+      "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
     device = c("auto", "cpu"), keep_in_env = TRUE,
     envir = 1, progress = TRUE
@@ -192,6 +192,25 @@ rag <- function(
   # Add transformer attribute to `service_context`
   attr(service_context, which = "transformer") <- transformer
 
+  # Load into environment
+  if(isTRUE(keep_in_env)){
+
+    # Keep llama-index module in environment
+    assign(
+      x = "llama_index",
+      value = llama_index,
+      envir = as.environment(envir)
+    )
+
+    # Keep service_context in the environment
+    assign(
+      x = "service_context",
+      value = service_context,
+      envir = as.environment(envir)
+    )
+
+  }
+
   # Depending on where documents are, load them
   if(!is.null(path)){
 
@@ -219,62 +238,65 @@ rag <- function(
   )
 
   # Set up query engine
-  if(response_mode == "tree_summarize"){
-    engine <- index$as_query_engine(
-      similarity_top_k = similarity_top_k,
-      response_mode = "tree_summarize"
-    )
-  }else{
-    engine <- index$as_query_engine(response_mode = response_mode)
-  }
+  engine <- index$as_query_engine(
+    similarity_top_k = similarity_top_k,
+    response_mode = response_mode
+  )
+
+  # Send message to user
+  message("Querying...", appendLF = FALSE)
+
+  # Start time
+  start <- Sys.time()
 
   # Get query
   extracted_query <- engine$query(query)
 
-  # Load into environment
-  if(isTRUE(keep_in_env)){
+  # Stop time
+  message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
 
-    # Keep llama-index module in environment
-    assign(
-      x = "llama_index",
-      value = llama_index,
-      envir = as.environment(envir)
-    )
-
-    # Keep service_context in the environment
-    assign(
-      x = "service_context",
-      value = service_context,
-      envir = as.environment(envir)
-    )
-
-  }
-
-  # Clean-up response
-  response <- response_cleanup(
-    extracted_query$response, transformer = transformer
+  # Organize Python output
+  output <- list(
+    response = response_cleanup(
+      extracted_query$response, transformer = transformer
+    ),
+    content = content_cleanup(extracted_query$source_nodes)
   )
 
   # Set class
-  class(response) <- "rag"
+  class(output) <- "rag"
 
   # Return response
-  return(response)
+  return(output)
 
+}
+
+
+#' @noRd
+# Function to display a spinning slash
+# Updated 28.01.2024
+spin <- function() {
+  chars <- c('|', '/', '-', '\\')
+  repeat {
+    for (char in chars) {
+      cat(sprintf("\r%s", char))
+      Sys.sleep(0.1)
+    }
+  }
 }
 
 #' @exportS3Method
 # S3method 'print'
 # Updated 25.01.2024
 print.rag <- function(x, ...){
-  cat(x)
+  cat(x$response)
 }
 
 #' @exportS3Method
 # S3method 'summary'
 # Updated 25.01.2024
 summary.rag <- function(object, ...){
-  cat(object)
+  cat(object$response)
 }
 
 #' Clean up response
@@ -300,6 +322,44 @@ response_cleanup <- function(response, transformer){
       "orca-2" = response
     )
   )
+
+}
+
+#' Clean up content
+#' @noRd
+# Updated 28.01.2024
+content_cleanup <- function(content){
+
+  # Get number of documents
+  n_documents <- length(content)
+
+  # Initialize data frame
+  content_df <- matrix(
+    data = NA, nrow = n_documents, ncol = 3,
+    dimnames = list(
+      NULL, c("document", "text", "score")
+    )
+  )
+
+
+  # Loop over content
+  for(i in seq_len(n_documents)){
+
+    # Populate matrix
+    content_df[i,] <- c(
+      content[[i]]$id_, content[[i]]$text, content[[i]]$score
+    )
+
+  }
+
+  # Make it a real data frame
+  content_df <- as.data.frame(content_df)
+
+  # Set proper modes
+  content_df$score <- as.numeric(content_df$score)
+
+  # Return data frame
+  return(content_df)
 
 }
 

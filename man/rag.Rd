@@ -10,7 +10,7 @@ rag(
   transformer = c("LLAMA-2", "Mistral-7B", "Orca-2", "Phi-2", "TinyLLAMA"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
-  response_mode = c("accumulate", "compact", "refine", "simple_summarize",
+  response_mode = c("accumulate", "compact", "no_text", "refine", "simple_summarize",
     "tree_summarize"),
   similarity_top_k = 5,
   device = c("auto", "cpu"),
