@@ -150,6 +150,9 @@ rag <- function(
   if(missing(response_mode)){
     device <- "auto"
   }else{device <- match.arg(device)}
+  
+  # Set device
+  device <- auto_device(device, transformer)
 
   # Run setup for modules
   setup_modules()
