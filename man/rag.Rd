@@ -82,6 +82,12 @@ Values will vary based on number of texts but some suggested values might be:
 
 These values depend on the number and quality of texts. Adjust as necessary}
 
+\item{device}{Character.
+Whether to use CPU or GPU for inference.
+Defaults to \code{"auto"} which will use
+GPU over CPU (if CUDA-capable GPU is setup).
+Set to \code{"cpu"} to perform over CPU}
+
 \item{keep_in_env}{Boolean (length = 1).
 Whether the classifier should be kept in your global environment.
 Defaults to \code{TRUE}.

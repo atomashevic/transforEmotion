@@ -66,6 +66,12 @@
 #'
 #' These values depend on the number and quality of texts. Adjust as necessary
 #'
+#' @param device Character.
+#' Whether to use CPU or GPU for inference.
+#' Defaults to \code{"auto"} which will use
+#' GPU over CPU (if CUDA-capable GPU is setup).
+#' Set to \code{"cpu"} to perform over CPU
+#'
 #' @param keep_in_env Boolean (length = 1).
 #' Whether the classifier should be kept in your global environment.
 #' Defaults to \code{TRUE}.
@@ -243,7 +249,7 @@ rag <- function(
     )
 
   }
-  
+
   # Clean-up response
   response <- response_cleanup(
     extracted_query$response, transformer = transformer
@@ -257,28 +263,28 @@ rag <- function(
 
 }
 
-#' S3method 'print'
 #' @exportS3Method
+# S3method 'print'
 # Updated 25.01.2024
-print.rag <- function(rag_object){
-  cat(rag_object)
+print.rag <- function(x, ...){
+  cat(x)
 }
 
-#' S3method 'summary'
 #' @exportS3Method
+# S3method 'summary'
 # Updated 25.01.2024
-summary.rag <- function(rag_object){
-  cat(rag_object)
+summary.rag <- function(object, ...){
+  cat(object)
 }
 
 #' Clean up response
 #' @noRd
 # Updated 28.01.2024
 response_cleanup <- function(response, transformer){
-  
+
   # Trim whitespace first!
   response <- trimws(response)
-  
+
   # Return on switch
   return(
     switch(
@@ -286,15 +292,15 @@ response_cleanup <- function(response, transformer){
       "tinyllama" = response,
       "llama-2" = response,
       "mistral-7b" = gsub(
-        "(\\d+)", "\\\n\\1", 
-        gsub("\n---.*", "", response), 
+        "(\\d+)", "\\\n\\1",
+        gsub("\n---.*", "", response),
         perl = TRUE
       ),
       "phi-2" = gsub("\\\n\\\n.*", "", response),
       "orca-2" = response
     )
   )
-  
+
 }
 
 #' Set up for TinyLLAMA
@@ -330,22 +336,22 @@ setup_llama2 <- function(llama_index, prompt, device)
 
   # # Check for {llama-cpp-python} install
   # if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
-  # 
+  #
   #   # Get operating system
   #   OS <- system.check()$OS
-  # 
+  #
   #   # Check for operating system
   #   if(OS == "linux"){
-  # 
+  #
   #     # Should be good to go...
   #     reticulate::conda_install(
   #       envname = "transforEmotion",
   #       packages = "llama-cpp-python",
   #       pip = TRUE
   #     )
-  # 
+  #
   #   }else{
-  # 
+  #
   #     # Try it out...
   #     install_try <- try(
   #       reticulate::conda_install(
@@ -354,13 +360,13 @@ setup_llama2 <- function(llama_index, prompt, device)
   #         pip = TRUE
   #       ), silent = TRUE
   #     )
-  # 
+  #
   #     # Catch the error
   #     if(is(install_try, "try-error")){
-  # 
+  #
   #       # Send error on how to install
   #       if(OS == "windows"){
-  # 
+  #
   #         stop(
   #           paste0(
   #             "{llama-cpp-python} failed installation. ",
@@ -368,9 +374,9 @@ setup_llama2 <- function(llama_index, prompt, device)
   #             "https://llama-cpp-python.readthedocs.io/"
   #           ), call. = FALSE
   #         )
-  # 
+  #
   #       }else{ # Mac
-  # 
+  #
   #         stop(
   #           paste0(
   #             "{llama-cpp-python} failed installation. ",
@@ -378,13 +384,13 @@ setup_llama2 <- function(llama_index, prompt, device)
   #             "https://llama-cpp-python.readthedocs.io/"
   #           ), call. = FALSE
   #         )
-  # 
+  #
   #       }
-  # 
+  #
   #     }
-  # 
+  #
   #   }
-  # 
+  #
   # }
 
   # Return model
