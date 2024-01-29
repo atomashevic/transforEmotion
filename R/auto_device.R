@@ -1,6 +1,6 @@
 #' @noRd
 # Automatically detect appropriate device
-# Updated 28.01.2024
+# Updated 29.01.2024
 auto_device <- function(device, transformer)
 {
 
@@ -10,9 +10,9 @@ auto_device <- function(device, transformer)
   transformer_memory <- round(
     switch(
       transformer,
-      "tinyllama" = 5324, "llama-2" = 5798,
-      "mistral-7b" = 30018, "orca-2" = 29836,
-      "phi-2" = 13594
+      "tinyllama" = 5504, "llama-2" = 5964,
+      "mistral-7b" = 30018, "openchat-3.5" = 29238,
+      "orca-2" = 29836, "phi-2" = 13594
     ), digits = -2
   )
 

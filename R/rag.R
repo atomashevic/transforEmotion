@@ -112,7 +112,10 @@
 # Updated 28.01.2024
 rag <- function(
     text = NULL, path = NULL,
-    transformer = c("LLAMA-2", "Mistral-7B", "Orca-2", "Phi-2", "TinyLLAMA"),
+    transformer = c(
+      "LLAMA-2", "Mistral-7B", "OpenChat-3.5",
+      "Orca-2", "Phi-2", "TinyLLAMA"
+    ),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
       "accumulate", "compact", "no_text",
@@ -122,30 +125,30 @@ rag <- function(
     envir = 1, progress = TRUE
 )
 {
-
+  
   # Check that input of 'text' argument is in the appropriate format for the analysis
   non_text_warning(text) # see utils-transforEmotion.R for function
-
+  
   # Check that 'text' or 'path' are set
   if(is.null(text) & is.null(path)){
     stop("Argument 'text' or 'path' must be provided.", call. = FALSE)
   }
-
+  
   # Check for 'transformer'
   if(missing(transformer)){
     transformer <- "tinyllama"
   }else{transformer <- tolower(match.arg(transformer))}
-
+  
   # Check for 'query'
   if(missing(query)){
     stop("A 'query' must be provided")
   }
-
+  
   # Set default for 'response_mode'
   if(missing(response_mode)){
     response_mode <- "tree_summarize"
   }else{response_mode <- match.arg(response_mode)}
-
+  
   # Set default for 'device'
   if(missing(response_mode)){
     device <- "auto"
@@ -153,26 +156,26 @@ rag <- function(
 
   # Run setup for modules
   setup_modules()
-
+  
   # Check for llama_index in environment
   if(!exists("llama_index", envir = as.environment(envir))){
-
+    
     # Import 'llama-index'
     message("Importing llama-index module...")
     llama_index <- reticulate::import("llama_index")
-
+    
   }
-
+  
   # Check for service context
   if(exists("service_context", envir = as.environment(envir))){
-
+    
     # Check for service context LLM
     if(attr(service_context, which = "transformer") != transformer){
       rm(service_context, envir = as.environment(envir)); gc(verbose = FALSE)
     }
-
+    
   }
-
+  
   # Get service context
   if(!exists("service_context", envir = as.environment(envir))){
 
@@ -185,79 +188,80 @@ rag <- function(
       "tinyllama" = setup_tinyllama(llama_index, prompt, device),
       "llama-2" = setup_llama2(llama_index, prompt, device),
       "mistral-7b" = setup_mistral(llama_index, prompt, device),
+      "openchat-3.5" = setup_openchat(llama_index, prompt, device),
       "orca-2" = setup_orca2(llama_index, prompt, device),
       "phi-2" = setup_phi2(llama_index, prompt, device),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
-
+    
   }
-
+  
   # Add transformer attribute to `service_context`
   attr(service_context, which = "transformer") <- transformer
-
+  
   # Load into environment
   if(isTRUE(keep_in_env)){
-
+    
     # Keep llama-index module in environment
     assign(
       x = "llama_index",
       value = llama_index,
       envir = as.environment(envir)
     )
-
+    
     # Keep service_context in the environment
     assign(
       x = "service_context",
       value = service_context,
       envir = as.environment(envir)
     )
-
+    
   }
-
+  
   # Depending on where documents are, load them
   if(!is.null(path)){
-
+    
     # Set documents
     documents <- llama_index$SimpleDirectoryReader(path)$load_data()
-
+    
   }else if(!is.null(text)){
-
+    
     # Set documents
     documents <- lapply(
       text, function(x){
         llama_index$Document(text = x)
       }
     )
-
+    
   }
-
+  
   # Send message to user
   message("Indexing documents...")
-
+  
   # Set indices
   index <- llama_index$VectorStoreIndex(
     documents, service_context = service_context,
     show_progress = progress
   )
-
+  
   # Set up query engine
   engine <- index$as_query_engine(
     similarity_top_k = similarity_top_k,
     response_mode = response_mode
   )
-
+  
   # Send message to user
   message("Querying...", appendLF = FALSE)
-
+  
   # Start time
   start <- Sys.time()
-
+  
   # Get query
   extracted_query <- engine$query(query)
-
+  
   # Stop time
   message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
-
+  
   # Organize Python output
   output <- list(
     response = response_cleanup(
@@ -265,27 +269,13 @@ rag <- function(
     ),
     content = content_cleanup(extracted_query$source_nodes)
   )
-
+  
   # Set class
   class(output) <- "rag"
-
+  
   # Return response
   return(output)
-
-}
-
-
-#' @noRd
-# Function to display a spinning slash
-# Updated 28.01.2024
-spin <- function() {
-  chars <- c('|', '/', '-', '\\')
-  repeat {
-    for (char in chars) {
-      cat(sprintf("\r%s", char))
-      Sys.sleep(0.1)
-    }
-  }
+  
 }
 
 #' @exportS3Method
@@ -304,38 +294,39 @@ summary.rag <- function(object, ...){
 
 #' Clean up response
 #' @noRd
-# Updated 28.01.2024
+# Updated 29.01.2024
 response_cleanup <- function(response, transformer){
-
+  
   # Trim whitespace first!
   response <- trimws(response)
-
+  
   # Return on switch
   return(
     switch(
       transformer,
-      "tinyllama" = response,
       "llama-2" = response,
       "mistral-7b" = gsub(
         "(\\d+)", "\\\n\\1",
         gsub("\n---.*", "", response),
         perl = TRUE
       ),
+      "openchat-3.5" = gsub("\n---.*", "", response),
+      "orca-2" = response,
       "phi-2" = gsub("\\\n\\\n.*", "", response),
-      "orca-2" = response
+      "tinyllama" = response
     )
   )
-
+  
 }
 
 #' Clean up content
 #' @noRd
 # Updated 28.01.2024
 content_cleanup <- function(content){
-
+  
   # Get number of documents
   n_documents <- length(content)
-
+  
   # Initialize data frame
   content_df <- matrix(
     data = NA, nrow = n_documents, ncol = 3,
@@ -343,119 +334,36 @@ content_cleanup <- function(content){
       NULL, c("document", "text", "score")
     )
   )
-
-
+  
+  
   # Loop over content
   for(i in seq_len(n_documents)){
-
+    
     # Populate matrix
     content_df[i,] <- c(
       content[[i]]$id_, content[[i]]$text, content[[i]]$score
     )
-
+    
   }
-
+  
   # Make it a real data frame
   content_df <- as.data.frame(content_df)
-
+  
   # Set proper modes
   content_df$score <- as.numeric(content_df$score)
-
+  
   # Return data frame
   return(content_df)
-
-}
-
-#' Set up for TinyLLAMA
-#' @noRd
-# Updated 28.01.2023
-setup_tinyllama <- function(llama_index, prompt, device)
-{
-
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = device
-      ), context_window = 2048L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
-    )
-  )
-
+  
 }
 
 #' Set up for LLAMA-2
 #' @noRd
+# LLAMA-2 ----
 # Updated 28.01.2023
 setup_llama2 <- function(llama_index, prompt, device)
 {
-
-  # # Check for {llama-cpp-python} install
-  # if(!"llama-cpp-python" %in% reticulate::py_list_packages(envname = "transforEmotion")$package){
-  #
-  #   # Get operating system
-  #   OS <- system.check()$OS
-  #
-  #   # Check for operating system
-  #   if(OS == "linux"){
-  #
-  #     # Should be good to go...
-  #     reticulate::conda_install(
-  #       envname = "transforEmotion",
-  #       packages = "llama-cpp-python",
-  #       pip = TRUE
-  #     )
-  #
-  #   }else{
-  #
-  #     # Try it out...
-  #     install_try <- try(
-  #       reticulate::conda_install(
-  #         envname = "transforEmotion",
-  #         packages = "llama-cpp-python",
-  #         pip = TRUE
-  #       ), silent = TRUE
-  #     )
-  #
-  #     # Catch the error
-  #     if(is(install_try, "try-error")){
-  #
-  #       # Send error on how to install
-  #       if(OS == "windows"){
-  #
-  #         stop(
-  #           paste0(
-  #             "{llama-cpp-python} failed installation. ",
-  #             "Follow these instructions and try again:\n\n",
-  #             "https://llama-cpp-python.readthedocs.io/"
-  #           ), call. = FALSE
-  #         )
-  #
-  #       }else{ # Mac
-  #
-  #         stop(
-  #           paste0(
-  #             "{llama-cpp-python} failed installation. ",
-  #             "Follow these instructions and try again:\n\n",
-  #             "https://llama-cpp-python.readthedocs.io/"
-  #           ), call. = FALSE
-  #         )
-  #
-  #       }
-  #
-  #     }
-  #
-  #   }
-  #
-  # }
-
+  
   # Return model
   return(
     llama_index$ServiceContext$from_defaults(
@@ -475,15 +383,16 @@ setup_llama2 <- function(llama_index, prompt, device)
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
-
+  
 }
 
 #' Set up for Mistral-7B
 #' @noRd
+# Mistral-7B ----
 # Updated 28.01.2023
 setup_mistral <- function(llama_index, prompt, device)
 {
-
+  
   # Return model
   return(
     llama_index$ServiceContext$from_defaults(
@@ -499,15 +408,40 @@ setup_mistral <- function(llama_index, prompt, device)
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
+  
+}
 
+#' Set up for OpenChat-3.5
+#' @noRd
+# OpenChat-3.5 ----
+# Updated 28.01.2023
+setup_openchat <- function(llama_index, prompt, device)
+{
+  
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "openchat/openchat_3.5",
+        tokenizer_name = "openchat/openchat_3.5",
+        device_map = device,
+        generate_kwargs = list(
+          "temperature" = as.double(0.1), do_sample = TRUE
+        )
+      ), context_window = 8192L,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+  
 }
 
 #' Set up for Orca-2
 #' @noRd
+# Orca-2 ----
 # Updated 28.01.2023
 setup_orca2 <- function(llama_index, prompt, device)
 {
-
+  
   # Return model
   return(
     llama_index$ServiceContext$from_defaults(
@@ -522,15 +456,16 @@ setup_orca2 <- function(llama_index, prompt, device)
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
-
+  
 }
 
 #' Set up for Phi-2
 #' @noRd
+# Phi-2 ----
 # Updated 28.01.2023
 setup_phi2 <- function(llama_index, prompt, device)
 {
-
+  
   # Return model
   return(
     llama_index$ServiceContext$from_defaults(
@@ -546,6 +481,31 @@ setup_phi2 <- function(llama_index, prompt, device)
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
   )
-
+  
 }
 
+#' Set up for TinyLLAMA
+#' @noRd
+# TinyLLAMA ----
+# Updated 28.01.2023
+setup_tinyllama <- function(llama_index, prompt, device)
+{
+  
+  # Return model
+  return(
+    llama_index$ServiceContext$from_defaults(
+      llm = llama_index$llms$HuggingFaceLLM(
+        model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        query_wrapper_prompt = llama_index$PromptTemplate(
+          paste0(
+            "<|system|>\n", prompt,
+            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+          )
+        ), device_map = device
+      ), context_window = 2048L,
+      embed_model = "local:BAAI/bge-small-en-v1.5"
+    )
+  )
+  
+}
