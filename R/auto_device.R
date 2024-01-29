@@ -86,6 +86,15 @@ auto_device <- function(device, transformer)
 }
 
 #' @noRd
+# GPU memory calculate
+# Based on https://www.substratus.ai/blog/calculating-gpu-memory-for-llm
+# Updated 28.01.2024
+calculate_gpu_memory <- function(parameters, bits = 32)
+{
+  return(((parameters * 4) / (32 / bits)) * 1.2)
+}
+
+#' @noRd
 # Get GPU memory
 # Updated 28.01.2024
 get_gpu_memory <- function(torch, device_no)
