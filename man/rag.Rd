@@ -54,7 +54,7 @@ Defaults to \code{"You are an expert at extracting emotional themes across many 
 
 \item{query}{Character.
 The query you'd like to know from the documents.
-Required with no default}
+Defaults to \code{prompt} if not provided}
 
 \item{response_mode}{Character (length = 1).
 Different responses generated from the model.
@@ -122,7 +122,7 @@ text <- neo_ipip_extraversion$friendliness[1:5]
 \dontrun{
 rag(
  text = text,
- query = "What themes are prevelant across the text?",
+ query = "What themes are prevalent across the text?",
  response_mode = "tree_summarize",
  similarity_top_k = 5
 )}

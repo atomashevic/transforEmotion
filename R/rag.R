@@ -37,7 +37,7 @@
 #'
 #' @param query Character.
 #' The query you'd like to know from the documents.
-#' Required with no default
+#' Defaults to \code{prompt} if not provided
 #'
 #' @param response_mode Character (length = 1).
 #' Different responses generated from the model.
@@ -101,7 +101,7 @@
 #' \dontrun{
 #' rag(
 #'  text = text,
-#'  query = "What themes are prevelant across the text?",
+#'  query = "What themes are prevalent across the text?",
 #'  response_mode = "tree_summarize",
 #'  similarity_top_k = 5
 #')}
@@ -109,7 +109,7 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 28.01.2024
+# Updated 02.02.2024
 rag <- function(
     text = NULL, path = NULL,
     transformer = c(
@@ -142,8 +142,8 @@ rag <- function(
   }else{transformer <- tolower(match.arg(transformer))}
 
   # Check for 'query'
-  if(missing(query)){
-    stop("A 'query' must be provided")
+  if(missing(query)){ # set 'query' to 'prompt' if missing
+    query <- prompt
   }
 
   # Set default for 'response_mode'
@@ -269,7 +269,10 @@ rag <- function(
     response = response_cleanup(
       extracted_query$response, transformer = transformer
     ),
-    content = content_cleanup(extracted_query$source_nodes)
+    content = content_cleanup(extracted_query$source_nodes),
+    document_embeddings = do.call(
+      rbind, silent_call(index$vector_store$to_dict()$embedding_dict)
+    )
   )
 
   # Set class
@@ -280,24 +283,36 @@ rag <- function(
 
 }
 
+# Bug checking ----
+# text = corona_train$text; path = NULL
+# transformer = "tinyllama"
+# prompt = "You are an expert at extracting themes across many texts"
+# query = "Please extract the ten most prevalent emotions across the documents. Be concise and do not repeat emotions"
+# response_mode = "no_text"; similarity_top_k = 5
+# device = "auto"; keep_in_env = TRUE
+# envir = 1; progress = TRUE
+
 #' @exportS3Method
-# S3method 'print'
+# S3method 'print' ----
 # Updated 25.01.2024
-print.rag <- function(x, ...){
+print.rag <- function(x, ...)
+{
   cat(x$response)
 }
 
 #' @exportS3Method
-# S3method 'summary'
+# S3method 'summary' ----
 # Updated 25.01.2024
-summary.rag <- function(object, ...){
+summary.rag <- function(object, ...)
+{
   cat(object$response)
 }
 
-#' Clean up response
 #' @noRd
+# Clean up response ----
 # Updated 29.01.2024
-response_cleanup <- function(response, transformer){
+response_cleanup <- function(response, transformer)
+{
 
   # Trim whitespace first!
   response <- trimws(response)
@@ -321,13 +336,58 @@ response_cleanup <- function(response, transformer){
 
 }
 
-#' Clean up content
 #' @noRd
+# Clean up content ----
 # Updated 28.01.2024
-content_cleanup <- function(content){
+content_cleanup <- function(content)
+{
 
   # Get number of documents
   n_documents <- length(content)
+
+  # Initialize data frame
+  content_df <- matrix(
+    data = NA, nrow = n_documents, ncol = 3,
+    dimnames = list(
+      NULL, c("document", "text", "score")
+    )
+  )
+
+  # Loop over content
+  for(i in seq_len(n_documents)){
+
+    # Populate matrix
+    content_df[i,] <- c(
+      content[[i]]$id_, content[[i]]$text, content[[i]]$score
+    )
+
+  }
+
+  # Make it a real data frame
+  content_df <- as.data.frame(content_df)
+
+  # Set proper modes
+  content_df$score <- as.numeric(content_df$score)
+
+  # Return data frame
+  return(content_df)
+
+}
+
+#' @noRd
+# Get document embedding ----
+# Updated 28.01.2024
+get_embedding <- function(index, output)
+{
+
+  # Loop across documents
+  embedding <- do.call(cbind, lapply(output$content$document, index$vector_store$get))
+
+
+
+
+
+
 
   # Initialize data frame
   content_df <- matrix(
@@ -359,7 +419,6 @@ content_cleanup <- function(content){
 
 }
 
-#' Set up for LLAMA-2
 #' @noRd
 # LLAMA-2 ----
 # Updated 28.01.2023
@@ -388,7 +447,6 @@ setup_llama2 <- function(llama_index, prompt, device)
 
 }
 
-#' Set up for Mistral-7B
 #' @noRd
 # Mistral-7B ----
 # Updated 28.01.2023
@@ -413,7 +471,6 @@ setup_mistral <- function(llama_index, prompt, device)
 
 }
 
-#' Set up for OpenChat-3.5
 #' @noRd
 # OpenChat-3.5 ----
 # Updated 28.01.2023
@@ -437,7 +494,6 @@ setup_openchat <- function(llama_index, prompt, device)
 
 }
 
-#' Set up for Orca-2
 #' @noRd
 # Orca-2 ----
 # Updated 28.01.2023
@@ -461,7 +517,6 @@ setup_orca2 <- function(llama_index, prompt, device)
 
 }
 
-#' Set up for Phi-2
 #' @noRd
 # Phi-2 ----
 # Updated 28.01.2023
@@ -486,7 +541,6 @@ setup_phi2 <- function(llama_index, prompt, device)
 
 }
 
-#' Set up for TinyLLAMA
 #' @noRd
 # TinyLLAMA ----
 # Updated 28.01.2023
