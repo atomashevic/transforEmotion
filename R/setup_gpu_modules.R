@@ -1,6 +1,6 @@
-#' Install Necessary Python Modules
+#' Install GPU Python Modules
 #'
-#' @description Installs modules for the {transforEmotion} conda environment
+#' @description Installs GPU modules for the {transforEmotion} conda environment
 #'
 #' @details Installs modules for miniconda using \code{\link[reticulate]{conda_install}}
 #'
@@ -8,18 +8,14 @@
 #'
 #' @export
 #'
-# Install modules
+# Install GPU modules
 # Updated 03.02.2024
-setup_modules <- function()
+setup_gpu_modules <- function()
 {
 
   # Set necessary modules
   modules <- c(
-    "accelerate", "llama-index", "nltk",
-    "opencv-python", "pandas", "pypdf",
-    "pytube", "pytz", "qdrant-client",
-    "sentencepiece", "tensorflow", "torch",
-    "torchaudio", "torchvision", "transformers"
+    "autoawq"
   )
 
   # Determine whether any modules need to be installed
