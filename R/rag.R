@@ -383,12 +383,6 @@ get_embedding <- function(index, output)
   # Loop across documents
   embedding <- do.call(cbind, lapply(output$content$document, index$vector_store$get))
 
-
-
-
-
-
-
   # Initialize data frame
   content_df <- matrix(
     data = NA, nrow = n_documents, ncol = 3,
@@ -396,7 +390,6 @@ get_embedding <- function(index, output)
       NULL, c("document", "text", "score")
     )
   )
-
 
   # Loop over content
   for(i in seq_len(n_documents)){
@@ -421,16 +414,77 @@ get_embedding <- function(index, output)
 
 #' @noRd
 # LLAMA-2 ----
-# Updated 28.01.2023
+# Updated 06.02.2024
 setup_llama2 <- function(llama_index, prompt, device)
 {
 
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
+  # Check for device
+  if(grepl("cuda", device)){
+
+    # Try to setup GPU modules
+    output <- try(setup_gpu_modules(), silent = TRUE)
+
+    # If error, then switch to "cpu"
+    if(is(device, "try-error")){
+      device <- "cpu"
+    }
+
+  }
+
+  # If GPU possible, try different models
+  if(grepl("cuda", device)){
+
+    # Order of models to try
+    MODEL <- c("GPTQ", "AWQ")
+
+    # Loop over and try
+    for(model in MODEL){
+
+      # Set up model
+      model_name <- paste0("TheBloke/Llama-2-7B-Chat-", model)
+
+      # Try to get and load model
+      load_model <- try(
+        llama_index$ServiceContext$from_defaults(
+          llm = llama_index$llms$HuggingFaceLLM(
+            model_name = model_name,
+            tokenizer_name = model_name,
+            query_wrapper_prompt = llama_index$PromptTemplate(
+              paste0(
+                "<|system|>\n", prompt,
+                "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+              )
+            ), device_map = device,
+            generate_kwargs = list(
+              temperature = as.double(0.1), do_sample = TRUE
+            )
+          ), context_window = 8192L,
+          embed_model = "local:BAAI/bge-small-en-v1.5"
+        ), silent = TRUE
+      )
+
+      # Check if load model failed
+      if(is(load_model, "try-error")){
+        delete_transformer(gsub("/", "--",  model_name), TRUE)
+      }else{ # Successful load, break out of loop
+        break
+      }
+
+    }
+
+    # If by the end, still failing, switch to CPU
+    if(is(load_model, "try-error")){
+      device <- "cpu"
+    }
+
+  }
+
+  # Use CPU model
+  if(device == "cpu"){
+    load_model <- llama_index$ServiceContext$from_defaults(
       llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "TheBloke/Llama-2-7b-Chat-AWQ",
-        tokenizer_name = "TheBloke/Llama-2-7b-Chat-AWQ",
+        model_name = "TheBloke/Llama-2-7B-Chat-fp16",
+        tokenizer_name = "TheBloke/Llama-2-7B-Chat-fp16",
         query_wrapper_prompt = llama_index$PromptTemplate(
           paste0(
             "<|system|>\n", prompt,
@@ -438,18 +492,21 @@ setup_llama2 <- function(llama_index, prompt, device)
           )
         ), device_map = device,
         generate_kwargs = list(
-          "temperature" = as.double(0.1), do_sample = TRUE
+          temperature = as.double(0.1), do_sample = TRUE
         )
       ), context_window = 8192L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )
-  )
+  }
+
+  # Return model
+  return(load_model)
 
 }
 
 #' @noRd
 # Mistral-7B ----
-# Updated 28.01.2023
+# Updated 28.01.2024
 setup_mistral <- function(llama_index, prompt, device)
 {
 
@@ -461,7 +518,7 @@ setup_mistral <- function(llama_index, prompt, device)
         tokenizer_name = "mistralai/Mistral-7B-v0.1",
         device_map = device,
         generate_kwargs = list(
-          "temperature" = as.double(0.1), do_sample = TRUE,
+          temperature = as.double(0.1), do_sample = TRUE,
           pad_token_id = 2L, eos_token_id = 2L
         )
       ), context_window = 8192L,
@@ -473,7 +530,7 @@ setup_mistral <- function(llama_index, prompt, device)
 
 #' @noRd
 # OpenChat-3.5 ----
-# Updated 28.01.2023
+# Updated 28.01.2024
 setup_openchat <- function(llama_index, prompt, device)
 {
 
@@ -485,7 +542,7 @@ setup_openchat <- function(llama_index, prompt, device)
         tokenizer_name = "openchat/openchat_3.5",
         device_map = device,
         generate_kwargs = list(
-          "temperature" = as.double(0.1), do_sample = TRUE
+          temperature = as.double(0.1), do_sample = TRUE
         )
       ), context_window = 8192L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
@@ -496,7 +553,7 @@ setup_openchat <- function(llama_index, prompt, device)
 
 #' @noRd
 # Orca-2 ----
-# Updated 28.01.2023
+# Updated 28.01.2024
 setup_orca2 <- function(llama_index, prompt, device)
 {
 
@@ -508,7 +565,7 @@ setup_orca2 <- function(llama_index, prompt, device)
         tokenizer_name = "microsoft/Orca-2-7b",
         device_map = device,
         generate_kwargs = list(
-          "temperature" = as.double(0.1), do_sample = TRUE
+          temperature = as.double(0.1), do_sample = TRUE
         )
       ), context_window = 4096L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
@@ -519,7 +576,7 @@ setup_orca2 <- function(llama_index, prompt, device)
 
 #' @noRd
 # Phi-2 ----
-# Updated 28.01.2023
+# Updated 28.01.2024
 setup_phi2 <- function(llama_index, prompt, device)
 {
 
@@ -531,7 +588,7 @@ setup_phi2 <- function(llama_index, prompt, device)
         tokenizer_name = "microsoft/phi-2",
         device_map = device,
         generate_kwargs = list(
-          "temperature" = as.double(0.1), do_sample = TRUE,
+          temperature = as.double(0.1), do_sample = TRUE,
           pad_token_id = 2L, eos_token_id = 2L
         )
       ), context_window = 2048L,
@@ -543,7 +600,7 @@ setup_phi2 <- function(llama_index, prompt, device)
 
 #' @noRd
 # TinyLLAMA ----
-# Updated 28.01.2023
+# Updated 28.01.2024
 setup_tinyllama <- function(llama_index, prompt, device)
 {
 

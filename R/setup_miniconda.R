@@ -22,22 +22,22 @@ conda_check <- function(){
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'         Aleksandar Tomašević <atomashevic@gmail.com>
-#' 
+#'
 #' @export
 #'
 # Install miniconda
 # Updated 15.11.2023
 setup_miniconda <- function()
 {
-  
+
   # Install miniconda
   path_to_miniconda <- try(
     install_miniconda(),
     silent = TRUE
   )
-  
-  if(any(class(path_to_miniconda) != "try-error")){   
-  message("\nTo uninstall miniconda, use `reticulate::miniconda_uninstall()`")
+
+  if(any(class(path_to_miniconda) != "try-error")){
+    message("\nTo uninstall miniconda, use `reticulate::miniconda_uninstall()`")
   }
 
   # Create transformEmotion enviroment if it doesn't exist
@@ -52,7 +52,7 @@ setup_miniconda <- function()
   # Activate the environment
 
   reticulate::use_condaenv("transforEmotion", required = TRUE)
-  
+
   print("Installing missing Python libraries...")
     setup_modules()
 }

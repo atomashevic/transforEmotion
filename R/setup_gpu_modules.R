@@ -9,14 +9,19 @@
 #' @export
 #'
 # Install GPU modules
-# Updated 03.02.2024
+# Updated 06.02.2024
 setup_gpu_modules <- function()
 {
 
   # Set necessary modules
   modules <- c(
-    "autoawq"
+    "autoawq", "auto-gptq", "optimum"
   )
+
+  # Check for Linux
+  if(system.check()$OS == "linux"){
+    modules <- c(modules, "llama-cpp-python")
+  }
 
   # Determine whether any modules need to be installed
   installed_modules <- reticulate::py_list_packages(envname = "transforEmotion")

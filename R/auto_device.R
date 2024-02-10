@@ -1,19 +1,17 @@
 #' @noRd
 # Automatically detect appropriate device
-# Updated 29.01.2024
+# Updated 06.02.2024
 auto_device <- function(device, transformer)
 {
 
   # Set transformer memory (MB)
-  # Numbers derived from overall memory usage on Alex's 1x A6000
-  # Single run of `rag` with each model using 3800 tweets
-  transformer_memory <- round(
-    switch(
-      transformer,
-      "tinyllama" = 5504, "llama-2" = 5964,
-      "mistral-7b" = 30018, "openchat-3.5" = 29238,
-      "orca-2" = 29836, "phi-2" = 13594
-    ), digits = -2
+  # Assume GPU and 16-bit unless otherwise noted
+  transformer_memory <- switch(
+    transformer,
+    "tinyllama" = 2640, "llama-2" = 4200, # supported by 4-bit
+    "mistral-7b" = 16800, "openchat-3.5" = 16800,
+    "orca-2" = 33600, # supported by 32-bit
+    "phi-2" = 6480
   )
 
   # First, check for "auto"
