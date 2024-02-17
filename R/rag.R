@@ -109,7 +109,7 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 02.02.2024
+# Updated 17.02.2024
 rag <- function(
     text = NULL, path = NULL,
     transformer = c(
@@ -164,7 +164,19 @@ rag <- function(
 
     # Import 'llama-index'
     message("Importing llama-index module...")
-    llama_index <- reticulate::import("llama_index")
+
+    # Determine if 'llama-index-legacy' exists
+    if("llama-index-legacy" %in% reticulate::py_list_packages()$package){
+
+      # {llama-index} >= 0.10.5
+      llama_index <- reticulate::import("llama_index.legacy")
+
+    }else{
+
+      # {llama-index} < 0.10.5
+      llama_index <- reticulate::import("llama_index")
+
+    }
 
   }
 
@@ -284,7 +296,8 @@ rag <- function(
 }
 
 # Bug checking ----
-# text = corona_train$text; path = NULL
+# data(neo_ipip_extraversion)
+# text = neo_ipip_extraversion$friendliness[1:5]; path = NULL
 # transformer = "tinyllama"
 # prompt = "You are an expert at extracting themes across many texts"
 # query = "Please extract the ten most prevalent emotions across the documents. Be concise and do not repeat emotions"
