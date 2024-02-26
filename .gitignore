@@ -52,3 +52,6 @@ rsconnect/
 .vscode/
 /doc/
 /Meta/
+
+# Notes folder
+/notes/
