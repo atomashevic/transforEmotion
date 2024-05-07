@@ -19,7 +19,6 @@ setup_modules <- function()
     "opencv-python", "pandas==2.1.3", "pypdf==4.0.1",
     "pytube==15.0.0", "pytz==2024.1", "qdrant-client==1.8.2",
     "sentencepiece==0.2.0", "tensorflow==2.14.1", "torch==2.1.1",
-    # "torchaudio", "torchvision",
     "transformers==4.35.0"
   )
 

@@ -123,7 +123,7 @@ Path can be either local or an URL. Here's an example of using a URL of Mona Lis
 ```R
 
 # Image URL or local filepath
-image <- "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Leonardo_da_Vinci_-_Mona_Lisa.jpg/401px-Leonardo_da_Vinci_-_Mona_Lisa.jpg"
+image <- 'https://cdn.mos.cms.futurecdn.net/xRqbwS4odpkSQscn3jHECh-650-80.jpg'
 
 # Array of emotion labels
 emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")

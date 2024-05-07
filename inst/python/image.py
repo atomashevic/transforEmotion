@@ -84,7 +84,7 @@ def get_text_embeds(labels):
     processor_openai
     model_openai
   except NameError:
-    print("Loading OpenAI CLIP model ... \n This may take a minute.")
+    print("Loading OpenAI CLIP model ...")
     processor_openai = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
     model_openai = AutoModel.from_pretrained("openai/clip-vit-base-patch32")
   text_inputs_openai = processor_openai(text=labels, return_tensors='pt', padding=True)
