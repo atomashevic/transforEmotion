@@ -15,8 +15,10 @@ setup_gpu_modules <- function()
 
   # Set necessary modules
   modules <- c(
-    "autoawq", "auto-gptq", "optimum"
+    "autoawq==0.2.5", "auto-gptq==0.7.1", "optimum==1.19.1"
   )
+
+# TODO freeze versions of modules to their current versions
 
   # Check for Linux
   if(system.check()$OS == "linux"){

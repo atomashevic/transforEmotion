@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 from pytube import YouTube
 from transformers import AutoProcessor, AutoModel
-import torch
-from torch import nn
-import torchvision.models as models
-from torchvision import transforms
+# import torch
+# from torch import nn
+# import torchvision.models as models
+# from torchvision import transforms
 import torch.nn.functional as F
-from PIL import Image
+# from PIL import Image
 import time
 
 
