@@ -51,6 +51,10 @@ After loading package **for the first time**, you need to setup the Python virtu
 setup_miniconda()
 ```
 
+> [!WARNING]
+> If you using [radian](https://github.com/randy3k/radian) console in VSCode or in a terminal emulator, you won't be able to set up the transforEmotion package. Radian is written in Python and (in most cases) already runs in your default Python environment. This prevents transforEmotion package from setting up the new virtual environment and installing the correct versions of necessary Python packages. Switch to default R console and everything should work fine.
+
+
 ## Text Example
 
 Next load some data with text for analysis. The example below uses item descriptions from the personality trait extraversion in the NEO-PI-R inventory found on the [IPIP](https://ipip.ori.org/newNEOFacetsKey.htm) website.
