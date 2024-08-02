@@ -9,7 +9,7 @@
 #' @export
 #'
 # Install modules
-# Updated 03.02.2024
+# Updated 02.08.2024
 setup_modules <- function()
 {
 
@@ -18,8 +18,8 @@ setup_modules <- function()
     "accelerate==0.29.3", "llama-index==0.10.30", "nltk==3.8.1",
     "opencv-python", "pandas==2.1.3", "pypdf==4.0.1",
     "pytube==15.0.0", "pytz==2024.1", "qdrant-client==1.8.2",
-    "sentencepiece==0.2.0", "tensorflow==2.14.1", "torch==2.1.1",
-    "transformers==4.35.0"
+    "sentencepiece==0.2.0", "sentence-transformers==2.7.0",
+    "tensorflow==2.14.1", "torch==2.1.1", "transformers==4.35.0"
   )
 
   # Determine whether any modules need to be installed

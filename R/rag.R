@@ -121,7 +121,7 @@ rag <- function(
       "accumulate", "compact", "no_text",
       "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
-    device = c("auto", "cpu"), keep_in_env = TRUE,
+    device = c("auto", "cpu", "cuda"), keep_in_env = TRUE,
     envir = 1, progress = TRUE
 )
 {

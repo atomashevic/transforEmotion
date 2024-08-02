@@ -141,7 +141,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 23.01.2024
+# Updated 02.08.2024
 transformer_scores <- function(
   text, classes, multiple_classes = FALSE,
   transformer = c(
@@ -149,7 +149,7 @@ transformer_scores <- function(
     "cross-encoder-distilroberta",
     "facebook-bart"
   ),
-  device = c("auto", "cpu"),
+  device = c("auto", "cpu", "cuda"),
   preprocess = FALSE, keep_in_env = TRUE, envir = 1
 )
 {
@@ -221,7 +221,7 @@ transformer_scores <- function(
       )
 
       # Errors
-      if(any(class(pipeline_catch) == "try-error")){
+      if(is(pipeline_catch, "try-error")){
 
         # Model exists but no pipeline
         if(isTRUE(grepl("Tokenizer class", pipeline_catch))){
@@ -233,6 +233,15 @@ transformer_scores <- function(
               "' exists but does not have a working pipeline yet.\n\nTry a default model or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n",
               sep = ""
             ), call. = FALSE
+          )
+
+        }else if(isTRUE(grepl("device_map", pipeline_catch))){
+
+          # Try again without device
+          pipeline_catch <- try(
+            classifier <- transformers$pipeline(
+              "zero-shot-classification", model = transformer
+            ), silent = TRUE
           )
 
         }else{

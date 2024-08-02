@@ -1,3 +1,10 @@
+# Changes in version 0.1.6
+
+o ADD: `sentence_similarity` to apply {sentence-transformers} to get similarity between texts
+
+o FIX: error in `transformer_scores` when the argument 'device_map' does not exist (solution: ignore device)
+
+
 # Changes in version 0.1.5
 
 o ADD: basic retrieval-augmented generation in the `rag` function (includes LLAMA-2, Mistral-7B, Orca-2, Phi-2, TinyLLAMA)

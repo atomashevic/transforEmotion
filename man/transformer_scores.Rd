@@ -10,7 +10,7 @@ transformer_scores(
   multiple_classes = FALSE,
   transformer = c("cross-encoder-roberta", "cross-encoder-distilroberta",
     "facebook-bart"),
-  device = c("auto", "cpu"),
+  device = c("auto", "cpu", "cuda"),
   preprocess = FALSE,
   keep_in_env = TRUE,
   envir = 1
