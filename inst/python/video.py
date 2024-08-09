@@ -4,14 +4,9 @@ import math
 import cv2 
 import numpy as np
 import pandas as pd
-from pytube import YouTube
+from pytubefix import YouTube #19 Fixed pytube issue
 from transformers import AutoProcessor, AutoModel
-# import torch
-# from torch import nn
-# import torchvision.models as models
-# from torchvision import transforms
 import torch.nn.functional as F
-# from PIL import Image
 import time
 
 
