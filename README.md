@@ -1,4 +1,4 @@
-### CRAN 0.1.4 | GitHub 0.1.5
+### CRAN 0.1.5 | GitHub 0.1.5
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) 
 
@@ -118,6 +118,31 @@ transformer_scores(
  ),
  transformer = "typeform/distilbert-base-uncased-mnli"
 )
+```
+
+## RAG 
+
+The `rag` function  is designed to enhance text generation using Retrieval-Augmented Generation (RAG) techniques. This function allows users to input text data or specify a path to local PDF files, which are then used to retrieve relevant documents.
+
+The rag function supports various large language models (LLMs), including TinyLLAMA, LLAMA-2, Mistral-7B, Orca-2, and Phi-2, each offering different levels of computational efficiency and quality. The default model is TinyLLAMA, which is the fastest model.
+
+Here's an example based on the decription of this package. First, we specify the text data.
+
+```R
+text <- "With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python. Implements sentiment analysis using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines. The default pipeline for text is [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). All other zero-shot classification model pipelines can be implemented using their model name from https://huggingface.co/models?pipeline_tag=zero-shot-classification." 
+```
+
+And then we run the `rag` function.
+
+```R
+ rag(text, query = "What is the use case for transforEmotion package?"
++ )
+```
+
+This code will provide the output similar to this one.
+
+```
+The use case for transforEmotion package is to use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, without the need for a GPU, subscriptions, paid services, or using Python. This package implements sentiment analysis using the Cross-Encoder's DistilRoBERTa model trained on the Stanford Natural Language Inference (SNLI) and MultiNLI datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). The transforEmotion package can be used to implement these models and other zero-shot classification model pipelines from the HuggingFace library.> 
 ```
 
 ## Image Example
