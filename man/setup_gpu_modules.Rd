@@ -7,7 +7,7 @@
 setup_gpu_modules()
 }
 \description{
-Installs GPU modules for the {transforEmotion} conda environment
+Installs GPU modules for the \{transforEmotion\} conda environment
 }
 \details{
 Installs modules for miniconda using \code{\link[reticulate]{conda_install}}

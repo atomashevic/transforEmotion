@@ -1,6 +1,6 @@
 #' Retrieval-augmented Generation (RAG)
 #'
-#' @description Performs retrieval-augmented generation using {llama-index}
+#' @description Performs retrieval-augmented generation \{llama-index\}
 #'
 #' Currently limited to the TinyLLAMA model
 #'
@@ -19,7 +19,7 @@
 #'
 #' \describe{
 #'
-#' \item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the {llama-cpp-python} module. Currently, we do not provide support for Mac and Windows users}
+#' \item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the \{llama-cpp-python\} module. Currently, we do not provide support for Mac and Windows users}
 #'
 #' \item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
 #'
@@ -395,6 +395,13 @@ get_embedding <- function(index, output)
 
   # Loop across documents
   embedding <- do.call(cbind, lapply(output$content$document, index$vector_store$get))
+
+### AT: Content and n_documents are not defined within the function
+### temp fix for CRAN checks, August 20 2024
+  # content
+  content <- output$content
+  # n_documents
+  n_documents <- nrow(content)
 
   # Initialize data frame
   content_df <- matrix(

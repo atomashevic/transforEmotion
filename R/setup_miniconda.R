@@ -21,7 +21,7 @@ conda_check <- function(){
 #' @details Installs miniconda using \code{\link[reticulate]{install_miniconda}} and activates the transforEmotion environment using \code{\link[reticulate]{use_condaenv}}. If the transforEmotion environment does not exist, it will be created using \code{\link[reticulate]{conda_create}}.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
-#'         Aleksandar Tomašević <atomashevic@gmail.com>
+#'         Aleksandar Tomasevic <atomashevic@gmail.com>
 #'
 #' @export
 #'

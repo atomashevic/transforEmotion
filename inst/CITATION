@@ -1,17 +1,18 @@
 citHeader("To cite transforEmotion in publications use:")
 
 bibentry(
-	bibtype	= "manual",
-	key	= "transforEmotion",
-	title	= "transforEmotion: Sentiment analysis for text, image and video using transformer models",
-	author	= c(person("Christensen,", "Alexander P"),
-		    person("Golino,", "Hudson"),
-				person("Tomasević","Aleksandar")),
-	year	= "2024",
-	note    = "R package version 0.1.4",
-
-  textVersion  =
-  paste0("Christensen, A. P., Golino, H., Tomašević, A. (2024). ",
-        "transforEmotion: Sentiment analysis for text, image and video using transformer models.",
-	"R package version 0.1.4.")
+  bibtype = "Article",
+  key = "tomasevic2024decodi",
+  title = "Decoding emotion dynamics in videos using dynamic Exploratory Graph Analysis and zero-shot image classification: A simulation and tutorial using the transforEmotion R package",
+  author = c(
+    person("Aleksandar", "Tomasevic"),
+    person("Hudson", "Golino"),
+    person("Alexander P", "Christensen")
+  ),
+  journal = "PsyArXiv",
+  year = 2024,
+  url = "https://osf.io/preprints/psyarxiv/hf3g7",
+  keywords = "at",
+  doi = "10.31234/osf.io/hf3g7",
+  language = "en"
 )

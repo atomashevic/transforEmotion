@@ -17,7 +17,7 @@
 #'
 #' @return A result object containing the analyzed video scores.
 #'
-#' @author Aleksandar Tomašević <atomashevic@gmail.com>
+#' @author Aleksandar Tomasevic <atomashevic@gmail.com>
 #' @import reticulate
 #'
 #' @export

@@ -1,6 +1,6 @@
 #' Install Necessary Python Modules
 #'
-#' @description Installs modules for the {transforEmotion} conda environment
+#' @description Installs modules for the \{transforEmotion\} conda environment
 #'
 #' @details Installs modules for miniconda using \code{\link[reticulate]{conda_install}}
 #'

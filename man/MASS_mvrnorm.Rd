@@ -4,14 +4,7 @@
 \alias{MASS_mvrnorm}
 \title{Multivariate Normal (Gaussian) Distribution}
 \usage{
-MASS_mvrnorm(
-  n = 1,
-  mu,
-  Sigma,
-  tol = 0.000001,
-  empirical = FALSE,
-  EISPACK = FALSE
-)
+MASS_mvrnorm(n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISPACK = FALSE)
 }
 \arguments{
 \item{n}{Numeric integer.

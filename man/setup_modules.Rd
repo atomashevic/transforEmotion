@@ -7,7 +7,7 @@
 setup_modules()
 }
 \description{
-Installs modules for the {transforEmotion} conda environment
+Installs modules for the \{transforEmotion\} conda environment
 }
 \details{
 Installs modules for miniconda using \code{\link[reticulate]{conda_install}}

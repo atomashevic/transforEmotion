@@ -1,6 +1,6 @@
 #' Install GPU Python Modules
 #'
-#' @description Installs GPU modules for the {transforEmotion} conda environment
+#' @description Installs GPU modules for the \{transforEmotion\} conda environment
 #'
 #' @details Installs modules for miniconda using \code{\link[reticulate]{conda_install}}
 #'

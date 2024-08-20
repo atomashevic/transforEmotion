@@ -36,7 +36,7 @@ Available models include:
 
 \describe{
 
-\item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the {llama-cpp-python} module. Currently, we do not provide support for Mac and Windows users}
+\item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the \{llama-cpp-python\} module. Currently, we do not provide support for Mac and Windows users}
 
 \item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
 
@@ -108,7 +108,7 @@ Defaults to \code{TRUE}}
 Returns response from TinyLLAMA
 }
 \description{
-Performs retrieval-augmented generation using {llama-index}
+Performs retrieval-augmented generation \{llama-index\}
 
 Currently limited to the TinyLLAMA model
 }
