@@ -388,51 +388,6 @@ content_cleanup <- function(content)
 }
 
 #' @noRd
-# Get document embedding ----
-# Updated 28.01.2024
-get_embedding <- function(index, output)
-{
-
-  # Loop across documents
-  embedding <- do.call(cbind, lapply(output$content$document, index$vector_store$get))
-
-### AT: Content and n_documents are not defined within the function
-### temp fix for CRAN checks, August 20 2024
-  # content
-  content <- output$content
-  # n_documents
-  n_documents <- nrow(content)
-
-  # Initialize data frame
-  content_df <- matrix(
-    data = NA, nrow = n_documents, ncol = 3,
-    dimnames = list(
-      NULL, c("document", "text", "score")
-    )
-  )
-
-  # Loop over content
-  for(i in seq_len(n_documents)){
-
-    # Populate matrix
-    content_df[i,] <- c(
-      content[[i]]$id_, content[[i]]$text, content[[i]]$score
-    )
-
-  }
-
-  # Make it a real data frame
-  content_df <- as.data.frame(content_df)
-
-  # Set proper modes
-  content_df$score <- as.numeric(content_df$score)
-
-  # Return data frame
-  return(content_df)
-
-}
-
-#' @noRd
 # LLAMA-2 ----
 # Updated 06.02.2024
 setup_llama2 <- function(llama_index, prompt, device)

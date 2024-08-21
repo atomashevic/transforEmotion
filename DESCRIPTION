@@ -1,7 +1,7 @@
 Package: transforEmotion
 Title: Sentiment Analysis for Text, Image and Video using Transformer Models
-Version: 0.1.5
-Date: 2024-08-02
+Version: 0.1.6
+Date: 2024-08-21
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com",
               role = "aut", comment = c(ORCID = "0000-0002-9798-7037")),
 	           person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut",
