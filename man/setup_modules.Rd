@@ -7,10 +7,10 @@
 setup_modules()
 }
 \description{
-Installs modules for the \{transforEmotion\} conda environment
+Installs modules for the \{transforEmotion\} conda environment.
 }
 \details{
-Installs modules for miniconda using \code{\link[reticulate]{conda_install}}
+This function installs the required Python modules for the \{transforEmotion\} conda environment using \code{\link[reticulate]{conda_install}}. Ensure that miniconda is installed and properly configured before running this function.
 }
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>
