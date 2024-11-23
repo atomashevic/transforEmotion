@@ -42,12 +42,7 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
           install-ghostscript: true          
-# to fix the issue with qpdf
-      - name: Update Homebrew
-        run: brew update
 
-      - name: Install qpdf
-        run: brew install qpdf
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
