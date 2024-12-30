@@ -15,7 +15,7 @@ communications research in situations where privacy and confidentiality is param
 
 ## Call for papers
 
-Overview 
+Overview
 
 Generative AI (GenAI) is revolutionizing the communication landscape, enabling machines to generate diverse forms of content such as text, audio, and multimedia. These advances hold immense potential for reshaping how we understand media, as they facilitate faster, more personalized, and scalable content production. However, they also raise significant questions about the ethical implications, accuracy, and societal impacts of machine-generated content. As a result, human-machine communication is emerging as a critical area of inquiry that explores how humans interact with AI-generated content, how GenAI tools can be harnessed to achieve desired societal outcomes, and how these systems shape broader communication ecosystems.
 
@@ -82,70 +82,57 @@ Contribution to Social Science Research (up to 400 words): Outline how the propo
 -  Expected publication of final articles: November 2025
 
 
-## Proposed Research
+## **Proposed Research**
 
-**Title**: *transforEmotion: An Open-Source R Package for Emotion Analysis Using Transformer-Based Generative AI Models*
+*transforEmotion: An Open-Source R Package for Emotion Analysis Using Transformer-Based Generative AI Models*
 
-**Type of Submission**: Software Demonstration Article
+Type of Submission: Software Demonstration Article
 
 ---
 
-**Abstract**
+This software demonstration article introduces *transforEmotion*, an open-source R package designed to facilitate emotion analysis in communication research using state-of-the-art transformer-based generative AI models. Leveraging the HuggingFace *transformers* library in Python, *transforEmotion* provides an accessible interface for sentiment analysis, facial expression recognition, and retrieval-augmented generation (RAG) within the R environment. The package aims to empower communication scientists by allowing them to perform multilingual, multi-label emotion analysis without the need for expensive hardware or paid APIs.
 
-This software demonstration article introduces **`transforEmotion`**, an open-source R package designed to facilitate emotion analysis in communication research using state-of-the-art **transformer-based** generative AI models. Leveraging the HuggingFace `transformers` library in Python, `transforEmotion` provides an accessible interface for sentiment analysis, facial expression recognition, and retrieval-augmented generation (RAG) within the R environment. The package aims to empower communication scientists by allowing them to perform complex natural language processing (NLP) and computer vision tasks locally on standard CPUs, without the need for expensive hardware or proprietary software.
-
-**Problem Statement**
+*Problem Statement*
 
 In the era of Generative AI (GenAI), communication researchers face challenges in analyzing the vast amounts of multimedia data generated across various platforms. Traditional tools often require significant computational resources or advanced programming skills, creating barriers for researchers aiming to incorporate AI-driven methods into their work. There is a pressing need for accessible, open-source tools that utilize transformer models to perform sophisticated analyses while ensuring data privacy and reproducibility.
 
-**Software Description**
+*Software Description*
 
-`transforEmotion` addresses these challenges by integrating powerful transformer-based AI models into a user-friendly R package. The key functionalities include:
+transforEmotion addresses these challenges by integrating powerful text and image/video transformer-based AI models into a user-friendly R package. The core aim is to provide robust, flexible, and multilingual emotion analysis for communication researchers:
 
-1. **Sentiment Analysis**: Utilizing pre-trained transformer models, the package can analyze textual data to compute emotion scores across various categories. Functions like `transformer_scores()` enable researchers to quantify emotional content in text, aiding in the analysis of social media posts, news articles, and other communication mediums.
+1. Multilingual text classification and sentiment analysis. The package supports textual emotion detection using any transformer model available at HuggingFace (nli-distilroberta-base, bart-large-mnli, etc.), enabling zero-shot classification across an arbitrary set of emotion labels. These labels can be specified in different languages, making the approach highly versatile for cross-cultural research and comparative studies.
+2. Facial expression recognition (FER) in images and videos. For visual content, transforEmotion offers integration with OpenAI’s CLIP (ViT-L/14), BAAI’s EVA-CLIP-18B, and Jina AI’s Jina-CLIP-v2, allowing the user to annotate images or video frames against any custom-defined set of emotion labels. Notably, the Jina AI’s Jina-CLIP-v2 model demonstrates superior performance in non-English contexts, making it an excellent choice for international research projects requiring accurate emotion detection in diverse linguistic settings.
+3. Zero-shot ;earning and arbitrary label sets: By harnessing the zero-shot capabilities of these generative AI models, transforEmotion frees researchers from collecting extensive labeled training data for every new study. Users can define an unlimited range of emotion labels (including non-English terms), apply them to both textual and visual content, and generate results without the need for further fine-tuning. This allows exploration of specialized emotional nuances beyond the conventional “happy/sad/angry” categories.
+4. Retrieval-augmented generation (RAG): The package’s rag() function enhances qualitative analyses by producing context-aware, AI-generated insights. When a user inputs a query and relevant documents, the system retrieves key evidence from the text corpus and uses generative transformer models to produce a synthesized response. This aligns with the broader trajectory of GenAI in automating knowledge extraction for communication and media studies.
 
-2. **Facial Expression Recognition**: The package processes video files to extract frames and analyze facial expressions using transformer-based computer vision models. The `video_scores()` function leverages models such as OpenAI's CLIP (ViT-L/14), BAAI's EVA-CLIP-18B, and Jina AI's Jina-CLIP-v2 to calculate emotion scores from visual data, supporting studies on non-verbal communication and media effects. Notably, Jina-CLIP-v2 extends capabilities beyond English, enabling analysis in multiple languages.
+*Functionality Demonstration*
 
-3. **Zero-Shot Learning and Arbitrary Label Sets**: By harnessing the zero-shot capabilities of transformer models, `transforEmotion` allows researchers to test and analyze emotions using an arbitrary set of labels without the need for additional training data. In our application, we utilize 11 emotion labels, demonstrating the flexibility to adapt to various research needs.
+We demonstrate the package's capabilities using the Multi-modal Affective Facial Expression in the Wild (MAFW) dataset [(Liu et al., 2022\)](https://paperpile.com/c/r9vrc4/NQmX), a large-scale, multi-modal database designed for dynamic facial expression recognition. MAFW comprises over 10,000 video clips sourced from diverse cultural and thematic backgrounds, encompassing various genres such as drama, comedy, and interviews. The dataset includes 11 single-expression categories and 32 compound-expression classes, each annotated multiple times to ensure reliability. By applying transforEmotion to this dataset, we showcase how researchers can perform comprehensive emotion analysis across different media formats and languages.
 
-4. **Retrieval-Augmented Generation (RAG)**: Incorporating RAG techniques, the `rag()` function enables users to generate context-aware responses based on input queries and relevant documents. This feature enhances qualitative analyses by providing AI-generated insights grounded in specific textual data.
+* Video Analysis: Two videos representing "happy" and "angry" emotions were processed. The video\_scores() function extracted frames and computed mean emotion scores for specified labels. The analysis successfully identified the predominant emotions, with the "happy" video showing the highest mean score for "happy" and the "angry" video for "angry."
+* Textual Description Analysis: The associated video descriptions were analyzed, and the textual analysis mirrored the video results, with the "happy" description yielding a high score for "happy" and the "angry" description showing elevated scores for "angry," "contemptuous," and "anxious."
+* RAG Application: We generated AI-driven interpretations of the emotional expressions based on the video descriptions and a specific query. The model provided coherent responses that aligned with the actual emotional content of the videos.
 
-**Functionality Demonstration**
+The transforEmotion package is available on CRAN and on GitHub under an open-source license, promoting transparency and collaboration. Comprehensive documentation, including tutorials and examples, is provided to facilitate adoption and encourage contributions from the research community.
 
-The `transforEmotion` package offers a streamlined workflow for emotion analysis, integrating video and text data processing with advanced AI capabilities. The workflow begins with video analysis, where the `video_scores()` function processes video files to extract frames and compute emotion scores using transformer-based models. This step allows for the analysis of non-verbal communication and facial expressions across diverse emotional and cultural contexts. Concurrently, the package performs text sentiment analysis on the annotated descriptions of the videos, which are written in neutral language. This analysis provides insights into the emotional nuances conveyed through text, enhancing the understanding of the video's content. Furthermore, the package forms RAG queries using these neutral descriptions, enabling the generation of AI-driven interpretations and context-aware responses. By integrating these workflows, `transforEmotion` provides a comprehensive toolkit for emotion analysis in communication research, offering flexibility in handling multi-modal data and applicability to various research contexts without requiring extensive computational resources.
+## **Timeline and Milestones**
 
-**Code Availability**
+* By January 31, 2025: Complete the drafting of the full software demonstration article, incorporating feedback from the extended abstract and refining analyses, including demonstrations with multiple transformer models and multilingual capabilities.
+* February – March 2025: Conduct additional validation studies and user testing to strengthen the software's reliability and usability across different models and languages.
+* By March 31, 2025: Submit the full manuscript for peer review.
 
-The `transforEmotion` package is available on GitHub under an open-source license, promoting transparency and collaboration. Comprehensive documentation, including tutorials and examples, is provided to facilitate adoption and encourage contributions from the research community.
+## **Contribution to Social Science Research**
 
----
+The transforEmotion package substantially contributes to social science research by lowering the barriers to integrating advanced transformer-based AI methodologies into communication studies. Its accessible interface allows researchers without extensive programming backgrounds to perform sophisticated emotion analysis on textual and visual data, including multilingual content. By leveraging models capable of zero-shot learning and handling arbitrary label sets, the package provides flexibility and adaptability for various research contexts.
 
-## Timeline and Milestones
+The inclusion of multiple CLIP models, such as OpenAI's CLIP, BAAI's EVA- CLIP-18B, and Jina AI's Jina-CLIP-v2, enhances the package's capabilities, enabling analysis beyond English and supporting cross-cultural studies. This fosters a more inclusive approach to communication research, accommodating diverse linguistic and cultural backgrounds.
 
-- **By January 31, 2025**: Complete the drafting of the full software demonstration article, incorporating feedback from the extended abstract and refining analyses, including demonstrations with multiple transformer models and multilingual capabilities.
-- **February – March 2025**: Conduct additional validation studies and user testing to strengthen the software's reliability and usability across different models and languages.
-- **By March 31, 2025**: Submit the full manuscript for peer review, addressing all guidelines specified by the journal.
-- **April 2025**: Revise the manuscript based on peer review feedback and prepare for final submission.
-- **By April 30, 2025**: Finalize and submit the revised manuscript for publication.
+By facilitating local inference on standard hardware, transforEmotion ensures data privacy and aligns with ethical research practices, particularly important when handling sensitive or confidential communication data. No files are being transfered to the remote server, researchers retain complete control over their information. The ability to utilize zero-shot learning with arbitrary label sets empowers researchers to tailor their analyses to specific emotions or constructs of interest, without the need for extensive model retraining. This flexibility supports innovative research designs and contributes to the advancement of emotion analysis methodologies.
 
----
+Moreover, transforEmotion supports reproducible and open science. By providing open-source code and comprehensive documentation, it encourages transparency and allows other researchers to validate, replicate, or build upon the work. This aligns with the broader goals of computational communication research to enhance methodological rigor and fosters a collaborative community focused on advancing the understanding of communication phenomena in the age of generative AI.
 
-## Contribution to Social Science Research
+In summary, transforEmotion serves as a valuable tool that enhances research capabilities, supports ethical standards, and contributes to the theoretical and practical advancement of computational communication research, particularly in the utilization of transformer-based models for emotion analysis.
 
-The `transforEmotion` package substantially contributes to social science research by lowering the barriers to integrating advanced transformer-based AI methodologies into communication studies. Its accessible interface allows researchers without extensive programming backgrounds to perform sophisticated emotion analysis on textual and visual data, including multilingual content. By leveraging models capable of zero-shot learning and handling arbitrary label sets, the package provides flexibility and adaptability for various research contexts.
+## **References**
 
-The inclusion of multiple transformer models, such as OpenAI's CLIP, BAAI's EVA-CLIP-18B, and Jina AI's Jina-CLIP-v2, enhances the package's capabilities, enabling analysis beyond English and supporting cross-cultural studies. This fosters a more inclusive approach to communication research, accommodating diverse linguistic and cultural backgrounds.
-
-By facilitating local computation on standard hardware, `transforEmotion` ensures data privacy and aligns with ethical research practices, particularly important when handling sensitive or confidential communication data.
-
-The package promotes interdisciplinary collaboration by bridging computational methods and communication theory, allowing researchers to explore new dimensions of human-machine communication, media influence, and audience engagement.
-
-The ability to utilize zero-shot learning with arbitrary label sets empowers researchers to tailor their analyses to specific emotions or constructs of interest, without the need for extensive model retraining. This flexibility supports innovative research designs and contributes to the advancement of emotion analysis methodologies.
-
-Moreover, `transforEmotion` supports reproducible and open science. By providing open-source code and comprehensive documentation, it encourages transparency and allows other researchers to validate, replicate, or build upon the work. This aligns with the broader goals of computational communication research to enhance methodological rigor and fosters a collaborative community focused on advancing the understanding of communication phenomena in the age of GenAI.
-
-In summary, `transforEmotion` serves as a valuable tool that enhances research capabilities, supports ethical standards, and contributes to the theoretical and practical advancement of computational communication research, particularly in the utilization of transformer-based models for emotion analysis.
-
----
-
-
+[Liu, Y., Dai, W., Feng, C., Wang, W., Yin, G., Zeng, J., & Shan, S. (2022, October 10). MAFW: A large-scale, multi-modal, compound affective database for dynamic facial expression recognition in the wild. *Proceedings of the 30th ACM International Conference on Multimedia*. MM ’22: The 30th ACM International Conference on Multimedia, Lisboa Portugal. https://doi.org/](http://paperpile.com/b/r9vrc4/NQmX)[10.1145/3503161.3548190](http://dx.doi.org/10.1145/3503161.3548190)
