@@ -1,6 +1,6 @@
-#' Run FER on YouTube video
+#' Run FER on a YouTube video using a Hugging Face CLIP model
 #'
-#' This function retrieves FER scores a specific number of frames extracted from YouTube video. It uses Python libraries for facial recognition and emotion detection in text, images, and videos.
+#' This function retrieves facial expression recognition (FER) scores from a specific number of frames extracted from a YouTube video using a specified Hugging Face CLIP model. It utilizes Python libraries for facial recognition and emotion detection in text, images, and video.
 #'
 #' @param video The URL of the YouTube video to analyze.
 #' @param classes A character vector specifying the classes to analyze.
