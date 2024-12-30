@@ -23,8 +23,10 @@
 #' @export
 #
 
-video_scores <- function(video, classes, nframes=100,
-                         face_selection = "largest", start = 0, end = -1, uniform = FALSE, ffreq = 15, save_video = FALSE, save_frames = FALSE, save_dir = "temp/", video_name = "temp"){
+video_scores <- function(video, classes, nframes = 100, face_selection = "largest",
+                         start = 0, end = -1, uniform = FALSE, ffreq = 15,
+                         save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
+                         video_name = "temp", model = "openai/clip-vit-large-patch14") {
   if (!conda_check()){
       stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
     
@@ -47,7 +49,11 @@ video_scores <- function(video, classes, nframes=100,
     stop("Classes must have at least 2 elements.")
   }
 
-  # check if face_selection is valid
+  # Check if model is valid
+  valid_models <- c("openai/clip-vit-large-patch14", "BAAI/EVA-CLIP-14B", "jinaai/jina-clip-v2")
+  if (!model %in% valid_models) {
+    stop(paste("Invalid model specified. Allowed models are:", paste(valid_models, collapse = ", ")))
+  }
   if(!face_selection %in% c("largest", "left", "right")){
     stop("Argument face_selection must be one of: largest, left, right")
   }
@@ -67,7 +73,7 @@ video_scores <- function(video, classes, nframes=100,
   }
   
   result = reticulate::py$yt_analyze(url = video, nframes = nframes, labels = classes,
-             side= face_selection, start = start, end = end, uniform = uniform, ff = ffreq, frame_dir = save_dir, video_name = video_name)
+             side = face_selection, start = start, end = end, uniform = uniform, ff = ffreq, frame_dir = save_dir, video_name = video_name, model_name = model)
 
   if (!save_video & grepl("youtu", video)){
     file.remove(paste0(save_dir, video_name, ".mp4"))

@@ -16,7 +16,7 @@
 #' @export
 
 
-image_scores <- function(image, classes, face_selection = "largest"){
+image_scores <- function(image, classes, face_selection = "largest", model = "openai/clip-vit-large-patch14") {
   if (!conda_check()){
       stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
     
@@ -50,14 +50,13 @@ image_scores <- function(image, classes, face_selection = "largest"){
   if(!face_selection %in% c("largest", "left", "right")){
     stop("Argument face_selection must be one of: largest, left, right")
   }
-  # if(!exists("text_embeds_openai", envir = .GlobalEnv)){
-  #   print("Downloading and preparing OpenAI CLIP text embeddings...")
-  #   text_embeds_openai <<- get_text_embeds(labels = classes)
-  # }
-  # if (! "model_openai" %in% py$globals()) {
-  #    print("Downloading and preparing OpenAI CLIP model and generating text embeddings. \n Please be patient, this may take a while...")
-  # }
-  result <- reticulate::py$classify_openai(image = image, labels = classes, face = face_selection)
+  # Check if model is valid
+  valid_models <- c("openai/clip-vit-large-patch14", "BAAI/EVA-CLIP-14B", "jinaai/jina-clip-v2")
+  if (!model %in% valid_models) {
+    stop(paste("Invalid model specified. Allowed models are:", paste(valid_models, collapse = ", ")))
+  }
+  
+  result <- reticulate::py$classify_image(image = image, labels = classes, face = face_selection, model_name = model)
   result <- as.data.frame(result)
   return(result)
 }
