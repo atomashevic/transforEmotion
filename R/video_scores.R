@@ -14,6 +14,10 @@
 #' @param save_frames Logical indicating whether to save the analyzed frames. Default is FALSE.
 #' @param save_dir The directory to save the analyzed frames. Default is "temp/".
 #' @param video_name The name of the analyzed video. Default is "temp".
+#' @param model A string specifying the Hugging Face CLIP model to use. Options are:
+#'   - `"openai/clip-vit-large-patch14"` (default)
+#'   - `"BAAI/EVA-CLIP-14B"`
+#'   - `"jinaai/jina-clip-v2"`
 #'
 #' @return A result object containing the analyzed video scores.
 #'

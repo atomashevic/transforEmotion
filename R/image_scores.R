@@ -1,6 +1,6 @@
-#' Calculate image scores based on OpenAI CLIP model
+#' Calculate image scores using a Hugging Face CLIP model
 #'
-#' This function takes an image file and a vector of classes as input and calculates the scores for each class using the OpenAI CLIP model.
+#' This function takes an image file and a vector of classes as input and calculates the scores for each class using a specified Hugging Face CLIP model.
 #' Primary use of the function is to calculate FER scores - Facial Expession Detectection of emotions based on detected facial expression in images. In case there are more than one face in the image, the function will return the scores of the face selected using the face_selection parameter.
 #' If there is no face in the image, the function will return NA for all classes.
 #' Function uses reticulate to call the Python functions in the image.py file. If you run this package/function for the first time it will take some time for the package to setup a functioning Python virtual enviroment in the background. This includes installing Python libraries for facial recognition and emotion detection in text, images and video. Please be patient.
@@ -8,6 +8,10 @@
 #' @param image The path to the image file or URL of the image.
 #' @param classes A character vector of classes to classify the image into.
 #' @param face_selection The method to select the face in the image. Can be "largest" or "left" or "right". Default is "largest" and will select the largest face in the image. "left" and "right" will select the face on the far left or the far right side of the image. Face_selection method is irrelevant if there is only one face in the image.
+#' @param model A string specifying the Hugging Face CLIP model to use. Options are:
+#'   - `"openai/clip-vit-large-patch14"` (default)
+#'   - `"BAAI/EVA-CLIP-14B"`
+#'   - `"jinaai/jina-clip-v2"`
 #' @return A data frame containing the scores for each class.
 #'
 #' @author Aleksandar Tomasevic <atomashevic@gmail.com>
