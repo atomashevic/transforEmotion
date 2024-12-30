@@ -120,9 +120,9 @@ We demonstrate the package's capabilities using the **Multi-modal Affective Faci
 
   - **Video Analysis Workflow**: Describe how the `video_scores()` function is used to process video files from the MAFW dataset. Explain that the function extracts frames and computes emotion scores for specified labels using transformer-based models. Emphasize the ability to analyze non-verbal communication and facial expressions across different emotions and cultural contexts.
 
-  - **Textual Description Analysis Workflow**: Explain that the annotated descriptions accompanying each video, written in emotionally neutral language, are analyzed using text sentiment analysis functions like `transformer_scores()`. Highlight how this process quantifies the emotional content conveyed in the neutral descriptions.
+  - **Textual Description Analysis Workflow**: The package analyzes the neutral language descriptions accompanying each video to compute emotion scores, providing insights into the emotional nuances conveyed through text.
 
-  - **RAG Query Formation and Application**: Detail how the `rag()` function is utilized to generate context-aware responses based on the neutral language descriptions. Emphasize that RAG queries are formed using these descriptions, allowing researchers to obtain AI-generated insights grounded in the specific content of the videos.
+  - **RAG Query Formation and Application**: By forming RAG queries based on the neutral annotated descriptions, researchers can generate AI-driven interpretations and context-aware responses relevant to the video's content.
 
 - **Integration of Workflows**:
 
