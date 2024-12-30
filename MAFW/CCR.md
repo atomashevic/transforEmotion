@@ -118,9 +118,9 @@ We demonstrate the package's capabilities using the **Multi-modal Affective Faci
 
 - **Video Analysis**: Two videos representing "happy" and "angry" emotions were processed. The `video_scores()` function extracted frames and computed mean emotion scores for specified labels. The analysis successfully identified the predominant emotions, with the "happy" video showing the highest mean score for "happy" and the "angry" video for "angry."
 
-- **Textual Description Analysis**: The associated video descriptions were analyzed using `transformer_scores()`. The textual analysis mirrored the video results, with the "happy" description yielding a high score for "happy" and the "angry" description showing elevated scores for "angry," "contemptuous," and "anxious."
+- **Textual Description Analysis**: The associated video descriptions were analyzed, and the textual analysis mirrored the video results, with the "happy" description yielding a high score for "happy" and the "angry" description showing elevated scores for "angry," "contemptuous," and "anxious."
 
-- **RAG Application**: Using the `rag()` function, we generated AI-driven interpretations of the emotional expressions based on the video descriptions and a specific query. The model provided coherent responses that aligned with the actual emotional content of the videos.
+- **RAG Application**: We generated AI-driven interpretations of the emotional expressions based on the video descriptions and a specific query. The model provided coherent responses that aligned with the actual emotional content of the videos.
 
 **Code Availability**
 
