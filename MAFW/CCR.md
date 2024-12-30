@@ -116,11 +116,19 @@ In the era of Generative AI (GenAI), communication researchers face challenges i
 
 We demonstrate the package's capabilities using the **Multi-modal Affective Facial Expression in the Wild (MAFW)** dataset, a large-scale, multi-modal database designed for dynamic facial expression recognition. MAFW comprises over 10,000 video clips sourced from diverse cultural and thematic backgrounds, encompassing various genres such as drama, comedy, and interviews. The dataset includes 11 single-expression categories and 32 compound-expression classes, each annotated multiple times to ensure reliability. Rich annotations accompany each clip, including expression distribution vectors, bilingual emotional descriptions, facial landmarks, and gender information. By applying `transforEmotion` to this dataset, we showcase how researchers can perform comprehensive emotion analysis across different media formats and languages.
 
-- **Video Analysis**: Two videos representing "happy" and "angry" emotions were processed. The `video_scores()` function extracted frames and computed mean emotion scores for specified labels. The analysis successfully identified the predominant emotions, with the "happy" video showing the highest mean score for "happy" and the "angry" video for "angry."
+- **Workflow Overview**:
 
-- **Textual Description Analysis**: The associated video descriptions were analyzed, and the textual analysis mirrored the video results, with the "happy" description yielding a high score for "happy" and the "angry" description showing elevated scores for "angry," "contemptuous," and "anxious."
+  - **Video Analysis Workflow**: Describe how the `video_scores()` function is used to process video files from the MAFW dataset. Explain that the function extracts frames and computes emotion scores for specified labels using transformer-based models. Emphasize the ability to analyze non-verbal communication and facial expressions across different emotions and cultural contexts.
 
-- **RAG Application**: We generated AI-driven interpretations of the emotional expressions based on the video descriptions and a specific query. The model provided coherent responses that aligned with the actual emotional content of the videos.
+  - **Textual Description Analysis Workflow**: Explain that the annotated descriptions accompanying each video, written in emotionally neutral language, are analyzed using text sentiment analysis functions like `transformer_scores()`. Highlight how this process quantifies the emotional content conveyed in the neutral descriptions.
+
+  - **RAG Query Formation and Application**: Detail how the `rag()` function is utilized to generate context-aware responses based on the neutral language descriptions. Emphasize that RAG queries are formed using these descriptions, allowing researchers to obtain AI-generated insights grounded in the specific content of the videos.
+
+- **Integration of Workflows**:
+
+  - Explain how combining the video analysis, textual sentiment analysis, and RAG functionalities provides a comprehensive toolkit for emotion analysis in communication research.
+
+  - Highlight the flexibility of the package in handling multi-modal data and its applicability to various research contexts without requiring extensive computational resources.
 
 **Code Availability**
 
