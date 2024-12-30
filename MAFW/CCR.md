@@ -84,8 +84,66 @@ Contribution to Social Science Research (up to 400 words): Outline how the propo
 
 ## Proposed Research
 
+**Title**: *transforEmotion: An Open-Source R Package for Emotion Analysis Using Generative AI Models*
+
+**Type of Submission**: Software Demonstration Article
+
+---
+
+**Abstract**
+
+This software demonstration article introduces **`transforEmotion`**, an open-source R package designed to facilitate emotion analysis in communication research using state-of-the-art generative AI models. Leveraging the HuggingFace `transformers` library in Python, `transforEmotion` provides an accessible interface for sentiment analysis, facial expression recognition, and retrieval-augmented generation (RAG) within the R environment. The package aims to empower communication scientists by allowing them to perform complex natural language processing (NLP) and computer vision tasks locally on standard CPUs, without the need for expensive hardware or proprietary software.
+
+**Problem Statement**
+
+In the era of Generative AI (GenAI), communication researchers face challenges in analyzing the vast amounts of multimedia data generated across various platforms. Traditional tools often require significant computational resources or advanced programming skills, creating barriers for researchers aiming to incorporate AI-driven methods into their work. There is a pressing need for accessible, open-source tools that can perform sophisticated analyses while ensuring data privacy and reproducibility.
+
+**Software Description**
+
+`transforEmotion` addresses these challenges by integrating powerful AI models into a user-friendly R package. The key functionalities include:
+
+1. **Sentiment Analysis**: Utilizing pre-trained transformer models, the package can analyze textual data to compute emotion scores across various categories. Functions like `transformer_scores()` enable researchers to quantify emotional content in text, aiding in the analysis of social media posts, news articles, and other communication mediums.
+
+2. **Facial Expression Recognition**: The package processes video files to extract frames and analyze facial expressions using computer vision techniques. The `video_scores()` function leverages models like OpenAI's CLIP to calculate emotion scores from facial cues in videos, supporting studies on non-verbal communication and media effects.
+
+3. **Retrieval-Augmented Generation (RAG)**: Incorporating RAG techniques, the `rag()` function allows users to generate context-aware responses based on input queries and relevant documents. This feature enhances qualitative analyses by providing AI-generated insights that are grounded in specific textual data.
+
+**Functionality Demonstration**
+
+Using the MAFW (Multi-modal Affective Face Warehouse) dataset, which comprises short videos annotated with dominant emotions and neutral descriptions, we demonstrate the package's capabilities through a detailed analysis:
+
+- **Video Analysis**: Two videos representing "happy" and "angry" emotions were processed. The `video_scores()` function extracted frames and computed mean emotion scores for specified labels. The analysis successfully identified the predominant emotions, with the "happy" video showing the highest mean score for "happy" and the "angry" video for "angry."
+
+- **Textual Description Analysis**: The associated video descriptions were analyzed using `transformer_scores()`. The textual analysis mirrored the video results, with the "happy" description yielding a high score for "happy" and the "angry" description showing elevated scores for "angry," "contemptuous," and "anxious."
+
+- **RAG Application**: Using the `rag()` function, we generated AI-driven interpretations of the emotional expressions based on the video descriptions and a specific query. The model provided coherent responses that aligned with the actual emotional content of the videos.
+
+**Code Availability**
+
+The `transforEmotion` package is available on GitHub under an open-source license, promoting transparency and collaboration. Comprehensive documentation, including tutorials and examples, is provided to facilitate adoption and encourage contributions from the research community.
+
+---
+
 ## Timeline and Milestones
 
+- **By January 31, 2025**: Complete the drafting of the full software demonstration article, incorporating feedback from the extended abstract and refining analyses.
+- **February – March 2025**: Conduct additional validation studies and user testing to strengthen the software's reliability and usability.
+- **By March 31, 2025**: Submit the full manuscript for peer review, addressing all guidelines specified by the journal.
+- **April 2025**: Revise the manuscript based on peer review feedback and prepare for final submission.
+- **By April 30, 2025**: Finalize and submit the revised manuscript for publication.
+
+---
+
 ## Contribution to Social Science Research
+
+The `transforEmotion` package substantially contributes to social science research by lowering the barriers to integrating advanced AI methodologies into communication studies. Its accessible interface allows researchers without extensive programming backgrounds to perform sophisticated emotion analysis on textual and visual data. By facilitating local computation on standard hardware, the package ensures data privacy and aligns with ethical research practices, particularly important when handling sensitive or confidential communication data.
+
+The package promotes interdisciplinary collaboration by bridging computational methods and communication theory. Researchers can explore new dimensions of human-machine communication, media influence, and audience engagement by analyzing emotional expressions across different media formats. The RAG functionality introduces innovative ways to generate context-aware insights, enabling more nuanced qualitative analyses.
+
+Moreover, `transforEmotion` supports reproducible and open science. By providing open-source code and comprehensive documentation, it encourages transparency and allows other researchers to validate, replicate, or build upon the work. This aligns with the broader goals of computational communication research to enhance methodological rigor and fosters a collaborative community focused on advancing the understanding of communication phenomena in the age of GenAI.
+
+In summary, `transforEmotion` serves as a valuable tool that enhances research capabilities, supports ethical standards, and contributes to the theoretical and practical advancement of computational communication research.
+
+---
 
 
