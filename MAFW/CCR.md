@@ -92,11 +92,11 @@ Contribution to Social Science Research (up to 400 words): Outline how the propo
 
 **Abstract**
 
-This software demonstration article introduces **`transforEmotion`**, an open-source R package designed to facilitate emotion analysis in communication research using state-of-the-art generative AI models. Leveraging the HuggingFace `transformers` library in Python, `transforEmotion` provides an accessible interface for sentiment analysis, facial expression recognition, and retrieval-augmented generation (RAG) within the R environment. The package aims to empower communication scientists by allowing them to perform complex natural language processing (NLP) and computer vision tasks locally on standard CPUs, without the need for expensive hardware or proprietary software.
+This software demonstration article introduces **`transforEmotion`**, an open-source R package designed to facilitate emotion analysis in communication research using state-of-the-art **transformer-based** generative AI models. Leveraging the HuggingFace `transformers` library in Python, `transforEmotion` provides an accessible interface for sentiment analysis, facial expression recognition, and retrieval-augmented generation (RAG) within the R environment. The package aims to empower communication scientists by allowing them to perform complex natural language processing (NLP) and computer vision tasks locally on standard CPUs, without the need for expensive hardware or proprietary software.
 
 **Problem Statement**
 
-In the era of Generative AI (GenAI), communication researchers face challenges in analyzing the vast amounts of multimedia data generated across various platforms. Traditional tools often require significant computational resources or advanced programming skills, creating barriers for researchers aiming to incorporate AI-driven methods into their work. There is a pressing need for accessible, open-source tools that can perform sophisticated analyses while ensuring data privacy and reproducibility.
+In the era of Generative AI (GenAI), communication researchers face challenges in analyzing the vast amounts of multimedia data generated across various platforms. Traditional tools often require significant computational resources or advanced programming skills, creating barriers for researchers aiming to incorporate AI-driven methods into their work. There is a pressing need for accessible, open-source tools that utilize transformer models to perform sophisticated analyses while ensuring data privacy and reproducibility.
 
 **Software Description**
 
