@@ -1,6 +1,7 @@
 library(transforEmotion)
 
-# Define input files and labels
+source("hello.R")
+hello()
 cat("\n=== INITIALIZATION ===\n")
 video_h <- "MAFW/data/00024.mp4"
 video_a <- "MAFW/data/00123.mp4"
