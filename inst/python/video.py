@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pytubefix import YouTube #19 Fixed pytube issue
 from transformers import AutoProcessor, AutoModel
+from image import classify_image
 import torch.nn.functional as F
 import time
 

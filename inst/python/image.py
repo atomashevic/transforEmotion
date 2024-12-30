@@ -88,7 +88,7 @@ def get_text_embeds(labels, model_name):
     processor = AutoProcessor.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name)
     model_dict[model_name] = {'processor': processor, 'model': model}
-  except NameError:
+  else:
     processor = model_dict[model_name]['processor']
     model = model_dict[model_name]['model']
   
