@@ -112,23 +112,7 @@ In the era of Generative AI (GenAI), communication researchers face challenges i
 
 **Functionality Demonstration**
 
-**MAFW Dataset Application**
-
-We demonstrate the package's capabilities using the **Multi-modal Affective Facial Expression in the Wild (MAFW)** dataset, a large-scale, multi-modal database designed for dynamic facial expression recognition. MAFW comprises over 10,000 video clips sourced from diverse cultural and thematic backgrounds, encompassing various genres such as drama, comedy, and interviews. The dataset includes 11 single-expression categories and 32 compound-expression classes, each annotated multiple times to ensure reliability. Rich annotations accompany each clip, including expression distribution vectors, bilingual emotional descriptions, facial landmarks, and gender information. By applying `transforEmotion` to this dataset, we showcase how researchers can perform comprehensive emotion analysis across different media formats and languages.
-
-- **Workflow Overview**:
-
-  - **Video Analysis Workflow**: Describe how the `video_scores()` function is used to process video files from the MAFW dataset. Explain that the function extracts frames and computes emotion scores for specified labels using transformer-based models. Emphasize the ability to analyze non-verbal communication and facial expressions across different emotions and cultural contexts.
-
-  - **Textual Description Analysis Workflow**: The package analyzes the neutral language descriptions accompanying each video to compute emotion scores, providing insights into the emotional nuances conveyed through text.
-
-  - **RAG Query Formation and Application**: By forming RAG queries based on the neutral annotated descriptions, researchers can generate AI-driven interpretations and context-aware responses relevant to the video's content.
-
-- **Integration of Workflows**:
-
-  - Explain how combining the video analysis, textual sentiment analysis, and RAG functionalities provides a comprehensive toolkit for emotion analysis in communication research.
-
-  - Highlight the flexibility of the package in handling multi-modal data and its applicability to various research contexts without requiring extensive computational resources.
+The `transforEmotion` package offers a streamlined workflow for emotion analysis, integrating video and text data processing with advanced AI capabilities. The workflow begins with video analysis, where the `video_scores()` function processes video files to extract frames and compute emotion scores using transformer-based models. This step allows for the analysis of non-verbal communication and facial expressions across diverse emotional and cultural contexts. Concurrently, the package performs text sentiment analysis on the annotated descriptions of the videos, which are written in neutral language. This analysis provides insights into the emotional nuances conveyed through text, enhancing the understanding of the video's content. Furthermore, the package forms RAG queries using these neutral descriptions, enabling the generation of AI-driven interpretations and context-aware responses. By integrating these workflows, `transforEmotion` provides a comprehensive toolkit for emotion analysis in communication research, offering flexibility in handling multi-modal data and applicability to various research contexts without requiring extensive computational resources.
 
 **Code Availability**
 
