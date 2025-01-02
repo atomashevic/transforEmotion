@@ -116,10 +116,7 @@ def get_text_embeds(labels, model_name):
             else:
                 tokenizer = model_dict[model_path]['tokenizer']
                 model = model_dict[model_path]['model']
-            text_inputs = tokenizer(["a photo of a person showing " + label.lower() for label in labels], 
-                                  return_tensors='pt', 
-                                  padding=True, 
-                                  truncation=True)
+            text_inputs = tokenizer(labels, return_tensors='pt', padding=True, truncation=True)
         elif model_name == "eva-8B":
             model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True) 
             text_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
