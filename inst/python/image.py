@@ -108,10 +108,15 @@ def get_text_embeds(labels, model_name):
     
     try:
         if model_name == "jina-v2":
-            # Use specific tokenizer for jina-v2
-            model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True)
-            text_tokenizer = CLIPTokenizer.from_pretrained("jinaai/jina-clip-v2")
-            text_inputs = text_tokenizer(labels, return_tensors='pt', padding=True, truncation=True)
+            if model_path not in model_dict:
+                print(f"Loading model {model_path} from HuggingFace...")
+                processor = CLIPProcessor.from_pretrained(model_path)
+                model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True)
+                model_dict[model_path] = {'processor': processor, 'model': model}
+            else:
+                processor = model_dict[model_path]['processor']
+                model = model_dict[model_path]['model']
+            text_inputs = processor(text=labels, return_tensors='pt', padding=True)
         elif model_name == "eva-8B":
             model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True) 
             text_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
