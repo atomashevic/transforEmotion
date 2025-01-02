@@ -58,3 +58,9 @@ rsconnect/
 
 # Playground folder
 /playground/
+.aider*
+.env
+
+# MAFW folder
+
+/MAFW/

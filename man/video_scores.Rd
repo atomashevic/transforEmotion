@@ -2,7 +2,7 @@
 % Please edit documentation in R/video_scores.R
 \name{video_scores}
 \alias{video_scores}
-\title{Run FER on YouTube video}
+\title{Run FER on a YouTube video using a Hugging Face CLIP model}
 \usage{
 video_scores(
   video,
@@ -16,7 +16,8 @@ video_scores(
   save_video = FALSE,
   save_frames = FALSE,
   save_dir = "temp/",
-  video_name = "temp"
+  video_name = "temp",
+  model = "openai/clip-vit-large-patch14"
 )
 }
 \arguments{
@@ -43,12 +44,17 @@ video_scores(
 \item{save_dir}{The directory to save the analyzed frames. Default is "temp/".}
 
 \item{video_name}{The name of the analyzed video. Default is "temp".}
+
+\item{model}{A string specifying the Hugging Face CLIP model to use. Options are:
+- `"openai/clip-vit-large-patch14"` (default)
+- `"BAAI/EVA-CLIP-14B"`
+- `"jinaai/jina-clip-v2"`}
 }
 \value{
 A result object containing the analyzed video scores.
 }
 \description{
-This function retrieves FER scores a specific number of frames extracted from YouTube video. It uses Python libraries for facial recognition and emotion detection in text, images, and videos.
+This function retrieves facial expression recognition (FER) scores from a specific number of frames extracted from a YouTube video using a specified Hugging Face CLIP model. It utilizes Python libraries for facial recognition and emotion detection in text, images, and video.
 }
 \author{
 Aleksandar Tomasevic <atomashevic@gmail.com>
