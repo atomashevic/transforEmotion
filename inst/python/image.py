@@ -2,7 +2,7 @@ import os
 import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import numpy as np
-from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer, AutoModel
 import torch
 import requests
 import cv2
@@ -87,7 +87,10 @@ def classify_image(image, labels, face, model_name="oai-base"):
                 else:
                     processor = model_dict[model_path]['processor']
                     model = model_dict[model_path]['model']
-                image_inputs = processor(images=image, return_tensors='pt')
+                if model_name == "jina-v2":
+                    image_embeds = model.encode_image(image)
+                else:
+                    image_inputs = processor(images=image, return_tensors='pt')
             
             image_embeds = model.get_image_features(**image_inputs)
             image_embeds /= image_embeds.norm(p=2, dim=-1, keepdim=True)
@@ -110,13 +113,12 @@ def get_text_embeds(labels, model_name):
         if model_name == "jina-v2":
             if model_path not in model_dict:
                 print(f"Loading model {model_path} from HuggingFace...")
-                model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True)
-                tokenizer = CLIPTokenizer.from_pretrained(model_path, use_fast=False)
-                model_dict[model_path] = {'tokenizer': tokenizer, 'model': model}
+                model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
+                model_dict[model_path] = {'model': model}
             else:
-                tokenizer = model_dict[model_path]['tokenizer']
                 model = model_dict[model_path]['model']
-            text_inputs = tokenizer(labels, return_tensors='pt', padding=True, truncation=True)
+            text_embeds = model.encode_text(labels)
+            return text_embeds
         elif model_name == "eva-8B":
             model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True) 
             text_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
