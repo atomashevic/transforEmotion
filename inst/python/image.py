@@ -25,8 +25,8 @@ def get_model_components(model_name):
             model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
             tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
             transform = T.Compose([
-                T.Resize(224, interpolation=InterpolationMode.BICUBIC),
-                T.CenterCrop(224),
+                T.Resize(512, interpolation=InterpolationMode.BICUBIC),
+                T.CenterCrop(512),
                 T.ToTensor(),
                 T.Normalize((0.48145466, 0.4578275, 0.40821073), 
                           (0.26862954, 0.26130258, 0.27577711))
