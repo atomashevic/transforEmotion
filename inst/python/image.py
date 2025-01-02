@@ -114,10 +114,15 @@ def get_text_embeds(labels, model_name):
             if model_path not in model_dict:
                 print(f"Loading model {model_path} from HuggingFace...")
                 model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
-                model_dict[model_path] = {'model': model}
+                tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+                model_dict[model_path] = {'model': model, 'tokenizer': tokenizer}
             else:
                 model = model_dict[model_path]['model']
-            text_embeds = model.encode_text(labels)
+                tokenizer = model_dict[model_path]['tokenizer']
+            
+            text_inputs = tokenizer(labels, return_tensors='pt', padding=True, truncation=True)
+            text_embeds = model.get_text_features(**text_inputs)
+            text_embeds /= text_embeds.norm(p=2, dim=-1, keepdim=True)
             return text_embeds
         elif model_name == "eva-8B":
             model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True) 
