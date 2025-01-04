@@ -179,21 +179,21 @@ image <- 'https://cdn.mos.cms.futurecdn.net/xRqbwS4odpkSQscn3jHECh-650-80.jpg'
 # Array of emotion labels
 emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
 
-# Run FER
-image_scores(image, emotions)
+# Run FER with base model
+image_scores(image, emotions, model = "oai-base")
 ```
 
 You can define up to 10 emotions. The output is a data frame with 1 row and columns corresponding to emotions. The values are FER scores for each emotion.
 
 If there is no face detected in the image, the output will be a 0x0 data frame.
 
-If there are mulitple faces detected in the image, by default the function will return the FER scores for the larget (focal) face. Alternative is to select the face on the left or the right side of the image. This can be done by specifying the `face_selection` argument.
+If there are multiple faces detected in the image, by default the function will return the FER scores for the largest (focal) face. Alternatively, you can select the face on the left or the right side of the image by specifying the `face_selection` argument.
 
 ## Video Example
 
 Video processing works by extracting frames from the video and then running the image processing function on each frame. Two input arguments are needed: the path to video and list of emotion labels.
 
-Path can be either local filepath or a **YouTube** URL. Support for other video hosting platforms is not yet implemented.
+Path can be either a local filepath or a **YouTube** URL. Support for other video hosting platforms is not yet implemented.
 
 ```R
 # Video URL or local filepath
@@ -202,14 +202,25 @@ video_url <- "https://www.youtube.com/watch?v=hdYNcv-chgY&ab_channel=Conservativ
 # Array of emotion labels
 emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
 
-# Run FER on `nframes` of the video
+# Run FER on `nframes` of the video with large model
 result <- video_scores(video_url, classes = emotions, 
                     nframes = 10, save_video = TRUE,
                     save_frames = TRUE, video_name = 'boris-johnson',
-                    start = 10, end = 120)
+                    start = 10, end = 120, model = "oai-large")
 ```            
 
-Working with videos is more computationally complex. This example extracts only 10 frames from the video and I shouldn't take longer than few minutes on an average laptop without GPU (depending on your internet connection needed to download the entire video and CLIP model). In research applicatons, we will usually extract 100-300 frames from the video. This can take much longer, so pantience is advised while waiting for the results. 
+Working with videos is more computationally complex. This example extracts only 10 frames from the video and shouldn't take longer than a few minutes on an average laptop without GPU (depending on your internet connection needed to download the entire video and CLIP model). In research applications, we will usually extract 100-300 frames from the video. This can take much longer, so patience is advised while waiting for the results.
+
+### Available Models
+
+The `image_scores` and `video_scores` functions support different models. The available models are:
+
+- `oai-base`: "openai/clip-vit-base-patch32" - A base model that is faster but less accurate.
+- `oai-large`: "openai/clip-vit-large-patch14" - A larger model that is more accurate but slower.
+- `eva-8B`: "BAAI/EVA-CLIP-8B-448" - A very large model that requires significant HDD space and RAM.
+- `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources.
+
+> **Note:** The larger models like `eva-8B` and `jina-v2` may take a lot of HDD space and need a lot of RAM to run efficiently. Choose the model based on your requirements for speed, accuracy, and available system resources.
 
 ## References
 
