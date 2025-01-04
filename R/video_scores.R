@@ -14,11 +14,13 @@
 #' @param save_frames Logical indicating whether to save the analyzed frames. Default is FALSE.
 #' @param save_dir The directory to save the analyzed frames. Default is "temp/".
 #' @param video_name The name of the analyzed video. Default is "temp".
-#' @param model A string specifying the Hugging Face CLIP model to use. Options are:
-#'   - `"openai/clip-vit-large-patch14"` (default)
-#'   - `"BAAI/EVA-CLIP-14B"`
-#'   - `"jinaai/jina-clip-v2"`
-#'
+#' @param model A string specifying the CLIP model to use. Options are:
+#'   \itemize{
+#'     \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
+#'     \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
+#'     \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448"
+#'     \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+#'   }
 #' @return A result object containing the analyzed video scores.
 #'
 #' @author Aleksandar Tomasevic <atomashevic@gmail.com>
@@ -30,15 +32,15 @@
 video_scores <- function(video, classes, nframes = 100, face_selection = "largest",
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
-                         video_name = "temp", model = "openai/clip-vit-large-patch14") {
+                         video_name = "temp", model = "oai-base") {
   if (!conda_check()){
       stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
-    
+
   }
   else {
     reticulate::use_condaenv("transforEmotion", required = FALSE)
   }
-  
+
   reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
 
   reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
@@ -54,7 +56,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
 
   # Check if model is valid
-  valid_models <- c("openai/clip-vit-large-patch14", "BAAI/EVA-CLIP-14B", "jinaai/jina-clip-v2")
+  valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
   if (!model %in% valid_models) {
     stop(paste("Invalid model specified. Allowed models are:", paste(valid_models, collapse = ", ")))
   }
@@ -75,11 +77,19 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     stop("You need to provide a YouTube video URL.")
   }
   }
-  
-  result = reticulate::py$yt_analyze(url = video, nframes = nframes, labels = classes,
-             side = face_selection, start = start, end = end, uniform = uniform, ff = ffreq, frame_dir = save_dir, video_name = video_name, model_name = model)
 
-  if (!save_video & grepl("youtu", video)){
+  available_models <- c(
+    "oai-base" = "openai/clip-vit-base-patch32",
+    "oai-large" = "openai/clip-vit-large-patch14",
+    "eva-8B" = "BAAI/EVA-CLIP-8B-448",
+    "jina-v2" = "jinaai/jina-clip-v2"
+  )
+
+  result <- reticulate::py$yt_analyze(url = video, nframes = nframes, labels = classes,
+             side = face_selection, start = start, end = end, uniform = uniform, ff = ffreq,
+             frame_dir = save_dir, video_name = video_name, model_name = model)
+
+  if (!save_video && grepl("youtu", video)){
     file.remove(paste0(save_dir, video_name, ".mp4"))
   }
   if(!save_frames){

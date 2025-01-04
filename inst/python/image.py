@@ -142,10 +142,16 @@ def classify_image(image, labels, face, model_name="oai-base"):
         
         return dict(zip(labels, probs))
 
+available_models = {
+    "oai-base": "openai/clip-vit-base-patch32",
+    "oai-large": "openai/clip-vit-large-patch14",
+    "eva-8B": "BAAI/EVA-CLIP-8B-448",
+    "jina-v2": "jinaai/jina-clip-v2"
+}
+
 model_dict = {
     "oai-base": "openai/clip-vit-base-patch32",
     "oai-large": "openai/clip-vit-large-patch14",
-    "eva-18B": "BAAI/EVA-CLIP-18B",
     "eva-8B": "BAAI/EVA-CLIP-8B-448",
     "jina-v2": "jinaai/jina-clip-v2"
 }

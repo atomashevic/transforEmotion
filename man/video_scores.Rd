@@ -17,7 +17,7 @@ video_scores(
   save_frames = FALSE,
   save_dir = "temp/",
   video_name = "temp",
-  model = "openai/clip-vit-large-patch14"
+  model = "oai-base"
 )
 }
 \arguments{
@@ -45,10 +45,13 @@ video_scores(
 
 \item{video_name}{The name of the analyzed video. Default is "temp".}
 
-\item{model}{A string specifying the Hugging Face CLIP model to use. Options are:
-- `"openai/clip-vit-large-patch14"` (default)
-- `"BAAI/EVA-CLIP-14B"`
-- `"jinaai/jina-clip-v2"`}
+\item{model}{A string specifying the CLIP model to use. Options are:
+\itemize{
+  \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
+  \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
+  \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448"
+  \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+}}
 }
 \value{
 A result object containing the analyzed video scores.

@@ -19,7 +19,8 @@ setup_modules <- function() {
     "tokenizers==0.14.1",
     "tensorflow-cpu==2.14.1",
     "torch==2.1.1+cpu", "transformers==4.35.2",
-    "pytubefix==6.9.2"
+    "pytubefix==6.9.2",
+    "torchvision==0.16.1+cpu"
   )
 
   # Determine whether any modules need to be installed
@@ -33,6 +34,9 @@ setup_modules <- function() {
 
   # Determine missing modules
   missing_modules <- modules[!modules_no_versions %in% installed_packages]
+
+  # Install OpenSSL via conda
+  reticulate::conda_install("transforEmotion", "openssl=3.0", pip = FALSE)
 
   # Determine if modules need to be installed
   if (length(missing_modules) != 0) {
