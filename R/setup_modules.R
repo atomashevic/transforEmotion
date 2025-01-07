@@ -1,69 +1,178 @@
 #' Install Necessary Python Modules
 #'
-#' @description Installs modules for the \{transforEmotion\} conda environment.
+#' @description
+#' Installs required Python modules for the \{transforEmotion\} package, with automatic GPU detection
+#' and optional GPU-enabled module installation.
 #'
-#' @details This function installs the required Python modules for the \{transforEmotion\} conda environment using \code{\link[reticulate]{conda_install}}. Ensure that miniconda is installed and properly configured before running this function.
+#' @details
+#' This function performs the following steps:
+#' \itemize{
+#'   \item Checks for NVIDIA GPU availability
+#'   \item If GPU is detected, prompts user to choose between CPU or GPU installation
+#'   \item Installs core modules including transformers, torch, tensorflow, and other dependencies
+#'   \item For GPU installations, sets up additional GPU-specific modules via \code{setup_gpu_modules()}
+#' }
+#'
+#' The function automatically manages dependencies and versions, ensuring compatibility
+#' between CPU and GPU variants of packages like torch, tensorflow, and torchvision.
+#' It uses \code{\link[reticulate]{conda_install}} for package management in the
+#' 'transforEmotion' conda environment.
+#'
+#' @note
+#' Ensure that miniconda is installed and properly configured before running this function.
+#' For GPU support, NVIDIA drivers must be properly installed on your system.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
-# Updated 13.09.2024
+# Updated 07.01.2025
+
+check_nvidia_gpu <- function() {
+# This functions checks if a NVIDIA GPU is available before we have access to `torch`
+if (.Platform$OS.type == "windows") {
+  # Windows: Check using nvidia-smi
+  gpu_check <- try(system("nvidia-smi", intern = TRUE, ignore.stderr = TRUE), silent = TRUE)
+  has_gpu <- !inherits(gpu_check, "try-error")
+} else {
+  # Linux/MacOS: Check using lspci or nvidia-smi
+  gpu_check_lspci <- suppressWarnings(
+    system("lspci | grep -i nvidia", ignore.stdout = TRUE, ignore.stderr = TRUE)
+  )
+  gpu_check_nvidia <- suppressWarnings(
+    system("nvidia-smi", ignore.stdout = TRUE, ignore.stderr = TRUE)
+  )
+  has_gpu <- gpu_check_lspci == 0 || gpu_check_nvidia == 0
+}
+return(has_gpu)
+}
+
 
 setup_modules <- function() {
-  # Set necessary modules
-  modules <- c(
+  # Check for NVIDIA GPU first
+  has_gpu <- check_nvidia_gpu()
+  use_gpu <- FALSE
+  
+  if (has_gpu) {
+    # Prompt user for GPU installation
+    message("\nNVIDIA GPU detected. Do you want to install GPU modules? (yes/no)")
+    user_response <- tolower(readline())
+    use_gpu <- user_response %in% c("yes", "y")
+  }
+  
+  # Set necessary modules with their versions
+  base_modules <- c(
     "accelerate==0.29.3", "llama-index==0.10.30",
     "nltk==3.8.1",
     "opencv-python", "pandas==2.1.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
     "sentence-transformers==2.7.0",
-    "tokenizers==0.14.1",
-    "tensorflow-cpu==2.14.1",
-    "torch==2.1.1+cpu", "transformers==4.35.2",
-    "pytubefix==6.9.2",
-    "torchvision==0.16.1+cpu"
+    "tokenizers==0.14.1"
   )
-
-  # Determine whether any modules need to be installed
-  installed_modules <- reticulate::py_list_packages(envname = "transforEmotion")
-
-  # Extract installed package names without versions
-  installed_packages <- installed_modules$package
-
-  # Remove version numbers from modules list for comparison
-  modules_no_versions <- sub("(.*)==.*", "\\1", modules)
-
-  # Determine missing modules
-  missing_modules <- modules[!modules_no_versions %in% installed_packages]
-
-  # Install OpenSSL via conda
-  reticulate::conda_install("transforEmotion", "openssl=3.0", pip = FALSE)
-
-  # Determine if modules need to be installed
-  if (length(missing_modules) != 0) {
-    # Send message to user about how many modules are being installed
-    message("\nThere are ", length(missing_modules),
-            " modules that need to be installed.")
-
-    # Update pip
-    message("\nUpdating pip first...")
-    reticulate::conda_install("transforEmotion",
-                              packages = "pip",
-                              pip_options = "--upgrade",
-                              pip = TRUE)
-
-    message("\nInstalling modules for 'transforEmotion'...")
-
-    # Install modules with pip options for PyTorch CPU wheels
-    reticulate::conda_install(
-      envname = "transforEmotion",
-      packages = missing_modules,
-      pip_options = c(
-        "--upgrade",
-        "--extra-index-url", "https://download.pytorch.org/whl/cpu"
-      ),
-      pip = TRUE
+  
+  # Add appropriate torch and tensorflow versions based on GPU availability
+  ml_modules <- if (use_gpu) {
+    c(
+      "tensorflow==2.14.1",
+      "torch==2.1.1", 
+      "torchvision==0.16.1"
     )
   } else {
-    message("\nAll modules are already installed.")
+    c(
+      "tensorflow-cpu==2.14.1",
+      "torch==2.1.1+cpu",
+      "torchvision==0.16.1+cpu"
+    )
+  }
+  
+  # Add remaining modules
+  final_modules <- c(
+    "transformers==4.35.2",
+    "pytubefix==6.9.2"
+  )
+  
+  # Combine all modules
+  modules <- c(base_modules, ml_modules, final_modules)
+  
+  # Setup progress bar
+  pb <- progress::progress_bar$new(
+    format = "  Installing [:bar] :percent eta: :eta",
+    total = 4, # Major steps: OpenSSL, pip update, main modules, GPU modules (if needed)
+    clear = FALSE,
+    width = 60
+  )
+  
+  # Determine whether any modules need to be installed
+  installed_modules <- suppressMessages(
+    reticulate::py_list_packages(envname = "transforEmotion")
+  )
+  
+  # Extract installed package names without versions
+  installed_packages <- installed_modules$package
+  
+  # Remove version numbers from modules list for comparison
+  modules_no_versions <- sub("(.*)==.*", "\\1", modules)
+  
+  # Determine missing modules
+  missing_modules <- modules[!modules_no_versions %in% installed_packages]
+  
+  if (length(missing_modules) > 0) {
+    message("\nInstalling ", length(missing_modules), " required modules...")
+    
+    # Install OpenSSL via conda (silently)
+    pb$tick(0, tokens = list(what = "Installing OpenSSL"))
+    suppressWarnings(
+      reticulate::conda_install("transforEmotion", "openssl=3.0", 
+                               pip = FALSE, 
+                               conda = "auto", 
+                               python_version = NULL,
+                               forge = TRUE)
+    )
+    pb$tick(1)
+    
+    # Update pip (silently)
+    pb$tick(0, tokens = list(what = "Updating pip"))
+    suppressWarnings(
+      reticulate::conda_install("transforEmotion",
+                               packages = "pip",
+                               pip_options = "--upgrade --quiet",
+                               pip = TRUE)
+    )
+    pb$tick(1)
+    
+    # Set pip options based on GPU availability
+    pip_options <- c("--upgrade", "--quiet")
+    if (!use_gpu) {
+      pip_options <- c(pip_options,
+                      "--extra-index-url", "https://download.pytorch.org/whl/cpu")
+    }
+    
+    # Install modules with appropriate pip options (silently)
+    pb$tick(0, tokens = list(what = "Installing main modules"))
+    suppressWarnings(
+      reticulate::conda_install(
+        envname = "transforEmotion",
+        packages = missing_modules,
+        pip_options = pip_options,
+        pip = TRUE
+      )
+    )
+    pb$tick(1)
+    
+    # If GPU was selected, install additional GPU modules
+    if (use_gpu) {
+      pb$tick(0, tokens = list(what = "Installing GPU modules"))
+      suppressWarnings(setup_gpu_modules())
+      pb$tick(1)
+    }
+    
+    message("\nInstallation complete!")
+  } else {
+    message("\nAll required modules are already installed.")
+    
+    # If GPU was selected and all base modules are installed, still check GPU modules
+    if (use_gpu) {
+      pb$tick(0, tokens = list(what = "Checking GPU modules"))
+      suppressWarnings(setup_gpu_modules())
+      pb$tick(1)
+    }
   }
 }
