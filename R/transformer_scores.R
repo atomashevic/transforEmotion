@@ -189,14 +189,24 @@ transformer_scores <- function(
   if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
-
-    # Run setup for modules
-    setup_modules()
-
-    # Import 'transformers' and 'torch' module
-    message("Importing transformers and torch modules...")
-    transformers <- reticulate::import("transformers")
-    torch <- reticulate::import("torch")
+    
+    # Try to import required modules
+    modules_import <- try({
+      transformers <- reticulate::import("transformers")
+      torch <- reticulate::import("torch")
+      list(transformers = transformers, torch = torch)
+    }, silent = TRUE)
+    
+    # If import fails, try setting up modules
+    if(inherits(modules_import, "try-error")) {
+      message("Required Python modules not found. Setting up modules...")
+      setup_modules()
+      transformers <- reticulate::import("transformers")
+      torch <- reticulate::import("torch")
+    } else {
+      transformers <- modules_import$transformers
+      torch <- modules_import$torch
+    }
 
     # Check for custom transformer
     if(transformer %in% c(

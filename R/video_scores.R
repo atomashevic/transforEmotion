@@ -37,17 +37,26 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base") {
-  if (!conda_check()){
-      stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
-
-  }
-  else {
+  
+  # Suppress TensorFlow messages
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
+  
+  # Try to import required Python modules
+  modules_import <- try({
     reticulate::use_condaenv("transforEmotion", required = FALSE)
+    image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+    video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
+    list(image = image_module, video = video_module)
+  }, silent = TRUE)
+  
+  # If import fails, try setting up modules
+  if(inherits(modules_import, "try-error")) {
+    message("Required Python modules not found. Setting up modules...")
+    setup_modules()
+    reticulate::use_condaenv("transforEmotion", required = FALSE)
+    image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+    video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }
-
-  reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
-
-  reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
 
   # check if classes is a character vector
   if(!is.character(classes)){

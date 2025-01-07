@@ -32,7 +32,32 @@ setup_gpu_modules <- function() {
 
   # Check for Linux and add llama-cpp-python if applicable
   if (system.check()$OS == "linux") {
-    modules <- c(modules, "llama-cpp-python")
+    # Set environment variables for llama-cpp-python build
+    Sys.setenv(
+      LDFLAGS = "-lstdc++fs",
+      CMAKE_ARGS = "-DLLAMA_CUBLAS=on"  # Enable CUDA support
+    )
+    
+    # Try installing pre-built wheel first, then fallback to source
+    tryCatch({
+      reticulate::conda_install(
+        envname = "transforEmotion",
+        packages = "llama-cpp-python",
+        pip_options = c("--upgrade", "--quiet", "--prefer-binary"),
+        pip = TRUE
+      )
+    }, error = function(e) {
+      message("Pre-built wheel not available, attempting to build from source...")
+      reticulate::conda_install(
+        envname = "transforEmotion",
+        packages = "llama-cpp-python",
+        pip_options = c("--upgrade", "--quiet"),
+        pip = TRUE
+      )
+    })
+    
+    # Remove llama-cpp-python from main modules list since we handled it separately
+    modules <- modules[modules != "llama-cpp-python"]
   }
 
   # Determine whether any modules need to be installed
@@ -52,7 +77,7 @@ setup_gpu_modules <- function() {
   # Only proceed if there are modules to install
   if (length(missing_modules) > 0) {
     # Set pip options for quiet installation
-    pip_options <- c("--upgrade", "--quiet")
+    pip_options <- c("--upgrade", "--quiet", "--prefer-binary")
 
     # Install modules silently
     suppressMessages(

@@ -38,13 +38,24 @@
 #' @export
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base") {
-  if (!conda_check()) {
-    stop("Python environment 'transforEmotion' is not available. Please run setup_miniconda() to install it.")
-  } else {
+  
+  # Suppress TensorFlow messages
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
+  
+  # Try to import required Python module
+  module_import <- try({
     reticulate::use_condaenv("transforEmotion", required = FALSE)
+    image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+    image_module
+  }, silent = TRUE)
+  
+  # If import fails, try setting up modules
+  if(inherits(module_import, "try-error")) {
+    message("Required Python modules not found. Setting up modules...")
+    setup_modules()
+    reticulate::use_condaenv("transforEmotion", required = FALSE)
+    image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
-
-  source_python(system.file("python", "image.py", package = "transforEmotion"))
 
   # check if image has image file extension
   if (!grepl("\\.(jpg|jpeg|png|bmp)$", image)) {

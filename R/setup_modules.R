@@ -53,9 +53,9 @@ setup_modules <- function() {
   
   if (has_gpu) {
     # Prompt user for GPU installation
-    message("\nNVIDIA GPU detected. Do you want to install GPU modules? (yes/no)")
+    message("\nNVIDIA GPU detected. Do you want to install GPU modules? ([Y]es/[N]o)")
     user_response <- tolower(readline())
-    use_gpu <- user_response %in% c("yes", "y")
+    use_gpu <- user_response %in% c("yes", "y", "Yes", "Y")
   }
   
   # Set necessary modules with their versions

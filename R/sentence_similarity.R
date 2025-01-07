@@ -113,13 +113,19 @@ sentence_similarity <- function(
   if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
-
-    # Run setup for modules
-    setup_modules()
-
-    # Import 'sentence-transformers' module
-    message("Importing sentence-transformers module...")
-    sentence_transformers <- reticulate::import("sentence_transformers")
+    
+    # Try to import sentence-transformers
+    sentence_transformers <- try(
+      reticulate::import("sentence_transformers"), 
+      silent = TRUE
+    )
+    
+    # If import fails, try setting up modules
+    if(inherits(sentence_transformers, "try-error")) {
+      message("Required Python modules not found. Setting up modules...")
+      setup_modules()
+      sentence_transformers <- reticulate::import("sentence_transformers")
+    }
 
     # Check for custom transformer
     if(transformer %in% c("all_minilm_l6")){

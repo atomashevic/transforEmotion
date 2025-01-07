@@ -53,6 +53,12 @@ After loading package **for the first time**, you need to setup the Python virtu
 setup_miniconda()
 ```
 
+You will be prompted to install GPU libraries. If you have an NVIDIA GPU, select "[Y]es" to install GPU libraries. If you don't have an NVIDIA GPU, select "[N]o" to proceed with CPU-only installation.
+
+You will gain access to all functionalities of the package even without GPU, but be aware that some functions will be significantly slower.
+
+If you have doubts whether you should install GPU libraries, see [GPU Support](#gpu-support) section below.
+
 > [!WARNING]
 > If you using [radian](https://github.com/randy3k/radian) console in VSCode or in a terminal emulator, you won't be able to set up the transforEmotion package. Radian is written in Python and (in most cases) already runs in your default Python environment. This prevents transforEmotion package from setting up the new virtual environment and installing the correct versions of necessary Python packages. Switch to default R console and everything should work fine.
 
@@ -220,7 +226,20 @@ The `image_scores` and `video_scores` functions support different models. The av
 - `eva-8B`: "BAAI/EVA-CLIP-8B-448" - A very large model that requires significant HDD space and RAM.
 - `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources.
 
-> **Note:** The larger models like `eva-8B` and `jina-v2` may take a lot of HDD space and need a lot of RAM to run efficiently. Choose the model based on your requirements for speed, accuracy, and available system resources.
+> **Note:** The larger models like `eva-8B` and `jina-v2` may take a lot of HDD space and need a lot of RAM to run efficiently. Choose the model based on your requirements for speed, accuracy, and available system resources. We recommend using 'oai-base' or 'oai-large' for most applications.
+
+## GPU Support
+
+When running the `setup_miniconda()` function, you will be prompted to install GPU libraries. If you select "[Y]es" when prompted to install GPU libraries, make sure you have:
+
+1. An NVIDIA GPU (GTX 1060 or newer)
+2. CUDA Toolkit 11.7+ installed
+3. Updated NVIDIA drivers
+4. GCC/G++ version 9 or newer (Linux only)
+
+Without these requirements, the GPU installation will likely fail. If you're unsure, select "no" to proceed with CPU-only installation. 
+
+If GPU installation fails, you can try running the `setup_modules()` function and selection "[N]o" when prompted to install GPU libraries.
 
 ## References
 

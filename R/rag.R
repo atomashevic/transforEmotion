@@ -161,27 +161,34 @@ rag <- function(
   }else{device <- match.arg(device)}
 
   # Run setup for modules
-  setup_modules()
+  # setup_modules()
 
   # Check for llama_index in environment
   if(!exists("llama_index", envir = as.environment(envir))){
-
-    # Import 'llama-index'
-    message("Importing llama-index module...")
-
-    # Determine if 'llama-index-legacy' exists
-    if("llama-index-legacy" %in% reticulate::py_list_packages()$package){
-
-      # {llama-index} >= 0.10.5
-      llama_index <- reticulate::import("llama_index.legacy")
-
-    }else{
-
-      # {llama-index} < 0.10.5
-      llama_index <- reticulate::import("llama_index")
-
+    
+    # Try to import llama-index
+    llama_index <- try(
+        if("llama-index-legacy" %in% reticulate::py_list_packages()$package) {
+            # {llama-index} >= 0.10.5
+            reticulate::import("llama_index.legacy")
+        } else {
+            # {llama-index} < 0.10.5
+            reticulate::import("llama_index")
+        }, silent = TRUE
+    )
+    
+    # If import fails, try setting up modules
+    if(inherits(llama_index, "try-error")) {
+        message("Required Python modules not found. Setting up modules...")
+        setup_modules()
+        
+        # Try import again
+        llama_index <- if("llama-index-legacy" %in% reticulate::py_list_packages()$package) {
+            reticulate::import("llama_index.legacy")
+        } else {
+            reticulate::import("llama_index")
+        }
     }
-
   }
 
   # Check for service context
