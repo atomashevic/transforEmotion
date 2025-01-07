@@ -49,7 +49,7 @@ video_scores(
 \itemize{
   \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
   \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-  \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448"
+  \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
   \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
 }}
 }

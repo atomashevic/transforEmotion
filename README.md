@@ -143,8 +143,8 @@ text <- "With `transforEmotion` you can use cutting-edge transformer models for 
         [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base)
         trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and
         [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets.
-        Using similar models, zero-shot classification transformers have demonstrated superior performance
-        relative to other natural language processing models
+        Using similar models, zero-shot classification transformers have demonstrated
+        superior performance relative to other natural language processing models
         (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)).
         All other zero-shot classification model pipelines can be implemented using their model name
         from https://huggingface.co/models?pipeline_tag=zero-shot-classification." 
@@ -221,12 +221,12 @@ Working with videos is more computationally complex. This example extracts only 
 
 The `image_scores` and `video_scores` functions support different models. The available models are:
 
-- `oai-base`: "openai/clip-vit-base-patch32" - A base model that is faster but less accurate.
-- `oai-large`: "openai/clip-vit-large-patch14" - A larger model that is more accurate but slower.
-- `eva-8B`: "BAAI/EVA-CLIP-8B-448" - A very large model that requires significant HDD space and RAM.
-- `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources.
+- `oai-base`: "openai/clip-vit-base-patch32" - A base model that is faster but less accurate. Requires ~2GB of RAM.
+- `oai-large`: "openai/clip-vit-large-patch14" - A larger model that is more accurate but slower. Requires ~4GB of RAM.
+- `eva-8B`: "BAAI/EVA-CLIP-8B-448" - A very large model that has been quantized to 4-bit precision for reduced memory usage (requires ~8GB of RAM instead of the original ~32GB).
+- `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources (~6GB of RAM).
 
-> **Note:** The larger models like `eva-8B` and `jina-v2` may take a lot of HDD space and need a lot of RAM to run efficiently. Choose the model based on your requirements for speed, accuracy, and available system resources. We recommend using 'oai-base' or 'oai-large' for most applications.
+> **Note:** The memory requirements listed above are approximate and represent the minimum RAM needed. For optimal performance, we recommend having at least 16GB of system RAM when using any of these models. If you're processing videos or multiple images in batch, more RAM might be needed. When using GPU acceleration, similar VRAM requirements apply. We recommend using 'oai-base' or 'oai-large' for most applications as they provide a good balance between accuracy and resource usage.
 
 ## GPU Support
 

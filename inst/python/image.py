@@ -2,7 +2,7 @@ import os
 import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import numpy as np
-from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer, AutoModel
+from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer, AutoModel, BitsAndBytesConfig
 import torch
 import requests
 import cv2
@@ -37,7 +37,16 @@ def get_model_components(model_name):
                 'transform': transform
             }
         elif model_name == "eva-8B":
-            model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True)
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16
+            )
+            model = CLIPModel.from_pretrained(
+                model_path, 
+                ignore_mismatched_sizes=True, 
+                quantization_config=quantization_config,
+                device_map="auto"
+            )
             transform = T.Compose([
                 T.Resize((448, 448), interpolation=InterpolationMode.BICUBIC),
                 T.ToTensor(),
