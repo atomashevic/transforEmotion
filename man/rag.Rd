@@ -112,6 +112,12 @@ Performs retrieval-augmented generation \{llama-index\}
 
 Currently limited to the TinyLLAMA model
 }
+\section{Data Privacy}{
+
+  All processing is done locally with the downloaded model,
+  and your text is never sent to any remote server or third-party.
+}
+
 \examples{
 # Load data
 data(neo_ipip_extraversion)

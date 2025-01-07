@@ -42,6 +42,10 @@ for the package to setup a functioning Python virtual environment in the
 background. This includes installing Python libraries for facial recognition
 and emotion detection in text, images and video. Please be patient.
 }
+\details{
+Data Privacy: All processing is done locally with the downloaded model,
+and your images are never sent to any remote server or third-party.
+}
 \author{
 Aleksandar Tomasevic <atomashevic@gmail.com>
 }

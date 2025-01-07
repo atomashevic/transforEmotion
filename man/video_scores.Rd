@@ -59,6 +59,12 @@ A result object containing the analyzed video scores.
 \description{
 This function retrieves facial expression recognition (FER) scores from a specific number of frames extracted from a YouTube video using a specified Hugging Face CLIP model. It utilizes Python libraries for facial recognition and emotion detection in text, images, and video.
 }
+\section{Data Privacy}{
+
+  All processing is done locally with the downloaded model,
+  and your video frames are never sent to any remote server or third-party.
+}
+
 \author{
 Aleksandar Tomasevic <atomashevic@gmail.com>
 }

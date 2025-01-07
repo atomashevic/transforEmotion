@@ -7,10 +7,22 @@
 setup_gpu_modules()
 }
 \description{
-Installs GPU modules for the \{transforEmotion\} conda environment
+Installs GPU-specific Python modules for the \{transforEmotion\} conda environment.
 }
 \details{
-Installs modules for miniconda using \code{\link[reticulate]{conda_install}}
+This function installs additional GPU-specific modules including:
+\itemize{
+  \item AutoAWQ for weight quantization
+  \item Auto-GPTQ for GPU quantization
+  \item Optimum for transformer optimization
+  \item llama-cpp-python (Linux only) for CPU/GPU inference
+}
+
+The function is typically called by \code{setup_modules()} when GPU installation
+is selected, but can also be run independently to update GPU-specific modules.
+}
+\note{
+This function requires NVIDIA GPU and drivers to be properly installed.
 }
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>

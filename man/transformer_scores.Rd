@@ -96,6 +96,12 @@ Returns probabilities for the text classes
 Uses sentiment analysis pipelines from \href{https://huggingface.co}{huggingface}
 to compute probabilities that the text corresponds to the specified classes
 }
+\section{Data Privacy}{
+
+  All processing is done locally with the downloaded model,
+  and your text is never sent to any remote server or third-party.
+}
+
 \examples{
 # Load data
 data(neo_ipip_extraversion)
