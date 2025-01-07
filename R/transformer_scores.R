@@ -192,6 +192,12 @@ transformer_scores <- function(
     
     # Try to import required modules
     modules_import <- try({
+      # Configure Python encoding
+      reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
+      
+      # Suppress TensorFlow logging messages
+      reticulate::py_run_string("import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'")
+      
       transformers <- reticulate::import("transformers")
       torch <- reticulate::import("torch")
       list(transformers = transformers, torch = torch)
@@ -201,6 +207,10 @@ transformer_scores <- function(
     if(inherits(modules_import, "try-error")) {
       message("Required Python modules not found. Setting up modules...")
       setup_modules()
+      
+      # Try import again with encoding configuration
+      reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
+      
       transformers <- reticulate::import("transformers")
       torch <- reticulate::import("torch")
     } else {

@@ -47,6 +47,9 @@ return(has_gpu)
 
 
 setup_modules <- function() {
+  # Configure Python encoding
+  reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
+  
   # Check for NVIDIA GPU first
   has_gpu <- check_nvidia_gpu()
   use_gpu <- FALSE
