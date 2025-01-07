@@ -106,6 +106,10 @@
 #'  similarity_top_k = 5
 #')}
 #'
+#' @section Data Privacy:
+#'   All processing is done locally with the downloaded model,
+#'   and your text is never sent to any remote server or third-party.
+#'
 #' @export
 #'
 # Retrieval-augmented generation

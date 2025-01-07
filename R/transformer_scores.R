@@ -138,6 +138,10 @@
 #' A broad-coverage challenge corpus for sentence understanding through inference.
 #' \emph{arXiv preprint arXiv:1704.05426}.
 #'
+#' @section Data Privacy:
+#'   All processing is done locally with the downloaded model,
+#'   and your text is never sent to any remote server or third-party.
+#'
 #' @export
 #'
 # Transformer Scores

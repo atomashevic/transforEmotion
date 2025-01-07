@@ -12,7 +12,7 @@
   <img src="man/figures/logo.png" alt="Logo" width="35%" style="display: block; margin: 0 auto;">
 </div>
 
-With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python*.
+With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python*. All data is processed locally on your machine, and nothing is sent to any external server or third-party service. This ensures full privacy for your data.
 
 - [How to install the package?](#how-to-install)
 - [How to run sentiment analysis on text?](#text-example)

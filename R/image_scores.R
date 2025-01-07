@@ -13,6 +13,9 @@
 #' background. This includes installing Python libraries for facial recognition
 #' and emotion detection in text, images and video. Please be patient.
 #'
+#' Data Privacy: All processing is done locally with the downloaded model,
+#' and your images are never sent to any remote server or third-party.
+#'
 #' @param image The path to the image file or URL of the image.
 #' @param classes A character vector of classes to classify the image into.
 #' @param face_selection The method to select the face in the image. Can be "largest"

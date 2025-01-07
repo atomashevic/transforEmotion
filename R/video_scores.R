@@ -23,6 +23,10 @@
 #'   }
 #' @return A result object containing the analyzed video scores.
 #'
+#' @section Data Privacy:
+#'   All processing is done locally with the downloaded model,
+#'   and your video frames are never sent to any remote server or third-party.
+#'
 #' @author Aleksandar Tomasevic <atomashevic@gmail.com>
 #' @import reticulate
 #'
