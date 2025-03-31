@@ -37,8 +37,17 @@
 #' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
-#'   custom fine-tuned models. Warning: Using very large models from local paths may cause 
-#'   memory issues or crashes depending on your system's resources.
+#'   custom fine-tuned models. 
+#'   
+#'   On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models. 
+#'   Navigate to the snapshots folder for the relevant model and point to the directory 
+#'   which contains the config.json file. For example: 
+#'   "/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
+#'   
+#'   On Windows, the base path is C:\Users\USERNAME\.cache\huggingface\transformers\
+#'   
+#'   Warning: Using very large models from local paths may cause memory issues or crashes 
+#'   depending on your system's resources.
 #' @return A data frame containing the scores for each class.
 #'
 #' @author Aleksandar Tomasevic <atomashevic@gmail.com>

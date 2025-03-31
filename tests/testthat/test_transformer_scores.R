@@ -36,7 +36,7 @@ test_that("transformer_scores works with local_model_path", {
   skip_on_ci()
   skip_if_not_installed("reticulate")
   skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test requires a local model directory")
+  #skip("This test requires a local model directory")
   
   # This test is skipped by default as it requires a locally downloaded model
   # To run it, you need to:
@@ -46,7 +46,7 @@ test_that("transformer_scores works with local_model_path", {
   
   test_text <- "With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification"
   test_classes <- c("technical", "informative", "promotional", "educational")
-  local_model_path <- "/path/to/local/model" # Replace with actual path when testing
+  local_model_path <- "/home/aleksandar/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/" # Replace with actual path when testing
   
   result <- transformer_scores(
     text = test_text,

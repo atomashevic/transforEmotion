@@ -4,7 +4,13 @@
 \alias{image_scores}
 \title{Calculate image scores using a Hugging Face CLIP model}
 \usage{
-image_scores(image, classes, face_selection = "largest", model = "oai-base")
+image_scores(
+  image,
+  classes,
+  face_selection = "largest",
+  model = "oai-base",
+  local_model_path = NULL
+)
 }
 \arguments{
 \item{image}{The path to the image file or URL of the image.}
@@ -23,7 +29,26 @@ only one face in the image.}
   \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
   \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
   \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
-}}
+  \item Any valid HuggingFace model ID
+}
+Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
+Large models may cause memory issues or crashes, especially on systems with limited resources.
+The package has been optimized and tested with the recommended models listed above.}
+
+\item{local_model_path}{Optional. Path to a local directory containing a pre-downloaded 
+HuggingFace model. If provided, the model will be loaded from this directory instead
+of being downloaded from HuggingFace. This is useful for offline usage or for using
+custom fine-tuned models. 
+
+On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models. 
+Navigate to the snapshots folder for the relevant model and point to the directory 
+which contains the config.json file. For example: 
+"/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
+
+On Windows, the base path is C:\Users\USERNAME\.cache\huggingface\transformers\
+
+Warning: Using very large models from local paths may cause memory issues or crashes 
+depending on your system's resources.}
 }
 \value{
 A data frame containing the scores for each class.

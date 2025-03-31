@@ -63,13 +63,16 @@ setup_modules <- function() {
   
   # Set necessary modules with their versions
   base_modules <- c(
-    "accelerate==0.29.3", "llama-index==0.10.30",
+    "numpy==1.24.3", # Use a version compatible with torch 2.1.1
+    "scipy==1.10.1", # Add scipy explicitly with compatible version
+    "accelerate==0.29.3", # Required for memory optimizations with large models
+    "llama-index==0.10.30",
     "nltk==3.8.1",
     "timm", "einops",
-    "bitsandbytes>=0.41.1",
-    "opencv-python", "pandas==2.1.3", "pypdf==4.0.1", "pytz==2024.1",
+    "safetensors==0.4.2", # For loading optimized model weights
+    "opencv-python", "pandas==1.5.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
-    "sentence-transformers==2.7.0",
+    "sentence-transformers==2.2.2",
     "tokenizers==0.14.1"
   )
   

@@ -49,17 +49,47 @@ def get_model_components(model_name, local_model_path=None):
                 'transform': transform
             }
         elif model_name == "eva-8B":
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16
-            )
-            model = CLIPModel.from_pretrained(
-                source_path, 
-                ignore_mismatched_sizes=True, 
-                quantization_config=quantization_config,
-                device_map="auto",
-                local_files_only=bool(local_model_path)
-            )
+            print("\n" + "="*80)
+            print("Loading EVA-CLIP-8B model (CPU-compatible mode)")
+            print("NOTE: This model is very large (8 billion parameters).")
+            print("Loading with low_cpu_mem_usage=True to reduce memory requirements.")
+            print("This may take several minutes and requires at least 16GB of RAM.")
+            print("If you experience memory issues, consider using a smaller model.")
+            print("="*80 + "\n")
+            
+            try:
+                # CPU-compatible loading with memory optimization
+                model = CLIPModel.from_pretrained(
+                    source_path,
+                    ignore_mismatched_sizes=True,
+                    low_cpu_mem_usage=True,
+                    torch_dtype=torch.float16,  # Use half precision to reduce memory
+                    local_files_only=bool(local_model_path)
+                )
+                print("Successfully loaded EVA model with memory optimization")
+            except Exception as e:
+                # First error - try with safetensors
+                print(f"Initial loading failed: {str(e)}")
+                print("Trying alternative loading method...")
+                
+                try:
+                    model = CLIPModel.from_pretrained(
+                        source_path,
+                        ignore_mismatched_sizes=True,
+                        low_cpu_mem_usage=True,
+                        torch_dtype=torch.float16,
+                        local_files_only=bool(local_model_path),
+                        use_safetensors=True
+                    )
+                    print("Successfully loaded EVA model with safetensors")
+                except Exception as e2:
+                    # Second failure - notify user that model is too large
+                    print("\n" + "="*80)
+                    print(f"ERROR: Could not load EVA model: {str(e2)}")
+                    print("This model is too large for your current hardware configuration.")
+                    print("Please consider using a smaller model like 'oai-large' instead.")
+                    print("="*80)
+                    raise ImportError("EVA model is too large for current hardware")
             transform = T.Compose([
                 T.Resize((448, 448), interpolation=InterpolationMode.BICUBIC),
                 T.ToTensor(),
