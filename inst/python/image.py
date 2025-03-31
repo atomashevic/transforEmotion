@@ -15,15 +15,27 @@ from torchvision.transforms import InterpolationMode
 warnings.filterwarnings("ignore") 
 logging.set_verbosity_error()
 
-def get_model_components(model_name):
-    """Initialize or retrieve model components from cache."""
-    model_path = model_dict.get(model_name, model_name)
+def get_model_components(model_name, local_model_path=None):
+    """Initialize or retrieve model components from cache.
     
-    if model_path not in model_dict:
-        print(f"Loading model {model_path} from HuggingFace...")
+    Args:
+        model_name: Name of the model to load from HuggingFace
+        local_model_path: Optional path to local model directory
+    """
+    model_path = model_dict.get(model_name, model_name)
+    cache_key = local_model_path if local_model_path else model_path
+    
+    if cache_key not in model_dict:
+        # Determine source path (HuggingFace or local)
+        source_path = local_model_path if local_model_path else model_path
+        source_type = "local directory" if local_model_path else "HuggingFace"
+        print(f"Loading model from {source_type}: {source_path}")
+        
         if model_name == "jina-v2":
-            model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
-            tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+            model = AutoModel.from_pretrained(source_path, trust_remote_code=True, local_files_only=bool(local_model_path))
+            # For tokenizer, always use the standard one unless explicitly provided locally
+            tokenizer_path = local_model_path if local_model_path else "openai/clip-vit-base-patch32"
+            tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=bool(local_model_path))
             transform = T.Compose([
                 T.Resize(512, interpolation=InterpolationMode.BICUBIC),
                 T.CenterCrop(512),
@@ -31,7 +43,7 @@ def get_model_components(model_name):
                 T.Normalize((0.48145466, 0.4578275, 0.40821073), 
                           (0.26862954, 0.26130258, 0.27577711))
             ])
-            model_dict[model_path] = {
+            model_dict[cache_key] = {
                 'model': model,
                 'tokenizer': tokenizer,
                 'transform': transform
@@ -42,10 +54,11 @@ def get_model_components(model_name):
                 bnb_4bit_compute_dtype=torch.float16
             )
             model = CLIPModel.from_pretrained(
-                model_path, 
+                source_path, 
                 ignore_mismatched_sizes=True, 
                 quantization_config=quantization_config,
-                device_map="auto"
+                device_map="auto",
+                local_files_only=bool(local_model_path)
             )
             transform = T.Compose([
                 T.Resize((448, 448), interpolation=InterpolationMode.BICUBIC),
@@ -53,21 +66,23 @@ def get_model_components(model_name):
                 T.Normalize((0.48145466, 0.4578275, 0.40821073), 
                           (0.26862954, 0.26130258, 0.27577711))
             ])
-            tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-            model_dict[model_path] = {
+            # For tokenizer, always use the standard one unless explicitly provided locally
+            tokenizer_path = local_model_path if local_model_path else "openai/clip-vit-base-patch32"
+            tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=bool(local_model_path))
+            model_dict[cache_key] = {
                 'model': model,
                 'tokenizer': tokenizer,
                 'transform': transform
             }
         else:
-            processor = CLIPProcessor.from_pretrained(model_path)
-            model = CLIPModel.from_pretrained(model_path, ignore_mismatched_sizes=True)
-            model_dict[model_path] = {
+            processor = CLIPProcessor.from_pretrained(source_path, local_files_only=bool(local_model_path))
+            model = CLIPModel.from_pretrained(source_path, ignore_mismatched_sizes=True, local_files_only=bool(local_model_path))
+            model_dict[cache_key] = {
                 'model': model,
                 'processor': processor
             }
     
-    return model_dict[model_path]
+    return model_dict[cache_key]
 
 def process_image(image, components):
     """Process image according to model requirements."""
@@ -105,9 +120,17 @@ def crop_face(image, padding=50, side='largest'):
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
     return Image.fromarray(result)
 
-def classify_image(image, labels, face, model_name="oai-base"):
-    """Classify image emotions using specified model."""
-    components = get_model_components(model_name)
+def classify_image(image, labels, face, model_name="oai-base", local_model_path=None):
+    """Classify image emotions using specified model.
+    
+    Args:
+        image: Path to image file or URL
+        labels: List of emotion labels to classify
+        face: Face selection strategy ('largest', 'left', 'right')
+        model_name: Name of HuggingFace model or predefined shorthand
+        local_model_path: Optional path to local model directory
+    """
+    components = get_model_components(model_name, local_model_path)
     
     with torch.no_grad():
         # Load and prepare image

@@ -48,6 +48,10 @@
 #' from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
 #' to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
 #'
+#' Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
+#' Large models may cause memory issues or crashes, especially on systems with limited resources.
+#' The package has been optimized and tested with the recommended models listed above.
+#'
 #' @param device Character.
 #' Whether to use CPU or GPU for inference.
 #' Defaults to \code{"auto"} which will use
@@ -74,6 +78,12 @@
 #' @param envir Numeric.
 #' Environment for the classifier to be saved for repeated use.
 #' Defaults to the global environment
+#'
+#' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
+#'   HuggingFace model. If provided, the model will be loaded from this directory instead
+#'   of being downloaded from HuggingFace. This is useful for offline usage or for using
+#'   custom fine-tuned models. Warning: Using very large models from local paths may cause 
+#'   memory issues or crashes depending on your system's resources.
 #'
 #' @return Returns probabilities for the text classes
 #'
@@ -154,7 +164,8 @@ transformer_scores <- function(
     "facebook-bart"
   ),
   device = c("auto", "cpu", "cuda"),
-  preprocess = FALSE, keep_in_env = TRUE, envir = 1
+  preprocess = FALSE, keep_in_env = TRUE, envir = 1,
+  local_model_path = NULL
 )
 {
 
@@ -238,11 +249,27 @@ transformer_scores <- function(
 
       # Custom pipeline from huggingface
       # Try to catch non-existing pipelines
-      pipeline_catch <- try(
-        classifier <- transformers$pipeline(
-          "zero-shot-classification", model = transformer, device_map = device
-        ), silent = TRUE
-      )
+      pipeline_catch <- try({
+        # Check if local model path is provided
+        if (!is.null(local_model_path)) {
+          if (!dir.exists(local_model_path)) {
+            stop("The specified local_model_path directory does not exist: ", local_model_path)
+          }
+          message("Using local model from: ", local_model_path)
+          classifier <- transformers$pipeline(
+            "zero-shot-classification", 
+            model = local_model_path, 
+            device_map = device,
+            local_files_only = TRUE
+          )
+        } else {
+          classifier <- transformers$pipeline(
+            "zero-shot-classification", 
+            model = transformer, 
+            device_map = device
+          )
+        }
+      }, silent = TRUE)
 
       # Errors
       if(is(pipeline_catch, "try-error")){
@@ -262,11 +289,20 @@ transformer_scores <- function(
         }else if(isTRUE(grepl("device_map", pipeline_catch))){
 
           # Try again without device
-          pipeline_catch <- try(
-            classifier <- transformers$pipeline(
-              "zero-shot-classification", model = transformer
-            ), silent = TRUE
-          )
+          pipeline_catch <- try({
+            if (!is.null(local_model_path)) {
+              classifier <- transformers$pipeline(
+                "zero-shot-classification", 
+                model = local_model_path,
+                local_files_only = TRUE
+              )
+            } else {
+              classifier <- transformers$pipeline(
+                "zero-shot-classification", 
+                model = transformer
+              )
+            }
+          }, silent = TRUE)
 
         }else{
           stop(pipeline_catch, call. = FALSE)

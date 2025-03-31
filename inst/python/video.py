@@ -12,7 +12,7 @@ import time
 
 
 def yt_analyze(url, nframes, labels, side='largest', start=0, end=-1, uniform=False,
-               ff=10, frame_dir='temp/', video_name='temp', model_name='oai-base'):
+               ff=10, frame_dir='temp/', video_name='temp', model_name='oai-base', local_model_path=None):
   nframes = int(nframes)
   start_time = time.time()
   temp_dir =  frame_dir
@@ -105,7 +105,7 @@ def yt_analyze(url, nframes, labels, side='largest', start=0, end=-1, uniform=Fa
   for i in range(counter):
     image = os.path.join(frame_dir, f"{video_name}-frame-{i}.jpg")
     if not(image is None):
-      emotions = classify_image(image, labels, face=side, model_name=model_name)
+      emotions = classify_image(image, labels, face=side, model_name=model_name, local_model_path=local_model_path)
     else:
       detected_emotions.append([np.nan]*len(labels))
     if emotions:
