@@ -12,25 +12,25 @@ from transformers import logging
 import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
 
-warnings.filterwarnings("ignore") 
+warnings.filterwarnings("ignore")
 logging.set_verbosity_error()
 
 def get_model_components(model_name, local_model_path=None):
     """Initialize or retrieve model components from cache.
-    
+
     Args:
         model_name: Name of the model to load from HuggingFace
         local_model_path: Optional path to local model directory
     """
     model_path = model_dict.get(model_name, model_name)
     cache_key = local_model_path if local_model_path else model_path
-    
+
     if cache_key not in model_dict:
         # Determine source path (HuggingFace or local)
         source_path = local_model_path if local_model_path else model_path
         source_type = "local directory" if local_model_path else "HuggingFace"
         print(f"Loading model from {source_type}: {source_path}")
-        
+
         if model_name == "jina-v2":
             model = AutoModel.from_pretrained(source_path, trust_remote_code=True, local_files_only=bool(local_model_path))
             # For tokenizer, always use the standard one unless explicitly provided locally
@@ -40,7 +40,7 @@ def get_model_components(model_name, local_model_path=None):
                 T.Resize(512, interpolation=InterpolationMode.BICUBIC),
                 T.CenterCrop(512),
                 T.ToTensor(),
-                T.Normalize((0.48145466, 0.4578275, 0.40821073), 
+                T.Normalize((0.48145466, 0.4578275, 0.40821073),
                           (0.26862954, 0.26130258, 0.27577711))
             ])
             model_dict[cache_key] = {
@@ -49,57 +49,50 @@ def get_model_components(model_name, local_model_path=None):
                 'transform': transform
             }
         elif model_name == "eva-8B":
-            print("\n" + "="*80)
-            print("Loading EVA-CLIP-8B model (CPU-compatible mode)")
-            print("NOTE: This model is very large (8 billion parameters).")
-            print("Loading with low_cpu_mem_usage=True to reduce memory requirements.")
-            print("This may take several minutes and requires at least 16GB of RAM.")
-            print("If you experience memory issues, consider using a smaller model.")
-            print("="*80 + "\n")
-            
             try:
-                # CPU-compatible loading with memory optimization
+                print("Attempting to load EVA-CLIP-8B model with 4-bit quantization...")
+                quantization_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_quant_type="nf4",  # normalized float 4
+                    bnb_4bit_use_double_quant=True,  # use nested quantization for more memory efficiency
+                )
                 model = CLIPModel.from_pretrained(
-                    source_path,
+                    model_path,
                     ignore_mismatched_sizes=True,
-                    low_cpu_mem_usage=True,
-                    torch_dtype=torch.float16,  # Use half precision to reduce memory
+                    quantization_config=quantization_config,
+                    torch_dtype=torch.float16,
                     local_files_only=bool(local_model_path)
                 )
-                print("Successfully loaded EVA model with memory optimization")
+                print("Successfully loaded EVA-CLIP-8B model")
             except Exception as e:
-                # First error - try with safetensors
-                print(f"Initial loading failed: {str(e)}")
-                print("Trying alternative loading method...")
-                
+                print(f"Quantized model loading failed: {str(e)}")
+                print("Falling back to standard loading method...")
                 try:
                     model = CLIPModel.from_pretrained(
-                        source_path,
+                        model_path,
                         ignore_mismatched_sizes=True,
-                        low_cpu_mem_usage=True,
-                        torch_dtype=torch.float16,
-                        local_files_only=bool(local_model_path),
-                        use_safetensors=True
+                        torch_dtype=torch.float32,  # Use float32 for CPU compatibility
+                        local_files_only=bool(local_model_path)
                     )
-                    print("Successfully loaded EVA model with safetensors")
+                    print("Successfully loaded EVA-CLIP-8B model without quantization.")
                 except Exception as e2:
-                    # Second failure - notify user that model is too large
-                    print("\n" + "="*80)
-                    print(f"ERROR: Could not load EVA model: {str(e2)}")
-                    print("This model is too large for your current hardware configuration.")
-                    print("Please consider using a smaller model like 'oai-large' instead.")
-                    print("="*80)
-                    raise ImportError("EVA model is too large for current hardware")
+                    print(f"Standard model loading failed: {str(e2)}")
+                    raise ImportError("EVA-CLIP-8B model could not be loaded. Please check your setup.")
+
+            # Define the image transformation pipeline
             transform = T.Compose([
                 T.Resize((448, 448), interpolation=InterpolationMode.BICUBIC),
                 T.ToTensor(),
-                T.Normalize((0.48145466, 0.4578275, 0.40821073), 
-                          (0.26862954, 0.26130258, 0.27577711))
+                T.Normalize((0.48145466, 0.4578275, 0.40821073),
+                            (0.26862954, 0.26130258, 0.27577711))
             ])
-            # For tokenizer, always use the standard one unless explicitly provided locally
-            tokenizer_path = local_model_path if local_model_path else "openai/clip-vit-base-patch32"
-            tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=bool(local_model_path))
-            model_dict[cache_key] = {
+
+            # Load the tokenizer
+            tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+
+            # Store the model, tokenizer, and transform in the model dictionary
+            model_dict[model_path] = {
                 'model': model,
                 'tokenizer': tokenizer,
                 'transform': transform
@@ -111,7 +104,7 @@ def get_model_components(model_name, local_model_path=None):
                 'model': model,
                 'processor': processor
             }
-    
+
     return model_dict[cache_key]
 
 def process_image(image, components):
@@ -152,7 +145,7 @@ def crop_face(image, padding=50, side='largest'):
 
 def classify_image(image, labels, face, model_name="oai-base", local_model_path=None):
     """Classify image emotions using specified model.
-    
+
     Args:
         image: Path to image file or URL
         labels: List of emotion labels to classify
@@ -161,7 +154,7 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
         local_model_path: Optional path to local model directory
     """
     components = get_model_components(model_name, local_model_path)
-    
+
     with torch.no_grad():
         # Load and prepare image
         if not image.startswith('http'):
@@ -173,35 +166,35 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
                 image = Image.open(requests.get(image, stream=True).raw)
             except:
                 raise ValueError("Cannot retrieve image from URL")
-        
+
         image = image.convert('RGB')
         image = crop_face(image, side=face)
-        
+
         if image is None:
             print('No face found in the image')
             return None
-            
+
         # Process inputs
         image_inputs = process_image(image, components)
         text_inputs = process_text(labels, components)
-        
+
         # Generate embeddings
         model = components['model']
         image_embeds = model.get_image_features(**image_inputs)
         text_embeds = model.get_text_features(**text_inputs)
-        
+
         # Normalize embeddings
         image_embeds /= image_embeds.norm(p=2, dim=-1, keepdim=True)
         text_embeds /= text_embeds.norm(p=2, dim=-1, keepdim=True)
-        
+
         # Calculate similarity and probabilities
         logits_per_image = torch.matmul(image_embeds, text_embeds.t()) * model.logit_scale.exp()
         probs = logits_per_image.softmax(dim=1).squeeze(0).tolist()
-        
+
         # Clean up
         del logits_per_image, image_embeds, text_embeds
         torch.cuda.empty_cache()
-        
+
         return dict(zip(labels, probs))
 
 available_models = {

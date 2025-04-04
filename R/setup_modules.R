@@ -63,7 +63,10 @@ setup_modules <- function() {
   
   # Set necessary modules with their versions
   base_modules <- c(
-    "numpy==1.24.3", # Use a version compatible with torch 2.1.1
+     "accelerate==0.29.3", 
+     "triton",
+     "bitsandbytes==0.45.2",
+    "numpy==1.24.3",   # Use a version compatible with torch 2.1.1
     "scipy==1.10.1", # Add scipy explicitly with compatible version
     "accelerate==0.29.3", # Required for memory optimizations with large models
     "llama-index==0.10.30",
@@ -73,7 +76,7 @@ setup_modules <- function() {
     "opencv-python", "pandas==1.5.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
     "sentence-transformers==2.2.2",
-    "tokenizers==0.14.1"
+    "tokenizers==0.13.3"
   )
   
   # Add appropriate torch and tensorflow versions based on GPU availability
@@ -93,7 +96,7 @@ setup_modules <- function() {
   
   # Add remaining modules
   final_modules <- c(
-    "transformers==4.35.2",
+    "transformers==4.30",
     "pytubefix==6.9.2"
   )
   
