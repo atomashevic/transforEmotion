@@ -164,7 +164,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 02.08.2024
+# Updated 04.04.2025
 transformer_scores <- function(
   text, classes, multiple_classes = FALSE,
   transformer = c(
@@ -202,8 +202,24 @@ transformer_scores <- function(
 
   # Set device
   if(missing(device)){
-    device <- "auto"
-  }else{device <- tolower(match.arg(device))}
+    # Use check_nvidia_gpu to determine default device
+    if(check_nvidia_gpu()){
+      device <- "auto"  # GPU available, use auto
+    } else {
+      device <- "cpu"   # No GPU available, force CPU
+    }
+  }else{
+    device <- tolower(match.arg(device))
+  }
+
+  # Suppress Python logging and warnings
+  reticulate::py_run_string("
+import os
+import logging
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow messages
+logging.getLogger('transformers').setLevel(logging.ERROR)  # Suppress transformers logs
+logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress huggingface_hub logs
+")
 
   # Check for classifiers in environment
   if(exists(transformer, envir = as.environment(envir))){
@@ -216,7 +232,7 @@ transformer_scores <- function(
       reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
       
       # Suppress TensorFlow logging messages
-      reticulate::py_run_string("import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'")
+      reticulate::py_run_string("import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'")
       
       transformers <- reticulate::import("transformers")
       torch <- reticulate::import("torch")
@@ -245,7 +261,7 @@ transformer_scores <- function(
 
       # Load pipeline
       classifier <- transformers$pipeline(
-        "zero-shot-classification", device_map = device,
+        "zero-shot-classification", device = device,
         model = switch(
           transformer,
           "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
@@ -268,14 +284,14 @@ transformer_scores <- function(
           classifier <- transformers$pipeline(
             "zero-shot-classification", 
             model = local_model_path, 
-            device_map = device,
+            device = device,
             local_files_only = TRUE
           )
         } else {
           classifier <- transformers$pipeline(
             "zero-shot-classification", 
             model = transformer, 
-            device_map = device
+            device = device
           )
         }
       }, silent = TRUE)
@@ -295,23 +311,30 @@ transformer_scores <- function(
             ), call. = FALSE
           )
 
-        }else if(isTRUE(grepl("device_map", pipeline_catch))){
+        } else if (isTRUE(grepl("device_map", pipeline_catch)) || isTRUE(grepl("meta tensor", pipeline_catch))) {
 
-          # Try again without device
+          # Try again without device_map or fallback to CPU if the first attempt fails
           pipeline_catch <- try({
             if (!is.null(local_model_path)) {
               classifier <- transformers$pipeline(
                 "zero-shot-classification", 
                 model = local_model_path,
-                local_files_only = TRUE
+                local_files_only = TRUE,
+                device = "cpu" # Fallback to CPU
               )
             } else {
               classifier <- transformers$pipeline(
                 "zero-shot-classification", 
-                model = transformer
+                model = transformer,
+                device = "cpu" # Fallback to CPU
               )
             }
-          }, silent = TRUE)
+          }, silent = TRUE);
+
+          # If the second attempt also fails, stop with an error
+          if (is(pipeline_catch, "try-error")) {
+            stop(pipeline_catch, call. = FALSE)
+          }
 
         }else{
           stop(pipeline_catch, call. = FALSE)

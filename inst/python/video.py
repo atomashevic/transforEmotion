@@ -106,14 +106,18 @@ def yt_analyze(url, nframes, labels, side='largest', start=0, end=-1, uniform=Fa
     image = os.path.join(frame_dir, f"{video_name}-frame-{i}.jpg")
     if not(image is None):
       emotions = classify_image(image, labels, face=side, model_name=model_name, local_model_path=local_model_path)
+      if emotions:
+        # Add the dictionary directly to our list
+        detected_emotions.append(emotions)
+      else:
+        # Create a dictionary with NaN values for each emotion
+        detected_emotions.append({label: np.nan for label in labels})
     else:
-      detected_emotions.append([np.nan]*len(labels))
-    if emotions:
-      detected_emotions.append(list(emotions.values()))
-    else:
-      detected_emotions.append([np.nan]*len(labels))
+      # Create a dictionary with NaN values for each emotion
+      detected_emotions.append({label: np.nan for label in labels})
+  
+  # Convert list of dictionaries to DataFrame - no need to set columns manually
   df = pd.DataFrame(detected_emotions)
-  df.columns = labels
   end_time = time.time()
   print(f"Done! Execution time: {end_time - start_time} seconds")
   return df

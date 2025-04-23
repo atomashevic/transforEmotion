@@ -53,7 +53,26 @@ setup_miniconda <- function()
 
   reticulate::use_condaenv("transforEmotion", required = TRUE)
 
-  print("Installing missing Python libraries...")
+  # Check if all required Python libraries are installed
+  installed_modules <- suppressMessages(
+    reticulate::py_list_packages(envname = "transforEmotion")
+  )
+
+  # Extract installed package names without versions
+  installed_packages <- installed_modules$package
+
+  # Define the required modules (same as in setup_modules)
+  required_modules <- c(
+    "openssl", "numpy", "scipy", "transformers", "torch", "tensorflow-cpu", "llama-index", "accelerate","bitsandbytes", "pandas", "sentence-transformers" )
+
+  # Check for missing modules
+  missing_modules <- required_modules[!required_modules %in% installed_packages]
+
+  if (length(missing_modules) > 0) {
+    print("Installing missing Python libraries...")
     setup_modules()
+  } else {
+    print("All required Python libraries are already installed.")
+  }
 }
 
