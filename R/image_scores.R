@@ -44,7 +44,7 @@
 #'   which contains the config.json file. For example: 
 #'   "/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
 #'   
-#'   On Windows, the base path is C:\Users\USERNAME\.cache\huggingface\transformers\
+#'   On Windows, the base path is C:\\Users\\USERNAME\\.cache\\huggingface\\transformers\\
 #'   
 #'   Warning: Using very large models from local paths may cause memory issues or crashes 
 #'   depending on your system's resources.

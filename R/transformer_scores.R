@@ -79,19 +79,19 @@
 #' Environment for the classifier to be saved for repeated use.
 #' Defaults to the global environment
 #'
-#' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
+#' @param local_model_path Optional. Path to a local directory containing a pre-downloaded
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
-#'   custom fine-tuned models. 
-#'   
-#'   On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models. 
-#'   Navigate to the snapshots folder for the relevant model and point to the directory 
-#'   which contains the config.json file. For example: 
+#'   custom fine-tuned models.
+#'
+#'   On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models.
+#'   Navigate to the snapshots folder for the relevant model and point to the directory
+#'   which contains the config.json file. For example:
 #'   "/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
-#'   
-#'   On Windows, the base path is C:\Users\USERNAME\.cache\huggingface\transformers\
-#'   
-#'   Warning: Using very large models from local paths may cause memory issues or crashes 
+#'
+#'   On Windows, the base path is C:\\Users\\USERNAME\\.cache\\huggingface\\transformers\\
+#'
+#'   Warning: Using very large models from local paths may cause memory issues or crashes
 #'   depending on your system's resources.
 #'
 #' @return Returns probabilities for the text classes
@@ -225,28 +225,28 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
   if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
   }else{
-    
+
     # Try to import required modules
     modules_import <- try({
       # Configure Python encoding
       reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
-      
+
       # Suppress TensorFlow logging messages
       reticulate::py_run_string("import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'")
-      
+
       transformers <- reticulate::import("transformers")
       torch <- reticulate::import("torch")
       list(transformers = transformers, torch = torch)
     }, silent = TRUE)
-    
+
     # If import fails, try setting up modules
     if(inherits(modules_import, "try-error")) {
       message("Required Python modules not found. Setting up modules...")
       setup_modules()
-      
+
       # Try import again with encoding configuration
       reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
-      
+
       transformers <- reticulate::import("transformers")
       torch <- reticulate::import("torch")
     } else {
@@ -282,15 +282,15 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
           }
           message("Using local model from: ", local_model_path)
           classifier <- transformers$pipeline(
-            "zero-shot-classification", 
-            model = local_model_path, 
+            "zero-shot-classification",
+            model = local_model_path,
             device = device,
             local_files_only = TRUE
           )
         } else {
           classifier <- transformers$pipeline(
-            "zero-shot-classification", 
-            model = transformer, 
+            "zero-shot-classification",
+            model = transformer,
             device = device
           )
         }
@@ -317,14 +317,14 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
           pipeline_catch <- try({
             if (!is.null(local_model_path)) {
               classifier <- transformers$pipeline(
-                "zero-shot-classification", 
+                "zero-shot-classification",
                 model = local_model_path,
                 local_files_only = TRUE,
                 device = "cpu" # Fallback to CPU
               )
             } else {
               classifier <- transformers$pipeline(
-                "zero-shot-classification", 
+                "zero-shot-classification",
                 model = transformer,
                 device = "cpu" # Fallback to CPU
               )

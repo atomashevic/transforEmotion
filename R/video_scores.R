@@ -26,19 +26,19 @@
 #'   Large models may cause memory issues or crashes, especially on systems with limited resources.
 #'   The package has been optimized and tested with the recommended models listed above.
 #'   Video processing is particularly memory-intensive, so use caution with large custom models.
-#' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
+#' @param local_model_path Optional. Path to a local directory containing a pre-downloaded
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
-#'   custom fine-tuned models. 
-#'   
-#'   On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models. 
-#'   Navigate to the snapshots folder for the relevant model and point to the directory 
-#'   which contains the config.json file. For example: 
+#'   custom fine-tuned models.
+#'
+#'   On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models.
+#'   Navigate to the snapshots folder for the relevant model and point to the directory
+#'   which contains the config.json file. For example:
 #'   "/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
-#'   
-#'   On Windows, the base path is C:\Users\USERNAME\.cache\huggingface\transformers\
-#'   
-#'   Warning: Using very large models from local paths may cause memory issues or crashes 
+#'
+#'   On Windows, the base path is C:\\Users\\USERNAME\\.cache\\huggingface\\transformers\\
+#'
+#'   Warning: Using very large models from local paths may cause memory issues or crashes
 #'   depending on your system's resources, especially when processing videos with many frames.
 #' @return A result object containing the analyzed video scores.
 #'
@@ -56,10 +56,10 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
-  
+
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
-  
+
   # Try to import required Python modules
   modules_import <- try({
     reticulate::use_condaenv("transforEmotion", required = FALSE)
@@ -67,7 +67,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
     list(image = image_module, video = video_module)
   }, silent = TRUE)
-  
+
   # If import fails, try setting up modules
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
@@ -91,7 +91,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   if(!face_selection %in% c("largest", "left", "right")){
     stop("Argument face_selection must be one of: largest, left, right")
   }
-  
+
   # Check if model is valid when using predefined shortcuts
   valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
   if (model %in% valid_models) {
@@ -128,16 +128,16 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
 
   result <- reticulate::py$yt_analyze(
-    url = video, 
-    nframes = nframes, 
+    url = video,
+    nframes = nframes,
     labels = classes,
-    side = face_selection, 
-    start = start, 
-    end = end, 
-    uniform = uniform, 
+    side = face_selection,
+    start = start,
+    end = end,
+    uniform = uniform,
     ff = ffreq,
-    frame_dir = save_dir, 
-    video_name = video_name, 
+    frame_dir = save_dir,
+    video_name = video_name,
     model_name = model,
     local_model_path = local_model_path
   )
