@@ -63,7 +63,6 @@ setup_modules <- function() {
 
   # Set necessary modules with their versions
   base_modules <- c(
-     "openssl==3.0",  # Add OpenSSL explicitly to the list
      "accelerate==0.29.3",
      "triton",
      "bitsandbytes==0.45.2",
@@ -77,9 +76,8 @@ setup_modules <- function() {
     "opencv-python", "pandas==1.5.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
     "sentence-transformers==2.2.2",
-    "xformers==0.0.23.post1",
-    "hf_xet",
-    "tokenizers==0.13.3"
+    # "tokenizers==0.13.3",
+    "tokenizers==0.21.0"
   )
 
   # Add appropriate torch and tensorflow versions based on GPU availability
@@ -99,7 +97,8 @@ setup_modules <- function() {
 
   # Add remaining modules
   final_modules <- c(
-    "transformers==4.30",
+    # "transformers==4.30",
+    "transformers==4.47.0",
     "pytubefix" #always use the latest version due to frequent fixes
   )
 
