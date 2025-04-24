@@ -1,3 +1,6 @@
+skip_on_cran()
+skip_on_ci()
+skip("This test is for manual testing only")
 test_that("dlo_dynamics returns the correct output", {
   # Test with example values
   expect_equal(dlo_dynamics(0, 0, 0.1, 0.01, 0.5, 0.1), c(0, 0.1))

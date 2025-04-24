@@ -49,35 +49,42 @@ return(has_gpu)
 setup_modules <- function() {
   # Configure Python encoding
   reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
-  
+
   # Check for NVIDIA GPU first
   has_gpu <- check_nvidia_gpu()
   use_gpu <- FALSE
-  
+
   if (has_gpu) {
     # Prompt user for GPU installation
     message("\nNVIDIA GPU detected. Do you want to install GPU modules? ([Y]es/[N]o)")
     user_response <- tolower(readline())
     use_gpu <- user_response %in% c("yes", "y", "Yes", "Y")
   }
-  
+
   # Set necessary modules with their versions
   base_modules <- c(
-    "accelerate==0.29.3", "llama-index==0.10.30",
+     "accelerate==0.29.3",
+     "triton",
+     "bitsandbytes==0.45.2",
+    "numpy==1.24.3",   # Use a version compatible with torch 2.1.1
+    "scipy==1.10.1", # Add scipy explicitly with compatible version
+    "accelerate==0.29.3", # Required for memory optimizations with large models
+    "llama-index==0.10.30",
     "nltk==3.8.1",
     "timm", "einops",
-    "bitsandbytes>=0.41.1",
-    "opencv-python", "pandas==2.1.3", "pypdf==4.0.1", "pytz==2024.1",
+    "safetensors==0.4.2", # For loading optimized model weights
+    "opencv-python", "pandas==1.5.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
-    "sentence-transformers==2.7.0",
-    "tokenizers==0.14.1"
+    "sentence-transformers==2.2.2",
+    # "tokenizers==0.13.3",
+    "tokenizers==0.21.0"
   )
-  
+
   # Add appropriate torch and tensorflow versions based on GPU availability
   ml_modules <- if (use_gpu) {
     c(
       "tensorflow==2.14.1",
-      "torch==2.1.1", 
+      "torch==2.1.1",
       "torchvision==0.16.1"
     )
   } else {
@@ -87,16 +94,17 @@ setup_modules <- function() {
       "torchvision==0.16.1+cpu"
     )
   }
-  
+
   # Add remaining modules
   final_modules <- c(
-    "transformers==4.35.2",
-    "pytubefix==6.9.2"
+    # "transformers==4.30",
+    "transformers==4.47.0",
+    "pytubefix" #always use the latest version due to frequent fixes
   )
-  
+
   # Combine all modules
   modules <- c(base_modules, ml_modules, final_modules)
-  
+
   # Setup progress bar
   pb <- progress::progress_bar$new(
     format = "  Installing [:bar] :percent eta: :eta",
@@ -104,35 +112,38 @@ setup_modules <- function() {
     clear = FALSE,
     width = 60
   )
-  
+
   # Determine whether any modules need to be installed
   installed_modules <- suppressMessages(
     reticulate::py_list_packages(envname = "transforEmotion")
   )
-  
+
   # Extract installed package names without versions
   installed_packages <- installed_modules$package
-  
+
   # Remove version numbers from modules list for comparison
   modules_no_versions <- sub("(.*)==.*", "\\1", modules)
-  
+
   # Determine missing modules
   missing_modules <- modules[!modules_no_versions %in% installed_packages]
-  
-  if (length(missing_modules) > 0) {
-    message("\nInstalling ", length(missing_modules), " required modules...")
-    
-    # Install OpenSSL via conda (silently)
-    pb$tick(0, tokens = list(what = "Installing OpenSSL"))
-    suppressWarnings(
-      reticulate::conda_install("transforEmotion", "openssl=3.0", 
-                               pip = FALSE, 
-                               conda = "auto", 
-                               python_version = NULL,
-                               forge = TRUE)
-    )
-    pb$tick(1)
-    
+
+  # Check if OpenSSL is already installed
+  openssl_installed <- "openssl" %in% installed_packages
+
+  if (length(missing_modules) > 0 || !openssl_installed) {
+    if (!openssl_installed) {
+      message("\nInstalling OpenSSL...")
+      pb$tick(0, tokens = list(what = "Installing OpenSSL"))
+      suppressWarnings(
+        reticulate::conda_install("transforEmotion", "openssl=3.0",
+                                 pip = FALSE,
+                                 conda = "auto",
+                                 python_version = NULL,
+                                 forge = TRUE)
+      )
+      pb$tick(1)
+    }
+
     # Update pip (silently)
     pb$tick(0, tokens = list(what = "Updating pip"))
     suppressWarnings(
@@ -142,14 +153,14 @@ setup_modules <- function() {
                                pip = TRUE)
     )
     pb$tick(1)
-    
+
     # Set pip options based on GPU availability
     pip_options <- c("--upgrade", "--quiet")
     if (!use_gpu) {
       pip_options <- c(pip_options,
                       "--extra-index-url", "https://download.pytorch.org/whl/cpu")
     }
-    
+
     # Install modules with appropriate pip options (silently)
     pb$tick(0, tokens = list(what = "Installing main modules"))
     suppressWarnings(
@@ -161,18 +172,18 @@ setup_modules <- function() {
       )
     )
     pb$tick(1)
-    
+
     # If GPU was selected, install additional GPU modules
     if (use_gpu) {
       pb$tick(0, tokens = list(what = "Installing GPU modules"))
       suppressWarnings(setup_gpu_modules())
       pb$tick(1)
     }
-    
+
     message("\nInstallation complete!")
   } else {
     message("\nAll required modules are already installed.")
-    
+
     # If GPU was selected and all base modules are installed, still check GPU modules
     if (use_gpu) {
       pb$tick(0, tokens = list(what = "Checking GPU modules"))

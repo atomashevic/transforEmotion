@@ -13,7 +13,8 @@ transformer_scores(
   device = c("auto", "cpu", "cuda"),
   preprocess = FALSE,
   keep_in_env = TRUE,
-  envir = 1
+  envir = 1,
+  local_model_path = NULL
 )
 }
 \arguments{
@@ -60,7 +61,11 @@ Defaults to \code{"cross-encoder-distilroberta"}
 
 Also allows any zero-shot classification models with a pipeline
 from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
-to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)}
+to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
+
+Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
+Large models may cause memory issues or crashes, especially on systems with limited resources.
+The package has been optimized and tested with the recommended models listed above.}
 
 \item{device}{Character.
 Whether to use CPU or GPU for inference.
@@ -88,6 +93,21 @@ re-loading the classifier every time you run this function.
 \item{envir}{Numeric.
 Environment for the classifier to be saved for repeated use.
 Defaults to the global environment}
+
+\item{local_model_path}{Optional. Path to a local directory containing a pre-downloaded
+  HuggingFace model. If provided, the model will be loaded from this directory instead
+  of being downloaded from HuggingFace. This is useful for offline usage or for using
+  custom fine-tuned models.
+
+  On Linux/Mac, look in ~/.cache/huggingface/hub/ folder for downloaded models.
+  Navigate to the snapshots folder for the relevant model and point to the directory
+  which contains the config.json file. For example:
+  "/home/username/.cache/huggingface/hub/models--cross-encoder--nli-distilroberta-base/snapshots/b5b020e8117e1ddc6a0c7ed0fd22c0e679edf0fa/"
+
+  On Windows, the base path is C:\\Users\\USERNAME\\.cache\\huggingface\\transformers\\
+
+  Warning: Using very large models from local paths may cause memory issues or crashes
+  depending on your system's resources.}
 }
 \value{
 Returns probabilities for the text classes
