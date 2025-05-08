@@ -164,7 +164,7 @@
 #' @export
 #'
 # Transformer Scores
-# Updated 04.04.2025
+# Updated 06.05.2025
 transformer_scores <- function(
   text, classes, multiple_classes = FALSE,
   transformer = c(
@@ -202,14 +202,18 @@ transformer_scores <- function(
 
   # Set device
   if(missing(device)){
-    # Use check_nvidia_gpu to determine default device
+    device <- "auto"
+  } else {
+    device <- tolower(match.arg(device))
+  }
+
+  # Use check_nvidia_gpu to determine default device
+  if(device == "auto"){
     if(check_nvidia_gpu()){
-      device <- "auto"  # GPU available, use auto
+      device <- "cuda"  # GPU available, use auto
     } else {
       device <- "cpu"   # No GPU available, force CPU
     }
-  }else{
-    device <- tolower(match.arg(device))
   }
 
   # Suppress Python logging and warnings
