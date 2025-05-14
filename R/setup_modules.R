@@ -66,7 +66,7 @@ setup_modules <- function() {
      "accelerate==0.29.3",
      "triton",
      "bitsandbytes==0.45.2",
-    "numpy==1.24.3",   # Use a version compatible with torch 2.1.1
+    "numpy==1.26",   # Use a version compatible with torch 2.1.1
     "scipy==1.10.1", # Add scipy explicitly with compatible version
     "accelerate==0.29.3", # Required for memory optimizations with large models
     "llama-index==0.10.30",
