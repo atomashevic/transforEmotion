@@ -24,6 +24,9 @@ def get_model_components(model_name, local_model_path=None):
     """
     model_path = model_dict.get(model_name, model_name)
     cache_key = local_model_path if local_model_path else model_path
+    
+    # Detect device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if cache_key not in model_dict:
         # Determine source path (HuggingFace or local)
@@ -33,6 +36,7 @@ def get_model_components(model_name, local_model_path=None):
 
         if model_name == "jina-v2":
             model = AutoModel.from_pretrained(source_path, trust_remote_code=True, local_files_only=bool(local_model_path))
+            model = model.to(device)
             # For tokenizer, always use the standard one unless explicitly provided locally
             tokenizer_path = local_model_path if local_model_path else "openai/clip-vit-base-patch32"
             tokenizer = CLIPTokenizer.from_pretrained(tokenizer_path, local_files_only=bool(local_model_path))
@@ -46,7 +50,8 @@ def get_model_components(model_name, local_model_path=None):
             model_dict[cache_key] = {
                 'model': model,
                 'tokenizer': tokenizer,
-                'transform': transform
+                'transform': transform,
+                'device': device
             }
         elif model_name == "eva-8B":
             try:
@@ -64,6 +69,7 @@ def get_model_components(model_name, local_model_path=None):
                     torch_dtype=torch.float16,
                     local_files_only=bool(local_model_path)
                 )
+                model = model.to(device)
                 print("Successfully loaded EVA-CLIP-8B model")
             except Exception as e:
                 print(f"Quantized model loading failed: {str(e)}")
@@ -75,6 +81,7 @@ def get_model_components(model_name, local_model_path=None):
                         torch_dtype=torch.float32,  # Use float32 for CPU compatibility
                         local_files_only=bool(local_model_path)
                     )
+                    model = model.to(device)
                     print("Successfully loaded EVA-CLIP-8B model without quantization.")
                 except Exception as e2:
                     print(f"Standard model loading failed: {str(e2)}")
@@ -95,32 +102,40 @@ def get_model_components(model_name, local_model_path=None):
             model_dict[model_path] = {
                 'model': model,
                 'tokenizer': tokenizer,
-                'transform': transform
+                'transform': transform,
+                'device': device
             }
         else:
             processor = CLIPProcessor.from_pretrained(source_path, local_files_only=bool(local_model_path))
             model = CLIPModel.from_pretrained(source_path, ignore_mismatched_sizes=True, local_files_only=bool(local_model_path))
+            model = model.to(device)
             model_dict[cache_key] = {
                 'model': model,
-                'processor': processor
+                'processor': processor,
+                'device': device
             }
 
     return model_dict[cache_key]
 
 def process_image(image, components):
     """Process image according to model requirements."""
+    device = components.get('device', torch.device('cpu'))
     if 'transform' in components:
-        image_tensor = components['transform'](image).unsqueeze(0)
+        image_tensor = components['transform'](image).unsqueeze(0).to(device)
         return {'pixel_values': image_tensor}
     else:
-        return components['processor'](images=image, return_tensors='pt')
+        inputs = components['processor'](images=image, return_tensors='pt')
+        return {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
 
 def process_text(labels, components):
     """Process text according to model requirements."""
+    device = components.get('device', torch.device('cpu'))
     if 'tokenizer' in components:
-        return components['tokenizer'](labels, return_tensors='pt', padding=True, truncation=True)
+        inputs = components['tokenizer'](labels, return_tensors='pt', padding=True, truncation=True)
+        return {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
     else:
-        return components['processor'](text=labels, return_tensors='pt', padding=True)
+        inputs = components['processor'](text=labels, return_tensors='pt', padding=True)
+        return {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
 
 def crop_face(image, padding=50, side='largest'):
     """Detect and crop face from image."""
@@ -193,7 +208,8 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
 
         # Clean up
         del logits_per_image, image_embeds, text_embeds
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         return dict(zip(labels, probs))
 

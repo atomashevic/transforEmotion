@@ -5,3 +5,10 @@ citation.cff
 LICENSE
 ^doc$
 ^Meta$
+^\.aider
+^\.env$
+^MAFW/
+^playground/
+^CLAUDE\.md$
+^tests/test_workflow\.md$
+diff_0.1.5_*
