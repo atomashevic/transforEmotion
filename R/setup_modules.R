@@ -61,11 +61,11 @@ setup_modules <- function() {
     use_gpu <- user_response %in% c("yes", "y", "Yes", "Y")
   }
 
+  # Get OS information
+  OS <- tolower(Sys.info()["sysname"])
+  
   # Set necessary modules with their versions
   base_modules <- c(
-     "accelerate==0.29.3",
-     "triton",
-     "bitsandbytes==0.45.2",
     "numpy==1.26",   # Use a version compatible with torch 2.1.1
     "scipy==1.10.1", # Add scipy explicitly with compatible version
     "accelerate==0.29.3", # Required for memory optimizations with large models
@@ -79,6 +79,20 @@ setup_modules <- function() {
     # "tokenizers==0.13.3",
     "tokenizers==0.21.0"
   )
+  
+  # Add platform-specific modules
+  if (OS == "linux") {
+    # triton is only available on Linux x86_64
+    # bitsandbytes is available on Linux and Windows
+    base_modules <- c(base_modules, "triton", "bitsandbytes==0.45.2")
+  } else if (OS == "windows") {
+    # bitsandbytes is available on Windows, but triton is not
+    base_modules <- c(base_modules, "bitsandbytes==0.45.2")
+    message("Note: Skipping 'triton' on Windows (Linux-only)")
+  } else if (OS == "darwin") {
+    # macOS: Skip both triton and bitsandbytes as they're not supported
+    message("Note: Skipping 'triton' and 'bitsandbytes' on macOS (not supported)")
+  }
 
   # Add appropriate torch and tensorflow versions based on GPU availability
   ml_modules <- if (use_gpu) {

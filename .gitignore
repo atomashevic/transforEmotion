@@ -68,3 +68,4 @@ rsconnect/
 # Markdown docs
 CLAUDE.md
 tests/test_workflow.md
+AGENTS.md
