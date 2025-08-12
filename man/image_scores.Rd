@@ -17,10 +17,11 @@ image_scores(
 
 \item{classes}{A character vector of classes to classify the image into.}
 
-\item{face_selection}{The method to select the face in the image. Can be "largest"
-or "left" or "right". Default is "largest" and will select the largest face
+\item{face_selection}{The method to select the face in the image. Can be "largest",
+"left", "right", or "none". Default is "largest" and will select the largest face
 in the image. "left" and "right" will select the face on the far left or the
-far right side of the image. Face_selection method is irrelevant if there is
+far right side of the image. "none" will use the whole image without cropping.
+Face_selection method is irrelevant if there is
 only one face in the image.}
 
 \item{model}{A string specifying the CLIP model to use. Options are:

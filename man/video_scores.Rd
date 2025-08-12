@@ -28,7 +28,9 @@ video_scores(
 
 \item{nframes}{The number of frames to analyze in the video. Default is 100.}
 
-\item{face_selection}{The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".}
+\item{face_selection}{The method for selecting faces in the video. Options are
+"largest", "left", "right", or "none". Default is "largest". Use "none"
+to classify the whole frame without face cropping.}
 
 \item{start}{The start time of the video range to analyze. Default is 0.}
 
