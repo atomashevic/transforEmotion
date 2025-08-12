@@ -64,13 +64,36 @@ download_result <- download_findingemo_data(
 )
 
 if (download_result$success) {
-  cat("✓ Dataset download completed\n")
-  cat("  Images downloaded:", download_result$image_count, "\n")
-  cat("  Failed downloads:", download_result$failed_count, "\n")
-  cat("  Total selected:", download_result$total_selected, "\n")
-  cat("  Success rate:", round(100 * download_result$image_count / download_result$total_selected, 1), "%\n\n")
+  # Derive counts robustly (handle 'skipped' responses that omit counts)
+  images_dir <- file.path(TARGET_DIR, "images")
+  image_files <- if (dir.exists(images_dir)) list.files(images_dir, pattern = "\\.(jpg|jpeg|png|bmp|gif)$", ignore.case = TRUE) else character(0)
+  derived_image_count <- length(image_files)
   
-  if (download_result$image_count == 0) {
+  urls_path <- file.path(TARGET_DIR, "urls.json")
+  derived_total_selected <- tryCatch({
+    if (file.exists(urls_path)) length(jsonlite::fromJSON(urls_path, simplifyVector = TRUE)) else NA_integer_
+  }, error = function(e) NA_integer_)
+  
+  metadata_path <- file.path(TARGET_DIR, "metadata.json")
+  derived_failed <- tryCatch({
+    if (file.exists(metadata_path)) {
+      md <- jsonlite::fromJSON(metadata_path, simplifyVector = TRUE)
+      if (!is.null(md$failed_downloads)) md$failed_downloads else NA_integer_
+    } else NA_integer_
+  }, error = function(e) NA_integer_)
+  
+  image_count <- if (!is.null(download_result$image_count)) download_result$image_count else derived_image_count
+  failed_count <- if (!is.null(download_result$failed_count)) download_result$failed_count else derived_failed
+  total_selected <- if (!is.null(download_result$total_selected)) download_result$total_selected else derived_total_selected
+  
+  cat("✓ Dataset download completed\n")
+  cat("  Images downloaded:", image_count, "\n")
+  cat("  Failed downloads:", ifelse(is.na(failed_count), "NA", failed_count), "\n")
+  cat("  Total selected:", ifelse(is.na(total_selected), "NA", total_selected), "\n")
+  success_rate <- if (!is.na(total_selected) && total_selected > 0) round(100 * image_count / total_selected, 1) else NA_real_
+  cat("  Success rate:", ifelse(is.na(success_rate), "NA", paste0(success_rate, " %")), "\n\n")
+  
+  if (isTRUE(image_count == 0)) {
     stop("No images were downloaded successfully. Cannot proceed with evaluation.")
   }
 } else {
@@ -336,7 +359,7 @@ sink(summary_file)
 cat("FindingEmo Comparative Evaluation Summary\n")
 cat("========================================\n")
 cat("Generated:", Sys.time(), "\n\n")
-cat(sprintf("Dataset: FindingEmo-Light (%d requested, %d downloaded)\n", MAX_IMAGES, download_result$image_count))
+cat(sprintf("Dataset: FindingEmo-Light (%d requested, %s downloaded)\n", MAX_IMAGES, if (exists("image_count")) as.character(image_count) else "NA"))
 cat("Model: transforEmotion (oai-base)\n")
 cat("Label sets benchmarked: emo8_noun, emo8_adj, emo8_adj_fe, emo8_adj_p\n\n")
 
