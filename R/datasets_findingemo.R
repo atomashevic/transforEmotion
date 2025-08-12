@@ -24,6 +24,12 @@
 #'   \item \code{annotation_file}: Path to annotation file (if successful)
 #'   \item \code{urls_file}: Path to URLs file (if successful)
 #'   \item \code{image_count}: Number of images downloaded (if any)
+#'   \item \code{annotations}: Full annotations data.frame (raw)
+#'   \item \code{evaluation_data}: Data.frame filtered to downloaded images
+#'         with columns suitable for evaluation workflows (id, truth, image_file,
+#'         image_path, valence, arousal, emo8_label, emotion)
+#'   \item \code{evaluation_csv}: Path to saved CSV of evaluation_data
+#'   \item \code{matched_count}: Number of annotations matched to downloaded images
 #' }
 #'
 #' @details
@@ -155,6 +161,103 @@ download_findingemo_data <- function(target_dir,
         }
       }
     }
+    
+    # Load annotations and merge with actually downloaded images
+    annotations_df <- tryCatch({
+      load_findingemo_annotations(target_dir, output_format = "dataframe")
+    }, error = function(e) {
+      warning("Failed to load annotations after download: ", e$message)
+      NULL
+    })
+    
+    images_dir <- file.path(target_dir, "images")
+    image_files <- if (dir.exists(images_dir)) list.files(
+      images_dir,
+      pattern = "\\.(jpg|jpeg|png|bmp|gif)$",
+      ignore.case = TRUE,
+      full.names = FALSE
+    ) else character(0)
+    
+    evaluation_df <- NULL
+    evaluation_csv <- NULL
+    matched_count <- 0
+    
+    if (!is.null(annotations_df)) {
+      # Ensure expected columns exist
+      if (!"image_path" %in% names(annotations_df)) {
+        # Try common alternatives
+        alt <- intersect(c("filepath", "path", "image"), names(annotations_df))
+        if (length(alt) > 0) {
+          annotations_df$image_path <- annotations_df[[alt[1]]]
+        }
+      }
+      if (!"index" %in% names(annotations_df)) {
+        # Fallback to row index if no explicit id
+        annotations_df$index <- seq_len(nrow(annotations_df))
+      }
+      if (!"emotion" %in% names(annotations_df)) {
+        # Try to find an emotion/label column
+        emo_col <- grep("emotion|label", names(annotations_df), value = TRUE, ignore.case = TRUE)
+        if (length(emo_col) > 0) annotations_df$emotion <- annotations_df[[emo_col[1]]]
+      }
+      
+  # Derive file name (guard against missing image_path)
+  ipath <- annotations_df$image_path
+  ipath[is.null(ipath)] <- ""
+  ipath[is.na(ipath)] <- ""
+  annotations_df$image_file <- basename(ipath)
+      annotations_df$image_file[is.na(annotations_df$image_file)] <- ""
+      
+      # Map to Emo8 where possible
+      if ("emotion" %in% names(annotations_df)) {
+        suppressWarnings({
+          annotations_df$emo8_label <- tryCatch(map_to_emo8(as.character(annotations_df$emotion)), error = function(e) rep(NA_character_, nrow(annotations_df)))
+        })
+      } else {
+        annotations_df$emo8_label <- NA_character_
+      }
+      
+      # Keep only those with downloaded image files
+      matched <- annotations_df[annotations_df$image_file %in% image_files & annotations_df$image_file != "", , drop = FALSE]
+      matched_count <- nrow(matched)
+      
+      if (matched_count > 0) {
+        # Build evaluation-ready dataframe
+        # Prefer emo8_label as truth if available, else original emotion
+        truth_col <- if (any(!is.na(matched$emo8_label))) "emo8_label" else "emotion"
+        evaluation_df <- data.frame(
+          id = matched$index,
+          truth = matched[[truth_col]],
+          image_file = matched$image_file,
+          image_path = file.path(images_dir, matched$image_file),
+          stringsAsFactors = FALSE
+        )
+        # Attach valence/arousal if present
+        if ("valence" %in% names(matched)) evaluation_df$valence <- matched$valence
+        if ("arousal" %in% names(matched)) evaluation_df$arousal <- matched$arousal
+        # Keep reference of both label variants
+        if ("emotion" %in% names(matched)) evaluation_df$emotion <- matched$emotion
+        if ("emo8_label" %in% names(matched)) evaluation_df$emo8_label <- matched$emo8_label
+        
+        # Save CSV for convenience
+        evaluation_csv <- file.path(target_dir, "evaluation_annotations.csv")
+        tryCatch({
+          utils::write.csv(evaluation_df, evaluation_csv, row.names = FALSE)
+          message("✓ Prepared evaluation data for ", matched_count, " images")
+          message("  Saved: ", evaluation_csv)
+        }, error = function(e) {
+          warning("Failed to save evaluation CSV: ", e$message)
+        })
+      } else {
+        message("No annotations matched to downloaded image files; evaluation data not created")
+      }
+    }
+    
+    # Attach to result
+    result$annotations <- annotations_df
+    result$evaluation_data <- evaluation_df
+    result$evaluation_csv <- evaluation_csv
+    result$matched_count <- matched_count
   } else {
     warning("✗ FindingEmo dataset download failed: ", result$message)
   }

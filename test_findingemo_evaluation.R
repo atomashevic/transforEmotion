@@ -17,7 +17,7 @@
 # SETUP AND DEPENDENCIES
 # =============================================================================
 
-devtools::load_all()
+pkgload::load_all()
 
 cat("🚀 FindingEmo Dataset Evaluation Script\n")
 cat("=====================================\n\n")
@@ -237,21 +237,59 @@ run_predictions_for_set <- function(set_name, set_classes, eval_annotations, ima
   list(data = df, success = success, fail = fail)
 }
 
-# Run predictions for each label set
-predictions_by_set <- list()
-for (nm in names(label_sets)) {
-  predictions_by_set[[nm]] <- run_predictions_for_set(
-    set_name = nm,
-    set_classes = label_sets[[nm]],
-    eval_annotations = eval_annotations,
-    images_dir = images_dir,
-    base_classes = EMO8_CLASSES
-  )
+cache_path <- file.path(TARGET_DIR, "predictions_cache.rds")
+use_cache <- FALSE
+overwrite <- Sys.getenv("OVERWRITE_PREDICTIONS", unset = "")
+if (file.exists(cache_path) && tolower(overwrite) %in% c("", "false", "0")) {
+  # Ask user only in interactive sessions
+  if (interactive()) {
+    ans <- readline(prompt = sprintf("Cached predictions found at %s. Recompute? [y/N]: ", cache_path))
+    use_cache <- !(tolower(ans) %in% c("y", "yes"))
+  } else {
+    cat(sprintf("⚡ Using cached predictions: %s (set OVERWRITE_PREDICTIONS=true to recompute)\n", cache_path))
+    use_cache <- TRUE
+  }
 }
 
-# Merge predictions from all sets into a single data.frame keyed by image_id/image_file
-merged_preds <- Reduce(function(x, y) merge(x, y, by = c("image_id", "image_file"), all = TRUE),
-                       lapply(predictions_by_set, `[[`, "data"))
+if (use_cache) {
+  cache <- readRDS(cache_path)
+  predictions_by_set <- cache$predictions_by_set
+  merged_preds <- cache$merged_preds
+} else {
+  # Run predictions for each label set
+  predictions_by_set <- list()
+  for (nm in names(label_sets)) {
+    predictions_by_set[[nm]] <- run_predictions_for_set(
+      set_name = nm,
+      set_classes = label_sets[[nm]],
+      eval_annotations = eval_annotations,
+      images_dir = images_dir,
+      base_classes = EMO8_CLASSES
+    )
+  }
+  # Merge predictions
+  merged_preds <- Reduce(function(x, y) merge(x, y, by = c("image_id", "image_file"), all = TRUE),
+                         lapply(predictions_by_set, `[[`, "data"))
+  # Save cache
+  if (!dir.exists(TARGET_DIR)) dir.create(TARGET_DIR, recursive = TRUE)
+  saveRDS(list(predictions_by_set = predictions_by_set, merged_preds = merged_preds), cache_path)
+  cat(sprintf("💾 Saved predictions cache to %s\n", cache_path))
+}
+
+# Join ground-truth (and valence/arousal if available) to merged predictions by keys
+truth_cols <- c("index", "image_file", "emo8_label")
+if (all(c("valence", "arousal") %in% names(eval_annotations))) {
+  truth_cols <- c(truth_cols, "valence", "arousal")
+}
+truth_info <- unique(eval_annotations[, truth_cols])
+merged_preds <- merge(
+  merged_preds,
+  truth_info,
+  by.x = c("image_id", "image_file"),
+  by.y = c("index", "image_file"),
+  all.x = TRUE,
+  sort = FALSE
+)
 
 # Determine valid rows per set and overall
 valid_flags <- lapply(names(label_sets), function(nm) !is.na(merged_preds[[paste0("pred_", nm)]]))
@@ -279,15 +317,15 @@ for (nm in names(label_sets)) {
   valid_idx <- !is.na(merged_preds[[pred_col]])
   eval_data_set <- data.frame(
     id = merged_preds$image_id[valid_idx],
-    truth = eval_annotations$emo8_label[valid_idx],
+    truth = merged_preds$emo8_label[valid_idx],
     pred = merged_preds[[pred_col]][valid_idx],
     stringsAsFactors = FALSE
   )
   eval_data_set[, prob_cols] <- merged_preds[valid_idx, prob_cols]
 
-  if (all(c("valence", "arousal") %in% names(eval_annotations))) {
-    eval_data_set$valence <- eval_annotations$valence[valid_idx]
-    eval_data_set$arousal <- eval_annotations$arousal[valid_idx]
+  if (all(c("valence", "arousal") %in% names(merged_preds))) {
+    eval_data_set$valence <- merged_preds$valence[valid_idx]
+    eval_data_set$arousal <- merged_preds$arousal[valid_idx]
   }
 
   if (nrow(eval_data_set) < 1) {
@@ -300,7 +338,8 @@ for (nm in names(label_sets)) {
     data = eval_data_set,
     truth_col = "truth",
     pred_col = "pred",
-    probs_cols = prob_cols,
+  probs_cols = prob_cols,
+  classes = EMO8_CLASSES,
     return_plot = FALSE
   )
 
@@ -344,7 +383,6 @@ if (!dir.exists(TARGET_DIR)) dir.create(TARGET_DIR, recursive = TRUE)
 
 # 6a. Combined predictions CSV (includes truth and all per-set preds + probs)
 combined_predictions <- merged_preds
-combined_predictions$truth <- eval_annotations$emo8_label
 
 preds_csv <- file.path(TARGET_DIR, "predictions_all_variants.csv")
 write.csv(combined_predictions, preds_csv, row.names = FALSE)
@@ -379,7 +417,15 @@ for (nm in names(results_by_set)) {
   if (!is.null(res$ece)) cat(sprintf("ECE: %.3f\n", res$ece))
   if (!is.null(res$brier_score)) cat(sprintf("Brier: %.3f\n", res$brier_score))
   cat("Confusion matrix:\n"); print(res$confusion_matrix)
-  if (!is.null(res$per_class_metrics)) { cat("Per-class metrics (rounded):\n"); print(round(res$per_class_metrics, 3)) }
+  if (!is.null(res$per_class_metrics)) {
+    cat("Per-class metrics (rounded):\n")
+    pcm <- res$per_class_metrics
+    num_cols <- vapply(pcm, is.numeric, logical(1))
+    if (any(num_cols)) {
+      pcm[, num_cols] <- lapply(pcm[, num_cols, drop = FALSE], function(x) round(x, 3))
+    }
+    print(pcm)
+  }
   cat("\n")
 }
 sink()

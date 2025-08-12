@@ -115,7 +115,8 @@ evaluate_emotions <- function(data,
     id_col = id_col,
     truth_col = truth_col,
     pred_col = pred_col,
-    probs_cols = probs_cols,
+  probs_cols = probs_cols,
+  classes = classes,
     na_rm = na_rm
   )
   
@@ -216,7 +217,7 @@ print.emotion_evaluation <- function(x, ...) {
 #' Validate evaluation input data
 #' @noRd
 .validate_evaluation_input <- function(data, id_col, truth_col, pred_col, 
-                                     probs_cols, na_rm) {
+                                     probs_cols, classes, na_rm) {
   
   # Load data if file path provided
   if (is.character(data) && length(data) == 1) {
@@ -230,16 +231,37 @@ print.emotion_evaluation <- function(x, ...) {
   if (!is.data.frame(data)) {
     stop("Data must be a data frame or path to CSV file", call. = FALSE)
   }
-  
-  # Check required columns
-  required_cols <- c(id_col, truth_col, pred_col)
+
+  # Heuristic aliasing for common column alternatives to reduce boilerplate
+  # If the requested columns are not present, create them from known alternatives
+  alias_if_missing <- function(df, target, candidates) {
+    if (!target %in% names(df)) {
+      cand <- intersect(candidates, names(df))
+      if (length(cand) > 0) {
+        df[[target]] <- df[[cand[1]]]
+      }
+    }
+    df
+  }
+
+  data <- alias_if_missing(data, id_col, c("id", "image_id", "index"))
+  data <- alias_if_missing(data, truth_col, c("truth", "emo8_label", "emotion_label", "emotion"))
+
+  # If pred column missing but probabilities provided, we'll create it below
+  # after validating probs. Otherwise try aliasing common pred names.
+  if (!(pred_col %in% names(data))) {
+    data <- alias_if_missing(data, pred_col, c("pred", "prediction", "predicted_emotion"))
+  }
+
+  # Check required columns again (except pred if probs_cols provided)
+  required_cols <- c(id_col, truth_col)
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "), 
          call. = FALSE)
   }
   
-  # Check probability columns if provided
+  # Validate probability columns and auto-detect if possible
   if (!is.null(probs_cols)) {
     missing_probs <- setdiff(probs_cols, names(data))
     if (length(missing_probs) > 0) {
@@ -248,6 +270,50 @@ print.emotion_evaluation <- function(x, ...) {
               call. = FALSE)
       probs_cols <- intersect(probs_cols, names(data))
     }
+    if (length(probs_cols) == 0) {
+      probs_cols <- NULL
+    }
+  }
+  
+  # If pred_col missing or has NAs and we have probabilities, compute predictions from argmax
+  if (!is.null(probs_cols) && length(probs_cols) > 1) {
+    if (!(pred_col %in% names(data))) {
+      # Create full pred column
+      max_idx <- apply(data[, probs_cols, drop = FALSE], 1, function(r) {
+        if (all(is.na(r))) return(NA_integer_)
+        which.max(r)
+      })
+      # Use provided classes if length matches probs; otherwise fallback to probs column names
+      pred_labels <- if (!is.null(classes) && length(classes) == length(probs_cols)) {
+        as.character(classes)
+      } else {
+        as.character(probs_cols)
+      }
+      data[[pred_col]] <- ifelse(is.na(max_idx), NA_character_, pred_labels[max_idx])
+    } else if (anyNA(data[[pred_col]])) {
+      # Fill NA predictions from probs if possible
+      na_idx <- which(is.na(data[[pred_col]]))
+      if (length(na_idx) > 0) {
+        fill_idx <- apply(data[na_idx, probs_cols, drop = FALSE], 1, function(r) {
+          if (all(is.na(r))) return(NA_integer_)
+          which.max(r)
+        })
+        pred_labels <- if (!is.null(classes) && length(classes) == length(probs_cols)) {
+          as.character(classes)
+        } else {
+          as.character(probs_cols)
+        }
+        data[[pred_col]][na_idx] <- ifelse(is.na(fill_idx), NA_character_, pred_labels[fill_idx])
+      }
+    }
+  }
+  
+  # Final required columns check including pred
+  required_cols <- c(id_col, truth_col, pred_col)
+  missing_cols <- setdiff(required_cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop("Missing required columns: ", paste(missing_cols, collapse = ", "), 
+         call. = FALSE)
   }
   
   # Remove missing values if requested
@@ -395,7 +461,10 @@ print.emotion_evaluation <- function(x, ...) {
   if (length(probs_cols) != length(classes)) {
     warning("Number of probability columns does not match number of classes", 
             call. = FALSE)
-    return(NA)
+    return(list(
+      per_class = NA,
+      macro = NA
+    ))
   }
   
   auroc_results <- data.frame(
@@ -537,20 +606,20 @@ print.emotion_evaluation <- function(x, ...) {
   observed_disagreement <- mean(truth_num != pred_num)
   
   # Expected disagreement (marginal distributions)
-  truth_counts <- table(truth_num)
-  pred_counts <- table(pred_num)
-  total_counts <- truth_counts + pred_counts[names(truth_counts)]
+  # Align counts across all classes and replace NAs with zeros
+  truth_counts <- table(factor(truth_num, levels = seq_along(classes)))
+  pred_counts  <- table(factor(pred_num,  levels = seq_along(classes)))
+  total_counts <- as.numeric(truth_counts) + as.numeric(pred_counts)
   
   # Expected disagreement under independence
-  expected_disagreement <- 1 - sum((total_counts / (2 * n))^2)
+  expected_disagreement <- 1 - sum((total_counts / (2 * n))^2, na.rm = TRUE)
   
-  # Krippendorff's alpha
-  if (expected_disagreement == 0) {
-    return(1)  # Perfect agreement
-  } else {
-    alpha <- 1 - (observed_disagreement / expected_disagreement)
-    return(alpha)
+  # Krippendorff's alpha with guards
+  if (is.na(expected_disagreement) || expected_disagreement == 0) {
+    return(NA)
   }
+  alpha <- 1 - (observed_disagreement / expected_disagreement)
+  return(alpha)
 }
 
 #' Create metrics summary table
@@ -590,8 +659,11 @@ print.emotion_evaluation <- function(x, ...) {
   }
   
   if ("auroc" %in% names(results) && !is.na(results$auroc$macro)) {
-    metrics_df <- rbind(metrics_df, 
-                       data.frame(metric = "auroc_macro", value = results$auroc$macro))
+    # Guard against malformed auroc structure
+    if (is.list(results$auroc) && !is.null(results$auroc$macro)) {
+      metrics_df <- rbind(metrics_df, 
+                          data.frame(metric = "auroc_macro", value = results$auroc$macro))
+    }
   }
   
   if ("ece" %in% names(results)) {
@@ -784,7 +856,7 @@ summary.emotion_evaluation <- function(object, ...) {
   if (!is.null(object$f1_micro)) {
     cat(sprintf("  • Micro F1: %.3f\n", object$f1_micro))
   }
-  if (!is.null(object$auroc) && !is.na(object$auroc$macro)) {
+  if (!is.null(object$auroc) && is.list(object$auroc) && !is.null(object$auroc$macro) && !is.na(object$auroc$macro)) {
     cat(sprintf("  • Macro AUROC: %.3f\n", object$auroc$macro))
   }
   if (!is.null(object$ece)) {

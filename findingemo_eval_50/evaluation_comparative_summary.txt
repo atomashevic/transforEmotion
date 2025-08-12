@@ -1,0 +1,145 @@
+FindingEmo Comparative Evaluation Summary
+========================================
+Generated: 1754992998 
+
+Dataset: FindingEmo-Light (50 requested, 40 downloaded)
+Model: transforEmotion (oai-base)
+Label sets benchmarked: emo8_noun, emo8_adj, emo8_adj_fe, emo8_adj_p
+
+Metrics by label set:
+                    set samples accuracy  f1_macro f1_micro f1_weighted
+emo8_noun     emo8_noun      32  0.18750 0.1106618  0.18750          NA
+emo8_adj       emo8_adj      32  0.25000 0.1531366  0.25000          NA
+emo8_adj_fe emo8_adj_fe      32  0.25000 0.1383929  0.25000          NA
+emo8_adj_p   emo8_adj_p      32  0.34375 0.1770833  0.34375          NA
+            precision_macro recall_macro precision_micro recall_micro       ece
+emo8_noun         0.1968750    0.1119048         0.18750      0.18750 0.2434851
+emo8_adj          0.2410714    0.1657738         0.25000      0.25000 0.2617529
+emo8_adj_fe       0.1708333    0.2166667         0.25000      0.25000 0.2419249
+emo8_adj_p        0.2789683    0.2511905         0.34375      0.34375 0.1505791
+            brier_score balanced_accuracy
+emo8_noun            NA         0.1278912
+emo8_adj             NA         0.1894558
+emo8_adj_fe          NA         0.2476190
+emo8_adj_p           NA         0.2870748
+
+-- emo8_noun details --
+Samples: 32
+Accuracy: 0.188
+F1 (macro/micro): 0.111 / 0.188
+Precision (macro/micro): 0.197 / 0.188
+Recall (macro/micro): 0.112 / 0.188
+ECE: 0.243
+Confusion matrix:
+              Actual
+Predicted      joy trust fear surprise sadness disgust anger anticipation Sum
+  joy            2     0    0        0       0       0     0            0   2
+  trust          0     0    1        0       0       0     0            0   1
+  fear           0     0    0        0       0       1     0            0   1
+  surprise       3     0    0        0       0       0     0            0   3
+  sadness        3     0    1        0       1       0     0            0   5
+  disgust        2     0    1        0       1       0     1            3   8
+  anger          2     0    1        0       0       0     0            1   4
+  anticipation   3     1    0        0       1       0     0            3   8
+  Sum           15     1    4        0       3       1     1            7  32
+Per-class metrics (rounded):
+         class precision recall    f1
+1          joy     1.000  0.133 0.235
+2        trust     0.000  0.000 0.000
+3         fear     0.000  0.000 0.000
+4     surprise     0.000  0.000 0.000
+5      sadness     0.200  0.333 0.250
+6      disgust     0.000  0.000 0.000
+7        anger     0.000  0.000 0.000
+8 anticipation     0.375  0.429 0.400
+
+-- emo8_adj details --
+Samples: 32
+Accuracy: 0.250
+F1 (macro/micro): 0.153 / 0.250
+Precision (macro/micro): 0.241 / 0.250
+Recall (macro/micro): 0.166 / 0.250
+ECE: 0.262
+Confusion matrix:
+              Actual
+Predicted      joy trust fear surprise sadness disgust anger anticipation Sum
+  joy            4     0    0        0       0       0     0            0   4
+  trust          0     0    1        0       0       0     0            0   1
+  fear           3     0    1        0       1       1     0            1   7
+  surprise       1     0    1        0       0       0     0            1   3
+  sadness        2     0    1        0       2       0     1            1   7
+  disgust        0     0    0        0       0       0     0            1   1
+  anger          4     1    0        0       0       0     0            2   7
+  anticipation   1     0    0        0       0       0     0            1   2
+  Sum           15     1    4        0       3       1     1            7  32
+Per-class metrics (rounded):
+         class precision recall    f1
+1          joy     1.000  0.267 0.421
+2        trust     0.000  0.000 0.000
+3         fear     0.143  0.250 0.182
+4     surprise     0.000  0.000 0.000
+5      sadness     0.286  0.667 0.400
+6      disgust     0.000  0.000 0.000
+7        anger     0.000  0.000 0.000
+8 anticipation     0.500  0.143 0.222
+
+-- emo8_adj_fe details --
+Samples: 32
+Accuracy: 0.250
+F1 (macro/micro): 0.138 / 0.250
+Precision (macro/micro): 0.171 / 0.250
+Recall (macro/micro): 0.217 / 0.250
+ECE: 0.242
+Confusion matrix:
+              Actual
+Predicted      joy trust fear surprise sadness disgust anger anticipation Sum
+  joy            6     0    0        0       0       0     0            0   6
+  trust          2     1    1        0       2       0     0            0   6
+  fear           3     0    0        0       0       1     1            3   8
+  surprise       0     0    0        0       0       0     0            1   1
+  sadness        1     0    2        0       1       0     0            1   5
+  disgust        0     0    1        0       0       0     0            1   2
+  anger          1     0    0        0       0       0     0            1   2
+  anticipation   2     0    0        0       0       0     0            0   2
+  Sum           15     1    4        0       3       1     1            7  32
+Per-class metrics (rounded):
+         class precision recall    f1
+1          joy     1.000  0.400 0.571
+2        trust     0.167  1.000 0.286
+3         fear     0.000  0.000 0.000
+4     surprise     0.000  0.000 0.000
+5      sadness     0.200  0.333 0.250
+6      disgust     0.000  0.000 0.000
+7        anger     0.000  0.000 0.000
+8 anticipation     0.000  0.000 0.000
+
+-- emo8_adj_p details --
+Samples: 32
+Accuracy: 0.344
+F1 (macro/micro): 0.177 / 0.344
+Precision (macro/micro): 0.279 / 0.344
+Recall (macro/micro): 0.251 / 0.344
+ECE: 0.151
+Confusion matrix:
+              Actual
+Predicted      joy trust fear surprise sadness disgust anger anticipation Sum
+  joy            8     0    0        0       1       0     0            0   9
+  trust          2     1    2        0       0       0     1            1   7
+  fear           1     0    0        0       0       0     0            2   3
+  surprise       1     0    1        0       1       1     0            0   4
+  sadness        2     0    1        0       1       0     0            1   5
+  disgust        0     0    0        0       0       0     0            0   0
+  anger          1     0    0        0       0       0     0            2   3
+  anticipation   0     0    0        0       0       0     0            1   1
+  Sum           15     1    4        0       3       1     1            7  32
+Per-class metrics (rounded):
+         class precision recall    f1
+1          joy     0.889  0.533 0.667
+2        trust     0.143  1.000 0.250
+3         fear     0.000  0.000 0.000
+4     surprise     0.000  0.000 0.000
+5      sadness     0.200  0.333 0.250
+6      disgust     0.000  0.000 0.000
+7        anger     0.000  0.000 0.000
+8 anticipation     1.000  0.143 0.250
+

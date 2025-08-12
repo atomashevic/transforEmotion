@@ -11,9 +11,16 @@ import warnings
 from transformers import logging
 import torchvision.transforms as T
 from torchvision.transforms import InterpolationMode
+import pandas as pd
 
 warnings.filterwarnings("ignore")
 logging.set_verbosity_error()
+
+# Load face detector once to avoid per-image overhead
+try:
+    FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+except Exception:
+    FACE_CASCADE = None
 
 def get_model_components(model_name, local_model_path=None):
     """Initialize or retrieve model components from cache.
@@ -138,23 +145,39 @@ def process_text(labels, components):
         return {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
 
 def crop_face(image, padding=50, side='largest'):
-    """Detect and crop face from image."""
-    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    """Detect and crop face from image.
+
+    side: 'largest' | 'left' | 'right' | 'none'
+    """
+    if side == 'none':
+        # Return original image without cropping
+        return image
+
+    image_bgr = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+    cascade = FACE_CASCADE or cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
     if len(faces) == 0:
         return None
 
     if side == 'largest':
         faces = sorted(faces, key=lambda x: x[2] * x[3], reverse=True)
+        target = faces[0]
+    elif side == 'left':
+        faces = sorted(faces, key=lambda x: x[0])  # smallest x (leftmost)
+        target = faces[0]
+    elif side == 'right':
+        faces = sorted(faces, key=lambda x: x[0], reverse=True)  # largest x (rightmost)
+        target = faces[0]
+    else:
+        target = faces[0]
 
-    (x, y, w, h) = faces[0]
+    (x, y, w, h) = target
     start_x, start_y = max(0, x - padding), max(0, y - padding)
-    end_x, end_y = min(image.shape[1] - 1, x + w + padding), min(image.shape[0] - 1, y + h + padding)
+    end_x, end_y = min(image_bgr.shape[1] - 1, x + w + padding), min(image_bgr.shape[0] - 1, y + h + padding)
 
-    result = image[start_y:end_y, start_x:end_x]
+    result = image_bgr[start_y:end_y, start_x:end_x]
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
     return Image.fromarray(result)
 
@@ -183,6 +206,7 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
                 raise ValueError("Cannot retrieve image from URL")
 
         image = image.convert('RGB')
+        # Crop face unless explicitly disabled
         image = crop_face(image, side=face)
 
         if image is None:
@@ -212,6 +236,92 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
             torch.cuda.empty_cache()
 
         return dict(zip(labels, probs))
+
+def classify_images_batch(images, labels, face='largest', model_name="oai-base", local_model_path=None):
+    """Classify a batch of images efficiently by computing text embeddings once.
+
+    Args:
+        images: List of image file paths or URLs
+        labels: List of labels
+    face: 'largest' | 'left' | 'right' | 'none'
+        model_name: Model alias or HF id
+        local_model_path: Optional local model directory
+
+    Returns:
+        pandas.DataFrame with one row per image: columns ['image_id', *labels]
+    """
+    if not isinstance(images, (list, tuple)):
+        raise ValueError("'images' must be a list of image paths/URLs")
+    if not isinstance(labels, (list, tuple)) or len(labels) < 2:
+        raise ValueError("'labels' must be a list with at least 2 items")
+
+    components = get_model_components(model_name, local_model_path)
+    model = components['model']
+
+    results = []
+    device = components.get('device', torch.device('cpu'))
+
+    with torch.no_grad():
+        # Compute text embeddings once
+        text_inputs = process_text(labels, components)
+        text_embeds = model.get_text_features(**text_inputs)
+        text_embeds = text_embeds / text_embeds.norm(p=2, dim=-1, keepdim=True)
+        logit_scale = model.logit_scale.exp() if hasattr(model, 'logit_scale') else torch.tensor(1.0, device=device)
+
+        for img in images:
+            row = {label: np.nan for label in labels}
+            row['image_id'] = os.path.basename(img) if isinstance(img, str) else str(img)
+            try:
+                if isinstance(img, str) and not img.startswith('http'):
+                    if not os.path.exists(img):
+                        # leave NaNs
+                        results.append(row)
+                        continue
+                    pil = Image.open(img)
+                else:
+                    pil = Image.open(requests.get(img, stream=True).raw)
+                pil = pil.convert('RGB')
+                face_img = crop_face(pil, side=face)
+                if face_img is None:
+                    results.append(row)
+                    continue
+                image_inputs = process_image(face_img, components)
+                image_embeds = model.get_image_features(**image_inputs)
+                image_embeds = image_embeds / image_embeds.norm(p=2, dim=-1, keepdim=True)
+                logits = torch.matmul(image_embeds, text_embeds.t()) * logit_scale
+                probs = logits.softmax(dim=1).squeeze(0).tolist()
+                for lbl, p in zip(labels, probs):
+                    row[lbl] = float(p)
+            except Exception:
+                # keep NaNs on failure
+                pass
+            finally:
+                # Clean temporary tensors
+                try:
+                    del image_embeds
+                except Exception:
+                    pass
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            results.append(row)
+
+        # Optional cleanup
+        try:
+            del text_embeds
+        except Exception:
+            pass
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    # Ensure consistent column order: image_id then label columns
+    df = pd.DataFrame(results)
+    cols = ['image_id'] + [c for c in labels]
+    # Add any missing columns (if results was empty)
+    for c in cols:
+        if c not in df.columns:
+            df[c] = np.nan
+    df = df[cols]
+    return df
 
 available_models = {
     "oai-base": "openai/clip-vit-base-patch32",

@@ -5,7 +5,9 @@
 #' @param video The URL of the YouTube video to analyze.
 #' @param classes A character vector specifying the classes to analyze.
 #' @param nframes The number of frames to analyze in the video. Default is 100.
-#' @param face_selection The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".
+#' @param face_selection The method for selecting faces in the video. Options are
+#'   "largest", "left", "right", or "none". Default is "largest". Use "none"
+#'   to classify the whole frame without face cropping.
 #' @param start The start time of the video range to analyze. Default is 0.
 #' @param end The end time of the video range to analyze. Default is -1 and this means that video won't be cut. If end is a positive number greater than start, the video will be cut from start to end.
 #' @param uniform Logical indicating whether to uniformly sample frames from the video. Default is FALSE.
@@ -88,8 +90,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
 
   # Check if face_selection is valid
-  if(!face_selection %in% c("largest", "left", "right")){
-    stop("Argument face_selection must be one of: largest, left, right")
+  if(!face_selection %in% c("largest", "left", "right", "none")){
+    stop("Argument face_selection must be one of: largest, left, right, none")
   }
 
   # Check if model is valid when using predefined shortcuts
