@@ -1,0 +1,3754 @@
+<!doctype html><!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en" > <![endif]--><!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en" >        <![endif]--><!--[if IE 8]>    <html class="no-js lt-ie9" lang="en" >               <![endif]--><!--[if gt IE 8]><!--><html class="no-js" lang="en"><!--<![endif]--><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="author" content="infinitSpace B.V.">
+    <meta name="description" content="beyond Blog">
+    <meta name="generator" content="HubSpot">
+    <title>beyond Blog | Admin</title>
+    <link rel="shortcut icon" href="https://www.wearebeyond.work/hubfs/favicon%20Beyond2.png">
+    
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:description" content="beyond Blog">
+    <meta property="og:title" content="beyond Blog | Admin">
+    <meta name="twitter:description" content="beyond Blog">
+    <meta name="twitter:title" content="beyond Blog | Admin">
+
+    
+
+    
+    <style>
+a.cta_button{-moz-box-sizing:content-box !important;-webkit-box-sizing:content-box !important;box-sizing:content-box !important;vertical-align:middle}.hs-breadcrumb-menu{list-style-type:none;margin:0px 0px 0px 0px;padding:0px 0px 0px 0px}.hs-breadcrumb-menu-item{float:left;padding:10px 0px 10px 10px}.hs-breadcrumb-menu-divider:before{content:'›';padding-left:10px}.hs-featured-image-link{border:0}.hs-featured-image{float:right;margin:0 0 20px 20px;max-width:50%}@media (max-width: 568px){.hs-featured-image{float:none;margin:0;width:100%;max-width:100%}}.hs-screen-reader-text{clip:rect(1px, 1px, 1px, 1px);height:1px;overflow:hidden;position:absolute !important;width:1px}
+</style>
+
+<link rel="stylesheet" href="https://www.wearebeyond.work/hs-fs/hubfs/hub_generated/module_assets/1/191972983081/1753505899926/module_Custom_Header_Mega_Menu_-_V2.min.css">
+
+<style>
+  body .header-container, body .global-header .custom-mega-menu-wrapper li.hs-menu-item.hs-menu-depth-1.hs-item-has-children>a:before{
+    background: #f5f3f2;
+  }
+  .global-header .hs-menu-wrapper.hs-menu-flow-horizontal>ul li a{
+    color:#17203f;
+  }
+  .span12.widget-span.widget-type-cell.global-footer{
+    background:#263253;
+  }
+  .span12.widget-span.widget-type-cell.global-footer *{
+    color:#e9d2cd;
+  }
+  body .global-header .custom-mega-menu-wrapper li.hs-menu-item.hs-menu-depth-1.hs-item-has-children:hover a:before, 
+  body .global-header .custom-mega-menu-wrapper.hs-menu-wrapper.hs-menu-flow-horizontal>ul li.hs-menu-item.hs-menu-depth-1.hs-item-has-children:hover a, 
+  body .sub-menu-row-fluid{
+    background:#e9d2cd;
+  }
+  .global-header .custom-mega-menu-wrapper.hs-menu-wrapper.hs-menu-flow-horizontal>ul li.hs-menu-item.hs-menu-depth-1.hs-item-has-children ul li a:hover, .global-header .hs-menu-wrapper ul.hs-menu-children-wrapper li a:hover{
+    color:#a55a46;
+  }
+
+  ul.ul-first-nav-header>li:last-child, ul.ul-first-nav-header>li:nth-last-child(2) {
+    display: block;
+  }
+
+
+  /*  Memberships megamenu CSS  */
+
+  .new-header-sec .mega-dropdown {position: absolute;top: 104px;left: calc(50% - 50px);transform: translateX(-50%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);border-radius: 0;width: 650px;opacity: 0; visibility: hidden;
+    transform: translateX(-50%) translateY(-15px);transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);z-index: 1000;border: none;
+    overflow: hidden;border-radius: 8px 0 0 8px; }
+  .new-header-sec .mega-content {display: grid;grid-template-columns: 200px 1fr 1fr;min-height: auto;max-height: none;}
+  .new-header-sec .service-tabs {background: #a55a46;padding: 15px 0;border-radius: 8px 0 0 8px;display: flex;flex-direction: column;justify-content: flex-start;}
+  .new-header-sec a.service-tab {display: block !important;padding: 12px 20px !important;color: rgba(255, 255, 255, 0.8) !important;
+    text-decoration: none;font-weight: 500 !important;font-size: 14px !important;background-color: transparent !important;line-height:1.5;
+    transition: all 0.3s ease !important;border-left: 4px solid transparent;position: relative;text-transform: capitalize !important;
+    letter-spacing: 0.3px;margin: 1px 0;}
+  .new-header-sec .service-tab.active::after {content: '';position: absolute;right: -1px;top: 0;bottom: 0;width: 1px;background: #e9d2cd;}
+  .new-header-sec .service-tab.active {background: #e9d2cd !important;color: #17203F !important;border-left-color: #a55a46 !important;
+    font-weight: 600 !important;box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);}
+  .new-header-sec .cities-section {padding: 25px 20px;background: #e9d2cd;overflow-y: auto;border-right: 1px solid #e0e0e0;}
+  .new-header-sec .cities-list {display: flex;flex-direction: column;}
+  .new-header-sec .city-item {position: relative;padding: 7px 8px;color: #6b7d94;text-decoration: none;font-weight: 500;font-size: 14px;
+    transition: all 0.3s ease;border-left: 4px solid transparent;text-transform: uppercase;letter-spacing: 0.4px;cursor: pointer;
+    border-radius: 4px;margin-bottom: 1px;}
+  .new-header-sec .city-item:hover {background: rgba(165, 90, 70, 0.15);color: #a55a46;border-left-color: #a55a46;font-weight: 600;}
+  .new-header-sec .locations-section {padding: 15px 20px;background: #e9d2cd;overflow-y: auto;transition: all 0.3s ease;
+    display: flex;flex-direction: column;justify-content: flex-start;margin-top: 0;}
+  .new-header-sec .locations-section.active {opacity: 1;visibility: visible;}
+  .new-header-sec .location-item {padding: 8px 16px !important;color: #17203F  !important;text-decoration: none;
+    font-weight: 500 !important;font-size: 14px !important;transition: all 0.3s ease !important;line-height: 1.5;
+    border-left: 4px solid transparent;letter-spacing: 0.3px;cursor: pointer;border-radius: 4px;margin-bottom: 1px;}
+  .global-header .new-header-sec   li.hs-item-has-children:hover .mega-dropdown { opacity: 1;visibility: visible; }
+  .new-header-sec .service-tab:hover {background: rgba(255, 255, 255, 0.1) !important;color: #ffffff !important;
+    border-left-color: #ffffff !important;}
+
+  a.location-item {display: block !important;}
+  a.location-item:hover {background: rgba(107, 125, 148, 0.1) !important;color: #A55A46 !important;
+    border-left-color: #a55a46;transform: translateX(2px);  }
+
+  .new-header-sec .city-item a {display: block !important;padding: 0 !important;background-color: transparent !important;
+    font-weight: 700 !important;color: #17203F !important;text-transform: uppercase !important;position: relative;letter-spacing: 0.4px;
+    font-size: 14px !important;}
+  .new-header-sec .city-item a:hover {color: #A55A46 !important; }
+  .new-header-sec .service-tab.reactive {background: #e9d2cd !important;color: #2c3e50 !important;border-left-color: #a55a46 !important;
+    font-weight: 600 !important;box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);  }
+  .new-header-sec .city-item:hover a {color: #A55A46 !important;  }
+
+  @media (max-width: 1090px) {
+
+    .city-item {cursor: pointer;position: relative;padding: 5px 20px 5px 30px;}
+    .city-item::after {content: "\f053";position: absolute; right: 10px;top: 11px;transition: transform 0.3s ease;display: inline-block;
+      font-family: FontAwesome;font-style: normal;font-weight: normal;line-height: 1;-webkit-font-smoothing: antialiased;transform: rotate(-90deg);}
+    .city-item.active::after {transform: rotate(90deg);}
+    .locations-section {display: none;padding-left: 0;}
+    .cities-section {display: none;}
+    a.service-tab.active + .cities-section {display: block;}
+    a.location-item {padding: 8px 20px 8px 35px;}
+    a.location-item:hover {background-color: transparent !important;}
+    a.service-tab:before {content: "\f053";position: absolute;right: 10px;top: 17px;transition: transform 0.3s ease;display: inline-block;
+      font-family: FontAwesome;font-style: normal;font-weight: normal;line-height: 1;-webkit-font-smoothing: antialiased;
+      transform: rotate(-90deg);}
+    a.service-tab {position: relative;border-top: 1px solid #000000;}
+    a.service-tab.active:before {transform: rotate(90deg);}
+    .city-item.active + .locations-section {display: block; }
+  }
+
+  }
+
+
+  /* ENd Memberships megamenu CSS   */
+
+</style>
+
+<link rel="stylesheet" href="/hs/hsstatic/BlogSocialSharingSupport/static-1.258/bundles/project.css">
+<link rel="stylesheet" href="https://www.wearebeyond.work/hs-fs/hubfs/hub_generated/module_assets/1/60296229687/1742528626246/module_Social_Media_Footer.min.css">
+    
+
+    
+<!--  Added by GoogleAnalytics integration -->
+<script>
+var _hsp = window._hsp = window._hsp || [];
+_hsp.push(['addPrivacyConsentListener', function(consent) { if (consent.allowed || (consent.categories && consent.categories.analytics)) {
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create','UA-213811763-1','auto');
+  ga('send','pageview');
+}}]);
+</script>
+
+<!-- /Added by GoogleAnalytics integration -->
+
+<!--  Added by GoogleAnalytics4 integration -->
+<script>
+var _hsp = window._hsp = window._hsp || [];
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+
+var useGoogleConsentModeV2 = true;
+var waitForUpdateMillis = 1000;
+
+
+if (!window._hsGoogleConsentRunOnce) {
+  window._hsGoogleConsentRunOnce = true;
+
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'analytics_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'wait_for_update': waitForUpdateMillis
+  });
+
+  if (useGoogleConsentModeV2) {
+    _hsp.push(['useGoogleConsentModeV2'])
+  } else {
+    _hsp.push(['addPrivacyConsentListener', function(consent){
+      var hasAnalyticsConsent = consent && (consent.allowed || (consent.categories && consent.categories.analytics));
+      var hasAdsConsent = consent && (consent.allowed || (consent.categories && consent.categories.advertisement));
+
+      gtag('consent', 'update', {
+        'ad_storage': hasAdsConsent ? 'granted' : 'denied',
+        'analytics_storage': hasAnalyticsConsent ? 'granted' : 'denied',
+        'ad_user_data': hasAdsConsent ? 'granted' : 'denied',
+        'ad_personalization': hasAdsConsent ? 'granted' : 'denied'
+      });
+    }]);
+  }
+}
+
+gtag('js', new Date());
+gtag('set', 'developer_id.dZTQ1Zm', true);
+gtag('config', 'G-VTTWN1T09J');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VTTWN1T09J"></script>
+
+<!-- /Added by GoogleAnalytics4 integration -->
+
+<!--  Added by GoogleTagManager integration -->
+<script>
+var _hsp = window._hsp = window._hsp || [];
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+
+var useGoogleConsentModeV2 = true;
+var waitForUpdateMillis = 1000;
+
+
+
+var hsLoadGtm = function loadGtm() {
+    if(window._hsGtmLoadOnce) {
+      return;
+    }
+
+    if (useGoogleConsentModeV2) {
+
+      gtag('set','developer_id.dZTQ1Zm',true);
+
+      gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'analytics_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'wait_for_update': waitForUpdateMillis
+      });
+
+      _hsp.push(['useGoogleConsentModeV2'])
+    }
+
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PTJGGQM');
+
+    window._hsGtmLoadOnce = true;
+};
+
+_hsp.push(['addPrivacyConsentListener', function(consent){
+  if(consent.allowed || (consent.categories && consent.categories.analytics)){
+    hsLoadGtm();
+  }
+}]);
+
+</script>
+
+<!-- /Added by GoogleTagManager integration -->
+
+
+<!-- Leadinfo tracking code -->
+<script>
+(function(l,e,a,d,i,n,f,o){if(!l[i]){l.GlobalLeadinfoNamespace=l.GlobalLeadinfoNamespace||[];
+l.GlobalLeadinfoNamespace.push(i);l[i]=function(){(l[i].q=l[i].q||[]).push(arguments)};l[i].t=l[i].t||n;
+l[i].q=l[i].q||[];o=e.createElement(a);f=e.getElementsByTagName(a)[0];o.async=1;o.src=d;f.parentNode.insertBefore(o,f);}
+}(window,document,'script','https://cdn.leadinfo.net/ping.js','leadinfo','LI-6728CA8A02517'));
+</script>	
+<link rel="next" href="https://www.wearebeyond.work/blog/author/admin/page/2">
+<meta property="og:url" content="https://www.wearebeyond.work/blog/author/admin">
+<meta property="og:type" content="blog">
+<meta name="twitter:card" content="summary">
+<link rel="alternate" type="application/rss+xml" href="https://www.wearebeyond.work/blog/rss.xml">
+<meta name="twitter:domain" content="www.wearebeyond.work">
+<script src="//platform.linkedin.com/in.js" type="text/javascript">
+    lang: en_US
+</script>
+
+<meta http-equiv="content-language" content="en">
+<link rel="stylesheet" href="//7052064.fs1.hubspotusercontent-na1.net/hubfs/7052064/hub_generated/template_assets/DEFAULT_ASSET/1754414403455/template_layout.min.css">
+
+
+<link rel="stylesheet" href="https://www.wearebeyond.work/hs-fs/hubfs/hub_generated/template_assets/1/60170789049/1742452619266/template_style_2021.css">
+
+
+
+
+</head>
+<body class="   hs-content-id-66594199340 hs-blog-listing hs-blog-id-66594199339" style="">
+<!--  Added by GoogleTagManager integration -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PTJGGQM" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<!-- /Added by GoogleTagManager integration -->
+
+    <div class="header-container-wrapper">
+    <div class="header-container container-fluid">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-global_group " style="" data-widget-type="global_group" data-x="0" data-w="12">
+<div class="" data-global-widget-path="generated_global_groups/191979415583.html"><div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell global-header" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-2 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell page-center" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-3 ">
+<div class="row-fluid ">
+<div class="span2 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="2">
+<div id="hs_cos_wrapper_module_924696882" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-logo" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module">
+  
+
+
+
+
+
+  <span id="hs_cos_wrapper_module_924696882_hs_logo_widget" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_logo" style="" data-hs-cos-general-type="widget" data-hs-cos-type="logo"><a href="https://www.wearebeyond.work" id="hs-link-module_924696882_hs_logo_widget" style="border-width:0px;border:0px;"><img src="https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=190&amp;height=56&amp;name=beyond_logo%20left%20top.png" class="hs-image-widget " height="56" style="height: auto;width:190px;border-width:0px;border:0px;" width="190" alt="beyond" title="beyond" srcset="https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=95&amp;height=28&amp;name=beyond_logo%20left%20top.png 95w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=190&amp;height=56&amp;name=beyond_logo%20left%20top.png 190w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=285&amp;height=84&amp;name=beyond_logo%20left%20top.png 285w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=380&amp;height=112&amp;name=beyond_logo%20left%20top.png 380w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=475&amp;height=140&amp;name=beyond_logo%20left%20top.png 475w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20top.png?width=570&amp;height=168&amp;name=beyond_logo%20left%20top.png 570w" sizes="(max-width: 190px) 100vw, 190px"></a></span>
+</div>
+
+</div><!--end widget-span -->
+<div class="span10 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="2" data-w="10">
+<div id="hs_cos_wrapper_module_175128990809777" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><div class="custom-mega-menu-wrapper hs-menu-wrapper hs-menu-flow-horizontal new-header-sec">
+  <ul class="ul-first-nav-header" role="menu">
+    
+    <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children">
+      
+
+      
+      <a href="javascript:void(0);" aria-haspopup="true" aria-expanded="false" role="menuitem">
+        MEMBERSHIPS
+      </a>
+      
+
+      
+      <div class="mega-dropdown">
+        <div class="mega-content">  
+          <div class="service-tabs">
+            
+            
+            
+            <a class="service-tab active" onclick="showServicePanel(event, 'Office Space')" href="https://www.wearebeyond.work/office-space">
+              Office Space
+            </a>
+            
+            
+            
+            <a class="service-tab active" onclick="showServicePanel(event, 'Coworking')" href="https://www.wearebeyond.work/coworking">
+              Coworking
+            </a>
+            
+            
+            
+            <a class="service-tab active" onclick="showServicePanel(event, 'Dedicated Desk')" href="https://www.wearebeyond.work/dedicated-desk">
+              Dedicated Desk
+            </a>
+            
+            
+            
+            <a class="service-tab active" onclick="showServicePanel(event, 'Meeting Rooms')" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms">
+              Meeting Rooms
+            </a>
+            
+          </div>
+
+          <div class="cities-section">
+            <div class="cities-list">
+              
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                <a href="https://www.wearebeyond.work/rental-offices-london">
+                  London      
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                <a href="https://www.wearebeyond.work/rental-offices-amsterdam">
+                  Amsterdam
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                <a href="https://www.wearebeyond.work/rental-offices-berlin">
+                  Berlin
+                </a>                    
+              </div>
+              
+              
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('London', this)">
+                <a href="https://www.wearebeyond.work/coworking/coworking-london">
+                  London
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                <a href="https://www.wearebeyond.work/coworking/coworking-amsterdam">
+                  Amsterdam
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                <a href="https://www.wearebeyond.work/coworking/coworking-berlin">
+                  Berlin
+                </a>                    
+              </div>
+              
+              
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                <a href="https://www.wearebeyond.work/dedicated-desk-london">
+                  London      
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                <a href="https://www.wearebeyond.work/dedicated-desk-amsterdam">
+                  Amsterdam
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                <a href="https://www.wearebeyond.work/dedicated-desk-berlin">
+                  Berlin
+                </a>                    
+              </div>
+              
+              
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                <a href="">
+                  London      
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                <a href="">
+                  Amsterdam
+                </a>                    
+              </div>
+              
+              
+                             
+              <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                <a href="">
+                  Berlin
+                </a>                    
+              </div>
+              
+              
+            </div>
+          </div>
+
+          <div class="locations-section" id="locations-panel">
+            <div class="locations-list" id="locations-list">
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/kingsbourne-house/" target="_blank" rel="noopener"> beyond Kingsbourne House
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/the-bower" target="_blank" rel="noopener"> beyond The Bower
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/gouden-bocht" target="_blank" rel="noopener"> beyond Gouden Bocht
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/rental-offices-berlin/quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+              </a>              
+              
+              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-kingsbourne-house" target="_blank" rel="noopener"> beyond Kingsbourne House
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-the-bower" target="_blank" rel="noopener"> beyond The Bower
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-gouden-bacht" target="_blank" rel="noopener"> beyond Gouden Bocht
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/beyond-republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-berlin/coworking-quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+              </a>              
+              
+              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/kingsbourne-house" target="_blank" rel="noopener"> beyond Kingsbourne House
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/the-bower" target="_blank" rel="noopener"> beyond The Bower
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/gouden-bocht" target="_blank" rel="noopener"> beyond Gouden Bocht
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-berlin/quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+              </a>              
+              
+              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://aldgatetower.wearebeyond.work/bookings/search?group=Meeting%20rooms" target="_blank" rel="noopener">beyond Aldgate Tower
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener">beyond Fox Court
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964752" target="_blank" rel="noopener">beyond Kingsbourne House
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415499547" target="_blank" rel="noopener">beyond The Bower
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964753" target="_blank" rel="noopener">beyond Zuidtoren
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1420951935" target="_blank" rel="noopener">beyond Gouden Bocht
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415079491" target="_blank" rel="noopener">beyond Republica Campus
+              </a>              
+              
+              
+              
+              
+              
+              <a class="location-item" href="https://qh.wearebeyond.work/bookings/search?group=Meeting%20rooms" target="_blank" rel="noopener">beyond Quartier Heidestrasse
+              </a>              
+              
+              
+              
+              <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener">beyond Chausseestrasse
+              </a>              
+              
+              
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+      
+
+
+    </li>
+    
+    <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children">
+      
+
+      
+      <a href="javascript:void(0);" aria-haspopup="true" aria-expanded="false" role="menuitem">
+        LOCATIONS
+      </a>
+      
+
+      
+
+      
+      <div class="sub-menu-hover-open">
+        <div class="sub-menu-row-fluid">
+          <div class="span7">
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  LONDON
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-aldgate-tower">
+                      Aldgate - beyond Aldgate Tower
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-fox-court">
+                      Holborn - beyond Fox Court 
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-kingsbourne-house">
+                      Holborn - beyond Kingsbourne House             
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-the-bower">
+                      Old Street - beyond The Bower    
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  AMSTERDAM
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-zuidtoren">
+                      Hoofddorp CS - beyond Zuidtoren      
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-gouden-bocht">
+                      Amsterdam - beyond Gouden Bocht                    
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-republica-campus">
+                      Amsterdam - beyond Republica Campus                    
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  BERLIN
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-quartier-heidestrasse">
+                      Mitte - beyond Quartier Heidestrasse
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.wearebeyond.work/beyond-chausseestrasse">
+                      Mitte - beyond Chausseestrasse                    
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  DUBAI                
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.centrumspaces.com/business-bay-dubai">
+                      Business Bay - Centrum Bay Gate Tower
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  ABU DHABI
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://www.centrumspaces.com/reem-island-abu-dhabi">
+                      Al Reem Island - Centrum Sky Tower                    
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+
+          </div>
+          <div class="span5">
+            <div class="sub-menu-image-wrapper" style="background-image:url(https://www.wearebeyond.work/hubfs/download.webp)">
+
+              
+              
+              <a href="https://www.wearebeyond.work/free-coworking-day">
+                
+                <h4>
+                  FREE COWORKING DAY
+                </h4>
+                
+                
+                <p>
+                  Your opportunity to experience everything that beyond workspace has to offer – completely free of charge.
+                </p>
+                
+                
+                <p class="text-right-menu">
+                  <span>learn more</span>
+                </p>
+                
+              </a>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+
+      
+
+
+    </li>
+    
+    <li class="hs-menu-item hs-menu-depth-1">
+      
+      
+      
+      
+
+      
+      <a href="#contactus">
+        CONTACT
+      </a>
+      
+
+      
+
+      
+
+      
+
+
+    </li>
+    
+    <li class="hs-menu-item hs-menu-depth-1">
+      
+      
+      
+      
+
+      
+      <a href="https://www.wearebeyond.work/beyond-broker-lp">
+        BROKERS
+      </a>
+      
+
+      
+
+      
+
+      
+
+
+    </li>
+    
+    <li class="hs-menu-item hs-menu-depth-1">
+      
+      
+      
+      
+
+      
+      <a href="https://www.wearebeyond.work/blog">
+        BLOG
+      </a>
+      
+
+      
+
+      
+
+      
+
+
+    </li>
+    
+    <li class="hs-menu-item hs-menu-depth-1 hs-item-has-children">
+      
+
+      
+      <a href="javascript:void(0);" aria-haspopup="true" aria-expanded="false" role="menuitem">
+         Member Login
+      </a>
+      
+
+      
+
+      
+
+      
+      <div class="sub-menu-hover-open">
+        <div class="sub-menu-row-fluid">
+          <div class="span7">
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  LONDON              
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://aldgatetower.wearebeyond.work/login">
+                      Aldgate – beyond Aldgate Tower                  
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://kingsbournehouse.wearebeyond.work/login">
+                      Holborn – beyond Kingsbourne House                  
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://thebower.wearebeyond.work/login">
+                      Old Street - beyond The Bower                  
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  AMSTERDAM              
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://zuidtoren.wearebeyond.work/login">
+                      Hoofddorp CS - beyond Zuidtoren                  
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://goudenbocht.wearebeyond.work/login">
+                      Amsterdam - beyond Gouden Bocht                  
+                    </a>
+                  </li>
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://republica.wearebeyond.work/login">
+                      Amsterdam - beyond Republica Campus                  
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+            <ul role="menu" class="hs-menu-children-wrapper">
+              <li class="hs-menu-item hs-menu-depth-2">
+
+                
+                
+                <a class="sub-menu-header" href="">
+                  BERLIN              
+                </a>
+
+                <ul role="menu" class="hs-sub-menu-children-wrapper">
+                  
+                  <li class="hs-menu-item hs-menu-depth-2">
+                    
+                    
+                    <a href="https://qh.wearebeyond.work/login">
+                      Mitte - beyond Quartier Heidestrasse                  
+                    </a>
+                  </li>
+                  
+
+                </ul>
+
+              </li>
+
+            </ul>
+
+            
+
+          </div>
+          <div class="span5">
+            <div class="sub-menu-image-wrapper" style="background-image:url(https://www.wearebeyond.work/hubfs/download.webp)">
+
+              
+              
+              <a href="https://www.wearebeyond.work/free-coworking-day">
+                
+                <h4>
+                  FREE COWORKING DAY
+                </h4>
+                
+                
+                <p>
+                  Your opportunity to experience everything that beyond workspace has to offer – completely free of charge.
+                </p>
+                
+                
+                <p class="text-right-menu">
+                  <span>learn more</span>
+                </p>
+                
+              </a>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+
+
+    </li>
+    
+  </ul>
+
+  <div class="nav-menu-button">
+
+    
+    <a class="nav-menu-button-wrapper" href="javascript:;">
+      
+    </a>
+    
+
+    
+
+    
+
+    
+
+  </div>
+
+  
+  <div class="header-last-button">
+    
+    
+    <a href="https://www.wearebeyond.work/free-coworking-day">
+      TRY A FREE DAY
+    </a>
+  </div>
+  
+
+</div>
+
+<nav class="mobile-nav-custom">
+  <ul class="pushNav js-topPushNav">
+
+    <li class="closeLevel js-closeLevelTop hdg">
+      <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11 Navigationstyles__CloseIcon-sc-pmv5i5-2 gueoqa" role="img" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>
+    </li>
+
+    
+
+
+    <li>
+
+      
+
+
+
+      
+      <div class="openLevel js-openLevel">
+        MEMBERSHIPS
+        <i class="fa fa-chevron-right"></i>
+      </div>
+      <ul class="pushNav pushNav_level js-pushNavLevel">
+        <li class="closeLevel js-closeLevel hdg">
+          <i class="fa fa-chevron-left"></i>
+          MEMBERSHIPS
+
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11 Navigationstyles__CloseIcon-sc-pmv5i5-2 gueoqa" role="img" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>
+        </li>
+
+        <div class="mega-dropdown">
+          <div class="mega-content">
+            <div class="service-tabs">
+              
+              <a href="#" class="service-tab" onclick="showServicePanel(event, 'Office Space')">Office Space</a>
+
+              <div class="cities-section">
+                <div class="cities-list">                 
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                    London      
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/kingsbourne-house/" target="_blank" rel="noopener"> beyond Kingsbourne House
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-london/the-bower" target="_blank" rel="noopener"> beyond The Bower
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                    Amsterdam
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/gouden-bocht" target="_blank" rel="noopener"> beyond Gouden Bocht
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-amsterdam/republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                    Berlin
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/rental-offices-berlin/quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <a href="#" class="service-tab" onclick="showServicePanel(event, 'Coworking')">Coworking</a>
+
+              <div class="cities-section">
+                <div class="cities-list">                 
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('London', this)">
+                    London
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-kingsbourne-house" target="_blank" rel="noopener"> beyond Kingsbourne House
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-london/coworking-the-bower" target="_blank" rel="noopener"> beyond The Bower
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                    Amsterdam
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-gouden-bacht" target="_blank" rel="noopener"> beyond Gouden Bocht
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-amsterdam/beyond-republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                    Berlin
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/coworking/coworking-berlin/coworking-quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <a href="#" class="service-tab" onclick="showServicePanel(event, 'Dedicated Desk')">Dedicated Desk</a>
+
+              <div class="cities-section">
+                <div class="cities-list">                 
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                    London      
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/aldgate-tower" target="_blank" rel="noopener"> beyond Aldgate Tower
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener"> beyond Fox Court
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/kingsbourne-house" target="_blank" rel="noopener"> beyond Kingsbourne House
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-london/the-bower" target="_blank" rel="noopener"> beyond The Bower
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                    Amsterdam
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/zuidtoren" target="_blank" rel="noopener"> beyond Zuidtoren
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/gouden-bocht" target="_blank" rel="noopener"> beyond Gouden Bocht
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-amsterdam/republica-campus" target="_blank" rel="noopener"> beyond Republica Campus
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                    Berlin
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/dedicated-desk-berlin/quartier-heidestrasse" target="_blank" rel="noopener"> beyond Quartier Heidestrasse
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener"> beyond Chausseestrasse
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <a href="#" class="service-tab" onclick="showServicePanel(event, 'Meeting Rooms')">Meeting Rooms</a>
+
+              <div class="cities-section">
+                <div class="cities-list">                 
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('London      ', this)">
+                    London      
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://aldgatetower.wearebeyond.work/bookings/search?group=Meeting%20rooms" target="_blank" rel="noopener">beyond Aldgate Tower
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-fox-court" target="_blank" rel="noopener">beyond Fox Court
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964752" target="_blank" rel="noopener">beyond Kingsbourne House
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415499547" target="_blank" rel="noopener">beyond The Bower
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Amsterdam', this)">
+                    Amsterdam
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964753" target="_blank" rel="noopener">beyond Zuidtoren
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1420951935" target="_blank" rel="noopener">beyond Gouden Bocht
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415079491" target="_blank" rel="noopener">beyond Republica Campus
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                  <div class="city-item" onmouseenter="showCityLocations('Berlin', this)">
+                    Berlin
+                  </div>
+                  <div class="locations-section">
+                    <div class="locations-list">                                   
+                      
+                      
+                      
+                      <a class="location-item" href="https://qh.wearebeyond.work/bookings/search?group=Meeting%20rooms" target="_blank" rel="noopener">beyond Quartier Heidestrasse
+                      </a>              
+                      
+                      
+                      
+                      <a class="location-item" href="https://www.wearebeyond.work/beyond-chausseestrasse" target="_blank" rel="noopener">beyond Chausseestrasse
+                      </a>              
+                                                    
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+            </div>
+
+          </div>
+        </div>
+      </ul>
+
+      
+
+    </li>
+
+    
+
+
+    <li>
+
+      
+
+
+
+      
+
+      <div class="openLevel js-openLevel">
+        LOCATIONS
+        <i class="fa fa-chevron-right"></i>
+      </div>
+
+      <ul class="pushNav pushNav_level js-pushNavLevel">
+        <li class="closeLevel js-closeLevel hdg">
+          <i class="fa fa-chevron-left"></i>
+          LOCATIONS
+
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11 Navigationstyles__CloseIcon-sc-pmv5i5-2 gueoqa" role="img" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>
+        </li>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              LONDON
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-aldgate-tower">
+                  Aldgate - beyond Aldgate Tower
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-fox-court">
+                  Holborn - beyond Fox Court 
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-kingsbourne-house">
+                  Holborn - beyond Kingsbourne House             
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-the-bower">
+                  Old Street - beyond The Bower    
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              AMSTERDAM
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-zuidtoren">
+                  Hoofddorp CS - beyond Zuidtoren      
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-gouden-bocht">
+                  Amsterdam - beyond Gouden Bocht                    
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-republica-campus">
+                  Amsterdam - beyond Republica Campus                    
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              BERLIN
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-quartier-heidestrasse">
+                  Mitte - beyond Quartier Heidestrasse
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.wearebeyond.work/beyond-chausseestrasse">
+                  Mitte - beyond Chausseestrasse                    
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              DUBAI                
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.centrumspaces.com/business-bay-dubai">
+                  Business Bay - Centrum Bay Gate Tower
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              ABU DHABI
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://www.centrumspaces.com/reem-island-abu-dhabi">
+                  Al Reem Island - Centrum Sky Tower                    
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>
+
+        </ul>
+
+        
+
+      </ul>
+
+      
+
+    </li>
+
+    
+
+
+    <li>
+
+      
+      
+      
+      
+
+
+
+      
+
+      
+      <a href="#contactus">
+        CONTACT 
+      </a>
+      
+
+      
+
+    </li>
+
+    
+
+
+    <li>
+
+      
+      
+      
+      
+
+
+
+      
+
+      
+      <a href="https://www.wearebeyond.work/beyond-broker-lp">
+        BROKERS 
+      </a>
+      
+
+      
+
+    </li>
+
+    
+
+
+    <li>
+
+      
+      
+      
+      
+
+
+
+      
+
+      
+      <a href="https://www.wearebeyond.work/blog">
+        BLOG 
+      </a>
+      
+
+      
+
+    </li>
+
+    
+
+
+    <li>
+
+      
+
+
+
+      
+
+      <div class="openLevel js-openLevel">
+         Member Login    
+        <i class="fa fa-chevron-right"></i> 
+      </div>
+
+      <ul class="pushNav sss pushNav_level js-pushNavLevel">
+        <li class="closeLevel js-closeLevel hdg">
+          <i class="fa fa-chevron-left"></i>
+           Member Login
+          <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11 Navigationstyles__CloseIcon-sc-pmv5i5-2 gueoqa" role="img" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>
+        </li>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              LONDON              
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://aldgatetower.wearebeyond.work/login">
+                  Aldgate – beyond Aldgate Tower                  
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://kingsbournehouse.wearebeyond.work/login">
+                  Holborn – beyond Kingsbourne House                  
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://thebower.wearebeyond.work/login">
+                  Old Street - beyond The Bower                  
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>      
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              AMSTERDAM              
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://zuidtoren.wearebeyond.work/login">
+                  Hoofddorp CS - beyond Zuidtoren                  
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://goudenbocht.wearebeyond.work/login">
+                  Amsterdam - beyond Gouden Bocht                  
+                </a>
+              </li>
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://republica.wearebeyond.work/login">
+                  Amsterdam - beyond Republica Campus                  
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>      
+
+        </ul>
+
+        
+        <ul role="menu" class="hs-menu-children-wrapper">
+          <li class="hs-menu-item hs-menu-depth-2">
+
+            
+            
+            <a class="sub-menu-header" href="">
+              BERLIN              
+            </a>
+
+            <ul role="menu" class="hs-sub-menu-children-wrapper">
+              
+              <li class="hs-menu-item hs-menu-depth-2">
+                
+                
+                <a href="https://qh.wearebeyond.work/login">
+                  Mitte - beyond Quartier Heidestrasse                  
+                </a>
+              </li>
+              
+
+            </ul>
+
+          </li>      
+
+        </ul>
+
+        
+
+      </ul>
+
+      
+
+    </li>
+
+    
+    
+    <li>
+      
+      
+      <a href="https://www.wearebeyond.work/free-coworking-day">TRY A FREE DAY
+      </a>
+    </li>
+    
+
+
+
+    <!--     <li>
+      <div class="openLevel js-openLevel">
+        Testing
+        <i class="fa fa-chevron-right"></i>
+      </div>
+
+      <ul class="pushNav pushNav_level js-pushNavLevel">
+        <li class="closeLevel js-closeLevel hdg">
+          <i class="fa fa-chevron-left"></i>
+          Go Back
+        </li>
+        <li><a href="#">Link to page fourteen</a></li>
+        <li><a href="#">Link to page fifteen</a></li>
+        <li><a href="#">Link to page sixteen</a></li>
+        <li><a href="#">Link to page seventeen</a></li>
+        <li><a href="#">Link to page eighteen</a></li>
+        <li><a href="#">Link to page nineteen</a></li>
+      </ul>
+
+    </li> -->
+
+  </ul>
+</nav>
+
+<div class="wrapper">
+
+  <div class="burger js-menuToggle">
+    <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bars" class="svg-inline--fa fa-bars fa-w-14 Navigationstyles__MenuIcon-sc-pmv5i5-1 gBnNkd" role="img" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512"><path fill="currentColor" d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"></path></svg>
+  </div>
+
+</div>
+
+<span class="screen"></span>
+
+
+
+</div>
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+</div>
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+    </div><!--end header -->
+</div><!--end header wrapper -->
+
+<div class="body-container-wrapper">
+    <div class="body-container container-fluid">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell page-center" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-2 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="margin:50px 0;" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_151388194052436" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-blog_content" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module">
+   <div class="blog-section">
+<div class="blog-listing-wrapper cell-wrapper">
+<div class="blog-section">
+<div class="blog-listing-wrapper cell-wrapper">
+<div class="post-listing">
+<div class="hs-author-profile">
+<h2 class="hs-author-name">Admin</h2>
+<div class="hs-author-bio"></div>
+</div>
+<h3 class="hs-author-listing-header">Recent Posts</h3>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/mental-health-awareness-week-wellness-and-the-workspace">Mental Health Awareness Week: Wellness and the workspace</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">May 23, 2025</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/mental-health-awareness-week-wellness-and-the-workspace">
+<img src="https://www.wearebeyond.work/hubfs/premium_photo-1683120730432-b5ea74bd9047.jpeg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+beyond.
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/mental-health-awareness-week-wellness-and-the-workspace">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right1_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/beyond-more-than-just-a-workspace-how-about-a-dinner-cruise">beyond, more than just a workspace: how about a dinner cruise?</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Mar 31, 2025</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/beyond-more-than-just-a-workspace-how-about-a-dinner-cruise">
+<img src="https://www.wearebeyond.work/hubfs/cropped-Salonboot_HRH_new_8.webp" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/beyond-more-than-just-a-workspace-how-about-a-dinner-cruise">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right2_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/amazing-double-header-two-brand-new-beyond-workspaces-open-today">Amazing double-header: Two brand-new beyond workspaces open today!</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Feb 02, 2025</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/amazing-double-header-two-brand-new-beyond-workspaces-open-today">
+<img src="https://www.wearebeyond.work/hubfs/Screenshot%202024-12-17%20140859.png" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/amazing-double-header-two-brand-new-beyond-workspaces-open-today">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right3_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/looking-back-at-beyonds-journey-in-2024">Looking back at beyond’s journey in 2024</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Dec 09, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/looking-back-at-beyonds-journey-in-2024">
+<img src="https://www.wearebeyond.work/hubfs/shutterstock_2203559307-2.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/looking-back-at-beyonds-journey-in-2024">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right4_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/beyond-launches-worlds-first-ai-in-business-workshop-series-across-its-global-network">beyond launches world’s first AI-in-business workshop series across its global network!</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Nov 19, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/beyond-launches-worlds-first-ai-in-business-workshop-series-across-its-global-network">
+<img src="https://www.wearebeyond.work/hubfs/shutterstock_1934207456.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/beyond-launches-worlds-first-ai-in-business-workshop-series-across-its-global-network">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right5_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/welcome-to-beyond-the-bower-everything-you-need-to-know">Welcome to beyond The Bower: everything you need to know</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Nov 11, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/welcome-to-beyond-the-bower-everything-you-need-to-know">
+<img src="https://www.wearebeyond.work/hubfs/24-01-21_0096_web.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/welcome-to-beyond-the-bower-everything-you-need-to-know">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right6_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/a-guide-for-scale-ups-to-picking-the-right-place-for-work">A guide for scale-ups to picking the right place for work</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Oct 17, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/a-guide-for-scale-ups-to-picking-the-right-place-for-work">
+<img src="https://www.wearebeyond.work/hubfs/shutterstock_1006205941.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/a-guide-for-scale-ups-to-picking-the-right-place-for-work">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right7_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/return-to-office-mandates-arent-the-answer-heres-beyonds-guide-to-making-your-workspace-a-place-employees-want-to-be">Our guide to make your workspace a place employees want to be</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Sep 13, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/return-to-office-mandates-arent-the-answer-heres-beyonds-guide-to-making-your-workspace-a-place-employees-want-to-be">
+<img src="https://www.wearebeyond.work/hubfs/shutterstock_1185148942.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/return-to-office-mandates-arent-the-answer-heres-beyonds-guide-to-making-your-workspace-a-place-employees-want-to-be">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right8_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/how-we-build-community-at-beyond">How we build community at beyond</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Aug 07, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/how-we-build-community-at-beyond">
+<img src="https://www.wearebeyond.work/hubfs/Screenshot%202024-08-07%20at%2012.35.17.png" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/how-we-build-community-at-beyond">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right9_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-index__post blog-index__post--small">
+<div class="blog-index__post-inner-card">
+<h2><a href="https://www.wearebeyond.work/blog/how-beyond-helps-businesses-grow-from-one-of-our-members-labb">How beyond helps businesses grow – from one of our members, 'labb'!</a></h2>
+<div class="blog-post__meta">
+Published by <a href="https://www.wearebeyond.work/blog/author/admin">Admin</a> 
+on <span class="blog-post__timestamp">Jul 26, 2024</span>
+</div>
+<a class="blog-index__post-image blog-index__post-image--small" href="https://www.wearebeyond.work/blog/how-beyond-helps-businesses-grow-from-one-of-our-members-labb">
+<img src="https://www.wearebeyond.work/hubfs/Sean.jpg" alt="beyond Blog">
+</a>
+<div class="blog-index__post-content  blog-index__post-content--small">
+<div class="blog-post__read-more">
+<a href="https://www.wearebeyond.work/blog/how-beyond-helps-businesses-grow-from-one-of-our-members-labb">Read More<span class="read-more__arrow"><span id="hs_cos_wrapper_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_icon" style="" data-hs-cos-general-type="widget" data-hs-cos-type="icon"><svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 448 512" aria-hidden="true"><g id="long-arrow-alt-right10_layer"><path d="M313.941 216H12c-6.627 0-12 5.373-12 12v56c0 6.627 5.373 12 12 12h301.941v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.569 0-33.941l-86.059-86.059c-15.119-15.119-40.971-4.411-40.971 16.971V216z" /></g></svg></span></span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="blog-pagination">
+<a class="all-posts-link" href="https://www.wearebeyond.work/blog/all">All posts</a>
+<a class="next-posts-link" href="https://www.wearebeyond.work/blog/author/admin/page/2">Next</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<style>
+.post-listing {
+overflow: hidden;
+max-width: 800px !important;
+padding: 0 30px;
+margin: 0 auto;
+width: 100%;
+}
+.hs-blog-listing .content-wrapper,.hs-blog-post .content-wrapper,.blog-header__inner {
+overflow: hidden;
+max-width: 800px !important;
+padding: 0 30px;
+margin: 0 auto;
+width: 100%
+}
+.content-wrapper {
+margin: 0 auto
+}
+.blog-header {
+text-align: left;
+margin-top: 70px;
+padding-top: 24px;
+padding-bottom: 48px
+}
+.blog-index__post-inner-card h2 {
+font-size: 32px;
+line-height: 48px;
+margin: 10px 0 9px;
+color: #374160;
+font-size: 26px;
+line-height: 32px;
+font-family: 'Poppins',sans-serif;
+font-weight: bold;
+}
+.blog-header__title {
+font-size: 28px;
+line-height: 1.5;
+color: #303235;
+margin: 18.76px 0;
+padding-bottom: 20px
+}
+.blog-header__subtitle {
+margin: 1rem 0 2rem
+}
+.blog-header__form {
+margin: 0 1rem
+}
+@media screen and (min-width: 768px) {
+.blog-header__form {
+width:500px;
+margin: 0 auto
+}
+}
+.blog-index {
+display: flex;
+flex-wrap: wrap
+}
+.blog-index:after {
+content: "";
+flex: auto
+}
+.blog-index__tag-header {
+flex: 1 0 100%;
+padding: 1rem
+}
+.blog-index__tag-subtitle {
+font-size: 1.16rem;
+line-height: 1.1
+}
+.blog-index__tag-heading {
+padding-bottom: 1rem;
+border-bottom: 3px solid #d1d6dc
+}
+@media only screen and (max-width: 700px) {
+.hs-blog-listing .content-wrapper,.hs-blog-post .content-wrapper,.blog-header__inner {
+padding:0 15px
+}
+}
+@media screen and (min-width: 768px) {
+.blog-index__post {
+*flex:0 0 calc(100%/2)
+}
+}
+@media screen and (min-width: 1000px) {
+.blog-index__post {
+*flex:0 0 calc(100%/3)
+}
+}
+@media screen and (min-width: 768px) {
+.blog-index__post--large {
+flex:1 0 100%;
+display: flex;
+justify-items: space-between
+}
+}
+.blog-post img {
+width: calc(100% + 40px);
+margin: 10px -20px;
+border-radius: 3px;
+padding-top: 9px
+}
+.blog-index__post-image {
+display: block;
+background-size: cover;
+background-position: center center;
+background-repeat: no-repeat;
+background-image: url('./images/grayscale-mountain.png')
+}
+@media screen and (min-width: 768px) {
+.blog-index__post-image--large {
+flex:1 1 100%;
+padding-bottom: 0
+}
+.blog-index__post-content--large {
+flex: 1 1 100%;
+padding-left: 2rem
+}
+.blog-index__post-image--large {
+flex: 1 1 48%
+}
+.blog-index__post-content--large {
+flex: 1 1 48%;
+padding-left: 2rem
+}
+}
+.blog-index__post-content h2 {
+margin: .5rem 0
+}
+.blog-index__post-content--small h2 {
+font-size: 1.25rem
+}
+.blog-index__post-content p {
+font-family: Lato,sans-serif
+}
+.blog-index__post-content a {
+font-weight: 500
+}
+.blog-index__post img {
+width: calc(100% + 40px);
+margin: 10px -20px;
+height: auto;
+border-radius: 3px
+}
+.blog-pagination {
+padding-bottom: 68px;
+position: relative
+}
+.blog-pagination__link {
+display: inline-flex;
+text-decoration: none;
+border: 2px solid transparent;
+border-radius: 7px;
+font-weight: 500
+}
+.blog-pagination__link--active {
+border: 2px solid #b0c1d4
+}
+.blog-pagination__link:hover,.blog-pagination__link:focus {
+text-decoration: underline
+}
+.blog-pagination__prev-link,.blog-pagination__next-link {
+display: inline-flex;
+align-items: center;
+position: absolute
+}
+.blog-pagination__prev-link {
+text-align: left;
+left: 0
+}
+.blog-pagination__next-link {
+text-align: right;
+right: 0
+}
+.blog-pagination__prev-link--disabled,.blog-pagination__next-link--disabled {
+color: #b0c1d4;
+pointer-events: none;
+cursor: default
+}
+.blog-pagination__prev-link svg,.blog-pagination__next-link svg {
+fill: #494a52;
+margin: 3px
+}
+.blog-pagination__prev-link--disabled svg,.blog-pagination__next-link--disabled svg {
+fill: #b0c1d4
+}
+.blog-pagination__number-link:hover,.blog-pagination__number-link:focus {
+border: 2px solid #b0c1d4
+}
+.blog-header__author-avatar {
+height: 200px;
+width: 200px;
+background-position: center center;
+background-size: cover;
+background-repeat: no-repeat;
+border-radius: 50%;
+box-shadow: 0 0 12px 0 rgba(0,0,0,0.15);
+margin: 0 auto 1.5rem
+}
+.blog-header__author-social-links a {
+display: inline-block;
+position: relative;
+background-color: #000;
+border-radius: 50%;
+width: 40px;
+height: 40px;
+margin: 0 5px
+}
+.blog-header__author-social-links a:hover {
+background-color: #494a52
+}
+.blog-header__author-social-links svg {
+fill: #fff;
+height: 15px;
+width: auto;
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%,-50%)
+}
+.blog-post {
+max-width: 960px;
+margin: 0 auto;
+padding: 2.9rem 0
+}
+.blog-post h1 {
+font-size: 28px;
+margin: 0;
+padding-top: 24px
+}
+.blog-post__meta {
+padding-top: 3px
+}
+.blog-post__meta p {
+font-size: 12px;
+line-height: 18px;
+margin: 0
+}
+.blog-post__meta a {
+color: #494a52;
+text-decoration: underline
+}
+.blog-post__tags {
+font-family: Lato,sans-serif;
+color: #000
+}
+.blog-post__tags svg {
+width: 15px;
+height: auto;
+margin-right: 10px
+}
+.blog-post__tag-link {
+font-size: .8rem;
+color: #000
+}
+.blog-recent-posts {
+margin-top: 3rem;
+background-color: #f8fafc;
+padding: 2rem 0
+}
+.blog-recent-posts h2 {
+text-align: center
+}
+.blog-recent-posts__list {
+display: flex
+}
+.blog-recent-posts__post {
+display: block;
+flex: 0 0 100%;
+color: #494a52;
+padding: 1rem
+}
+@media screen and (min-width: 768px) {
+.blog-recent-posts__post {
+flex:0 0 calc(100%/2)
+}
+}
+@media screen and (min-width: 1000px) {
+.blog-recent-posts__post {
+flex:0 0 calc(100%/3)
+}
+}
+.blog-recent-posts__post:hover {
+text-decoration: none
+}
+.blog-recent-posts__image {
+background-size: cover;
+background-position: center center;
+background-repeat: no-repeat;
+padding-bottom: 63%
+}
+.blog-recent-posts__title {
+margin: 1rem 0 .5rem
+}
+.blog-comments {
+max-width: 680px;
+margin: 0 auto
+}
+.blog-comments form {
+max-width: 100%
+}
+.blog-comments .hs-submit {
+text-align: center
+}
+.blog-comments .comment-reply-to {
+border: 0 none
+}
+.blog-comments .comment-reply-to:hover {
+background-color: transparent;
+text-decoration: underline;
+color: #494a52
+}
+.post-item .page-center {
+display: -webkit-flex;
+display: flex;
+margin-bottom: 20px
+}
+.post-item .page-center .span4,.post-item .page-center .span8 {
+-webkit-flex: 1;
+-ms-flex: 1;
+flex: 1
+}
+.post-item .page-center .span8 {
+flex-basis: 31.914893614%
+}
+img.featured-image {
+height: 100% !important;
+width: 100% !important;
+object-fit: cover
+}
+.blog-index__post.blog-index__post--small {
+display: flex
+}
+.blog-index__post-inner-card {
+display: flex;
+flex-flow: column nowrap;
+width: 100%;
+border-radius: 5px;
+background: #fff;
+box-shadow: none !important;
+border-bottom-style: solid;
+border-bottom-width: 1px;
+border-bottom-color: rgba(236,236,236,1);
+padding-bottom: 50px;
+margin-bottom: 40px
+}
+.blog-index__post-image {
+border-radius: 5px 5px 0 0
+}
+.blog-index__post-inner-card .blog-index__post-content {
+display: flex;
+flex-direction: column;
+height: 100%;
+font-size: 18px;
+line-height: 29px;
+margin-bottom: 10px;
+color: #374160;
+font-size: 15px;
+font-weight: 400;
+line-height: 24px;
+font-family: 'Poppins',sans-serif;
+}
+.blog-index__post-inner-card .blog-post__meta, .blog-index__post-inner-card .blog-post__meta *, .blog-index__post-content a, .blog-pagination a{
+color: #374160;
+font-size: 15px;
+font-weight: 400;
+line-height: 24px;
+font-family: 'Poppins',sans-serif;
+}
+.blog-index__post-content a{
+display:inline-block;
+margin-top:15px;
+color: #34495e;
+}
+.blog-pagination a{
+color: #34495e;
+}
+.blog-post__tag-link,.blog-post__tags {
+font-size: 12px;
+font-weight: 200;
+text-transform: uppercase;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+letter-spacing: .01rem
+}
+.blog-post__tag-link:hover {
+text-decoration: none
+}
+.blog-index__post-content--small h2 {
+font-size: 18px;
+line-height: 26px
+}
+.blog-index__post-content--small h2 a:hover {
+text-decoration: none;
+transition: all .5s
+}
+.blog-post__meta-section {
+display: flex;
+justify-content: space-between;
+align-items: flex-end;
+margin-top: auto;
+padding-top: 30px;
+font-size: 14px
+}
+.read-more__arrow {
+position: relative;
+top: 3px;
+padding-left: 6px
+}
+.blog-post__read-more svg {
+fill: #3392c3 !important;
+width: 15px;
+height: auto
+}
+.blog-post__read-more a svg {
+-webkit-transition: all .15s linear;
+-moz-transition: all .15s linear;
+-o-transition: all .15s linear;
+transition: all .15s linear
+}
+@media screen and (max-width: 767px) {
+.blog-index.sidebar {
+padding:1rem 0;
+padding-bottom: 3.3rem
+}
+}
+.blog-index.sidebar {
+display: flex
+}
+@media screen and (min-width: 1000px) {
+.blog-index.sidebar .blog-index__post {
+flex:0 0 calc(100%/2)
+}
+}
+@media screen and (max-width: 999px) {
+.blog-index.sidebar .blog-index__post {
+flex:0 0 calc(100%/1)
+}
+}
+.blog-sidebar {
+padding-top: 3.9rem
+}
+@media screen and (max-width: 767px) {
+.blog-sidebar {
+padding:2rem 1rem;
+padding-bottom: 0
+}
+}
+.blog-sidebar h3 {
+margin-bottom: 20px;
+font-size: 21px;
+font-weight: 600;
+line-height: 37px
+}
+.blog-sidebar ul {
+padding: 30px;
+margin: 0 0 40px 0;
+list-style: none;
+border-radius: 5px;
+background: #fff
+}
+.blog-sidebar ul li {
+padding: 10px 0;
+border-top: 1px solid #dfddd9;
+font-weight: 600
+}
+.blog-sidebar ul li:first-child {
+border-top-color: transparent
+}
+.blog-sidebar a {
+text-decoration: none
+}
+.blog-sidebar a:hover {
+text-decoration: none
+}
+.blog-sidebar .filter-link-count {
+display: none
+}
+.blog-sidebar .filter-expand-link {
+position: relative;
+top: -15px;
+display: block;
+margin-bottom: 25px;
+text-transform: capitalize;
+text-align: center
+}
+.blog-sidebar-post-listing ul li {
+padding-left: 2.3em;
+line-height: 24px;
+text-indent: -2.3em
+}
+.blog-sidebar-post-listing li:before {
+position: relative;
+width: 22px;
+float: left;
+content: counter(list-item);
+margin-right: 25px;
+font-size: 36px;
+font-weight: 600
+}
+.blog-sidebar-post-listing li a {
+position: relative;
+top: -3px
+}
+.blog-pagination.span12 {
+display: flex;
+margin-left: 0
+}
+@media(max-width: 767px) {
+.hs-blog-listing .content-wrapper>.row-fluid {
+display:flex;
+flex-direction: column
+}
+.hs-blog-listing .span3 {
+order: 1
+}
+.hs-blog-listing .span9 {
+order: 2
+}
+.hs-blog-listing .blog-pagination {
+order: 3
+}
+.blog-sidebar.mobile .blog-sidebar-topic-filter ul,.blog-sidebar.mobile .blog-sidebar-post-listing ul {
+visibility: hidden;
+opacity: 0;
+transition: all 5s;
+display: none
+}
+.blog-sidebar.mobile .blog-sidebar-topic-filter h3,.blog-sidebar.mobile .blog-sidebar-post-listing h3 {
+cursor: pointer
+}
+.blog-sidebar.mobile .blog-sidebar-topic-filter h3:after,.blog-sidebar.mobile .blog-sidebar-post-listing h3:after {
+content: "+";
+padding-left: 6px
+}
+.blog-sidebar.mobile .blog-sidebar-topic-filter.clicked h3:after,.blog-sidebar.mobile .blog-sidebar-post-listing.clicked h3:after {
+content: "-";
+padding-left: 7px
+}
+.blog-sidebar.mobile .clicked ul {
+display: block;
+visibility: visible;
+transition: all 1s;
+opacity: 1
+}
+}
+.subscription-form {
+display: block;
+margin: 0 auto;
+padding: 60px 0;
+width: 40%;
+text-align: center
+}
+@media(max-width: 767px) {
+.subscription-form {
+width:85%
+}
+}
+.subscription-form label {
+text-align: center
+}
+.post-featured-image {
+margin-bottom: -110px;
+min-height: 300px;
+background-size: cover;
+border-radius: 5px;
+margin-top: 40px;
+background-position: center center
+}
+.blog-post {
+position: relative
+}
+.blog-post.no-image {
+margin-top: 50px
+}
+.blog-post__title {
+line-height: 42px
+}
+.blog-post__meta a {
+text-decoration: none
+}
+.blog-post__links {
+display: block;
+padding-bottom: 28px;
+padding-top: 68px
+}
+.blog-post__back-to-blog {
+text-decoration: none;
+font-size: 14px;
+line-height: 21px;
+font-weight: 500;
+display: block
+}
+.blog-post__back-to-blog svg {
+position: relative;
+top: 0px;
+font-size: 14px;
+line-height: 21px;
+font-weight: 500;
+-webkit-transition: all .15s linear;
+-moz-transition: all .15s linear;
+-o-transition: all .15s linear;
+transition: all .15s linear
+}
+@media only screen and (max-width: 700px) .content-wrapper {
+padding:0 15px
+}
+.blog-comments {
+max-width: 100%
+}
+.comment.depth-0:first-child {
+margin-top: 2em
+}
+.comment.depth-1 {
+padding-left: 2em;
+padding-top: 1em;
+margin-top: 1em
+}
+.blog-comments form {
+margin-top: 2em;
+padding-top: 2em
+}
+.blog-recent-posts__list {
+flex-wrap: wrap
+}
+.blog-recent-posts .blog-index__post-content h2 {
+text-align: left
+}
+.blog-recent-posts .blog-post__meta-section {
+justify-content: flex-end
+}
+.blog-post__body {
+padding-bottom: 12px;
+padding-top: 6px
+}
+.blog-post__content {
+font-size: 18px;
+line-height: 1.6;
+margin-bottom: 10px
+}
+.blog-post__content hr {
+display: none
+}
+.blog-post__content p {
+margin: 18px 0
+}
+.blog-post__content li,.blog-post__content a {
+line-height: 29px;
+font-weight: 500
+}
+.blog-index__post-inner-card .blog-post__meta {
+padding: 0;
+margin-bottom: 12px
+}
+.center-links {
+text-align: center
+}
+</style>
+</div>
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+    </div><!--end body -->
+</div><!--end body wrapper -->
+
+<div class="footer-container-wrapper">
+    <div class="footer-container container-fluid">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-global_group " style="" data-widget-type="global_group" data-x="0" data-w="12">
+<div class="" data-global-widget-path="generated_global_groups/60203918706.html"><div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell global-footer" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-2 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell page-center" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-3 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell global-footer-one" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-4 ">
+<div class="row-fluid ">
+<div class="span4 widget-span widget-type-cell global-footer-col" style="" data-widget-type="cell" data-x="0" data-w="4">
+
+<div class="row-fluid-wrapper row-depth-2 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637491596007441" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-logo" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module">
+  
+
+
+
+
+
+  <span id="hs_cos_wrapper_module_1637491596007441_hs_logo_widget" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_logo" style="" data-hs-cos-general-type="widget" data-hs-cos-type="logo"><a href="//infinitspace.com" id="hs-link-module_1637491596007441_hs_logo_widget" style="border-width:0px;border:0px;"><img src="https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=140&amp;height=41&amp;name=beyond_logo%20left%20bottom.png" class="hs-image-widget " height="41" style="height: auto;width:140px;border-width:0px;border:0px;" width="140" alt="beyond_logo left bottom" title="beyond_logo left bottom" srcset="https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=70&amp;height=21&amp;name=beyond_logo%20left%20bottom.png 70w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=140&amp;height=41&amp;name=beyond_logo%20left%20bottom.png 140w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=210&amp;height=62&amp;name=beyond_logo%20left%20bottom.png 210w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=280&amp;height=82&amp;name=beyond_logo%20left%20bottom.png 280w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=350&amp;height=103&amp;name=beyond_logo%20left%20bottom.png 350w, https://www.wearebeyond.work/hs-fs/hubfs/Assets_2021/beyond_logo%20left%20bottom.png?width=420&amp;height=123&amp;name=beyond_logo%20left%20bottom.png 420w" sizes="(max-width: 140px) 100vw, 140px"></a></span>
+</div>
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-2 row-number-2 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="color:#e9d2cd; margin-top:20px;" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637491701104562" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637491701104562_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text">beyond is operated by infinitSpace and is part of its flexible workspaces portfolio.<table border="0" width="100%"><tbody><tr><td width="50%"><a href="https://www.infinitspace.com" target="_blank" style="vertical-align:top">www.infinitspace.com</a></td><td width="50%" align="right"><a href="https://www.tallyworkspace.com/the-tallys-winners/" target="_blank"><img src="https://ik.imagekit.io/cq93tp3vf/the_tallys_badge-2.png?updatedAt=1689607260553" alt="Tally Workspace The Tallys Award Badge" style="width:120px; height: 120px"></a></td></tr></tbody></table></span></div>
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+<div class="span8 widget-span widget-type-cell " style="" data-widget-type="cell" data-x="4" data-w="8">
+
+<div class="row-fluid-wrapper row-depth-2 row-number-3 ">
+<div class="row-fluid ">
+<div class="span2 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="2">
+<div id="hs_cos_wrapper_module_1637773061495142" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-space" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span class="hs-horizontal-spacer"></span></div>
+
+</div><!--end widget-span -->
+<div class="span3 widget-span widget-type-cell " style="" data-widget-type="cell" data-x="2" data-w="3">
+
+<div class="row-fluid-wrapper row-depth-2 row-number-4 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget footer-header" style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_163749316462422" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_163749316462422_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text">Navigation</span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-2 row-number-5 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637493877142319" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-simple_menu" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637493877142319_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_simple_menu" style="" data-hs-cos-general-type="widget" data-hs-cos-type="simple_menu"><div id="hs_menu_wrapper_module_1637493877142319_" class="hs-menu-wrapper active-branch flyouts hs-menu-flow-vertical" role="navigation" data-sitemap-name="" data-menu-id="" aria-label="Navigation Menu">
+ <ul role="menu">
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/#whoweare" role="menuitem" target="_self">Who we are</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/#membershipsmodule" role="menuitem" target="_self">Memberships</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/#benefits" role="menuitem" target="_self">Benefits</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/referral" role="menuitem" target="_self">Make a referral</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/free-coworking-day" role="menuitem" target="_self">Book a day for free</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/careers" role="menuitem" target="_self">Careers</a></li>
+ </ul>
+</div></span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+<div class="span5 widget-span widget-type-cell " style="" data-widget-type="cell" data-x="5" data-w="5">
+
+<div class="row-fluid-wrapper row-depth-2 row-number-6 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget footer-header" style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_163749321061082" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_163749321061082_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text"><a href="#">Contact</a></span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-2 row-number-7 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637494018022478" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637494018022478_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text">+44 (0)20 8050 7267</span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-2 row-number-8 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637494020662480" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637494020662480_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text"><a href="mailto:info@infinitspace.com">info@infinitspace.com</a></span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+<div class="span2 widget-span widget-type-cell " style="" data-widget-type="cell" data-x="10" data-w="2">
+
+<div class="row-fluid-wrapper row-depth-2 row-number-9 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget footer-header" style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637493249123159" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637493249123159_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_text" style="" data-hs-cos-general-type="widget" data-hs-cos-type="text"></span></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-2 row-number-10 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637612512286158" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><div class="social-media-wrapper">
+  <ul>
+    
+      <li>
+        
+        
+        <a href="https://www.facebook.com/wearebeyond.work" target="_blank" rel="noopener">
+          
+            
+            
+             
+            <img src="https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=38&amp;height=38&amp;name=facebook_icon.png" alt="facebook_icon" loading="lazy" width="38" height="38" srcset="https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=19&amp;height=19&amp;name=facebook_icon.png 19w, https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=38&amp;height=38&amp;name=facebook_icon.png 38w, https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=57&amp;height=57&amp;name=facebook_icon.png 57w, https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=76&amp;height=76&amp;name=facebook_icon.png 76w, https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=95&amp;height=95&amp;name=facebook_icon.png 95w, https://www.wearebeyond.work/hs-fs/hubfs/facebook_icon.png?width=114&amp;height=114&amp;name=facebook_icon.png 114w" sizes="(max-width: 38px) 100vw, 38px">
+          
+        </a>
+      </li>
+    
+      <li>
+        
+        
+        <a href="https://www.instagram.com/wearebeyond_work/" target="_blank" rel="noopener">
+          
+            
+            
+             
+            <img src="https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=38&amp;height=38&amp;name=instagram_icon.png" alt="instagram_icon" loading="lazy" width="38" height="38" srcset="https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=19&amp;height=19&amp;name=instagram_icon.png 19w, https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=38&amp;height=38&amp;name=instagram_icon.png 38w, https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=57&amp;height=57&amp;name=instagram_icon.png 57w, https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=76&amp;height=76&amp;name=instagram_icon.png 76w, https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=95&amp;height=95&amp;name=instagram_icon.png 95w, https://www.wearebeyond.work/hs-fs/hubfs/instagram_icon.png?width=114&amp;height=114&amp;name=instagram_icon.png 114w" sizes="(max-width: 38px) 100vw, 38px">
+          
+        </a>
+      </li>
+    
+      <li>
+        
+        
+        <a href="https://www.linkedin.com/company/wearebeyondwork" target="_blank" rel="noopener">
+          
+            
+            
+             
+            <img src="https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=38&amp;height=38&amp;name=linkedin_icon.png" alt="linkedin_icon" loading="lazy" width="38" height="38" srcset="https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=19&amp;height=19&amp;name=linkedin_icon.png 19w, https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=38&amp;height=38&amp;name=linkedin_icon.png 38w, https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=57&amp;height=57&amp;name=linkedin_icon.png 57w, https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=76&amp;height=76&amp;name=linkedin_icon.png 76w, https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=95&amp;height=95&amp;name=linkedin_icon.png 95w, https://www.wearebeyond.work/hs-fs/hubfs/linkedin_icon.png?width=114&amp;height=114&amp;name=linkedin_icon.png 114w" sizes="(max-width: 38px) 100vw, 38px">
+          
+        </a>
+      </li>
+    
+  </ul>
+</div></div>
+
+   </div><!--end widget-span -->
+    </div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+<div class="row-fluid-wrapper row-depth-1 row-number-1 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-cell global-footer-two" style="" data-widget-type="cell" data-x="0" data-w="12">
+
+<div class="row-fluid-wrapper row-depth-1 row-number-2 ">
+<div class="row-fluid ">
+<div class="span12 widget-span widget-type-custom_widget " style="" data-widget-type="custom_widget" data-x="0" data-w="12">
+<div id="hs_cos_wrapper_module_1637504608371132" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_module widget-type-simple_menu" style="" data-hs-cos-general-type="widget" data-hs-cos-type="module"><span id="hs_cos_wrapper_module_1637504608371132_" class="hs_cos_wrapper hs_cos_wrapper_widget hs_cos_wrapper_type_simple_menu" style="" data-hs-cos-general-type="widget" data-hs-cos-type="simple_menu"><div id="hs_menu_wrapper_module_1637504608371132_" class="hs-menu-wrapper active-branch flyouts hs-menu-flow-horizontal" role="navigation" data-sitemap-name="" data-menu-id="" aria-label="Navigation Menu">
+ <ul role="menu">
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="https://www.wearebeyond.work/privacy-policy" role="menuitem" target="_self">Privacy Policy</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="javascript:void(0);" role="menuitem" target="_self">© All right reserved to infinitSpace 2025</a></li>
+  <li class="hs-menu-item hs-menu-depth-1" role="none"><a href="javascript:void(0);" role="menuitem" target="_self">infinitSpace B.V., Papaverhof 59, 1032 LX, Amsterdam, The Netherlands</a></li>
+ </ul>
+</div></span></div>
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+</div>
+</div><!--end widget-span -->
+</div><!--end row-->
+</div><!--end row-wrapper -->
+
+    </div><!--end footer -->
+</div><!--end footer wrapper -->
+
+    <script src="/hs/hsstatic/jquery-libs/static-1.1/jquery/jquery-1.7.1.js"></script>
+<script>hsjQuery = window['jQuery'];</script>
+<!-- HubSpot performance collection script -->
+<script defer src="/hs/hsstatic/content-cwv-embed/static-1.1293/embed.js"></script>
+<script>
+var hsVars = hsVars || {}; hsVars['language'] = 'en';
+</script>
+
+<script src="/hs/hsstatic/cos-i18n/static-1.53/bundles/project.js"></script>
+<script src="https://www.wearebeyond.work/hs-fs/hubfs/hub_generated/module_assets/1/191972983081/1753505899926/module_Custom_Header_Mega_Menu_-_V2.min.js"></script>
+
+
+<script type="application/json" id="megaMenuData">
+{
+  
+  "Office Space": {
+    "cities": [
+      
+      {
+        "name": "London      ",
+        "href": "https://www.wearebeyond.work/rental-offices-london",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Aldgate Tower",
+            "href": "https://www.wearebeyond.work/rental-offices-london/aldgate-tower",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Fox Court",
+            "href": "https://www.wearebeyond.work/beyond-fox-court",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Kingsbourne House",
+            "href": "https://www.wearebeyond.work/rental-offices-london/kingsbourne-house/",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond The Bower",
+            "href": "https://www.wearebeyond.work/rental-offices-london/the-bower",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Amsterdam",
+        "href": "https://www.wearebeyond.work/rental-offices-amsterdam",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Zuidtoren",
+            "href": "https://www.wearebeyond.work/rental-offices-amsterdam/zuidtoren",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Gouden Bocht",
+            "href": "https://www.wearebeyond.work/rental-offices-amsterdam/gouden-bocht",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Republica Campus",
+            "href": "https://www.wearebeyond.work/rental-offices-amsterdam/republica-campus",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Berlin",
+        "href": "https://www.wearebeyond.work/rental-offices-berlin",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Quartier Heidestrasse",
+            "href": "https://www.wearebeyond.work/rental-offices-berlin/quartier-heidestrasse",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Chausseestrasse",
+            "href": "https://www.wearebeyond.work/beyond-chausseestrasse",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      }
+      
+    ]
+  },
+  
+  "Coworking": {
+    "cities": [
+      
+      {
+        "name": "London",
+        "href": "https://www.wearebeyond.work/coworking/coworking-london",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Aldgate Tower",
+            "href": "https://www.wearebeyond.work/coworking/coworking-london/coworking-aldgate-tower",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Fox Court",
+            "href": "https://www.wearebeyond.work/beyond-fox-court",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Kingsbourne House",
+            "href": "https://www.wearebeyond.work/coworking/coworking-london/coworking-kingsbourne-house",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond The Bower",
+            "href": "https://www.wearebeyond.work/coworking/coworking-london/coworking-the-bower",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Amsterdam",
+        "href": "https://www.wearebeyond.work/coworking/coworking-amsterdam",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Zuidtoren",
+            "href": "https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-zuidtoren",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Gouden Bocht",
+            "href": "https://www.wearebeyond.work/coworking/coworking-amsterdam/coworking-gouden-bacht",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Republica Campus",
+            "href": "https://www.wearebeyond.work/coworking/coworking-amsterdam/beyond-republica-campus",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Berlin",
+        "href": "https://www.wearebeyond.work/coworking/coworking-berlin",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Quartier Heidestrasse",
+            "href": "https://www.wearebeyond.work/coworking/coworking-berlin/coworking-quartier-heidestrasse",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Chausseestrasse",
+            "href": "https://www.wearebeyond.work/beyond-chausseestrasse",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      }
+      
+    ]
+  },
+  
+  "Dedicated Desk": {
+    "cities": [
+      
+      {
+        "name": "London      ",
+        "href": "https://www.wearebeyond.work/dedicated-desk-london",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Aldgate Tower",
+            "href": "https://www.wearebeyond.work/dedicated-desk-london/aldgate-tower",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Fox Court",
+            "href": "https://www.wearebeyond.work/beyond-fox-court",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Kingsbourne House",
+            "href": "https://www.wearebeyond.work/dedicated-desk-london/kingsbourne-house",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond The Bower",
+            "href": "https://www.wearebeyond.work/dedicated-desk-london/the-bower",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Amsterdam",
+        "href": "https://www.wearebeyond.work/dedicated-desk-amsterdam",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Zuidtoren",
+            "href": "https://www.wearebeyond.work/dedicated-desk-amsterdam/zuidtoren",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Gouden Bocht",
+            "href": "https://www.wearebeyond.work/dedicated-desk-amsterdam/gouden-bocht",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Republica Campus",
+            "href": "https://www.wearebeyond.work/dedicated-desk-amsterdam/republica-campus",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Berlin",
+        "href": "https://www.wearebeyond.work/dedicated-desk-berlin",
+        "target": false,
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": " beyond Quartier Heidestrasse",
+            "href": "https://www.wearebeyond.work/dedicated-desk-berlin/quartier-heidestrasse",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": " beyond Chausseestrasse",
+            "href": "https://www.wearebeyond.work/beyond-chausseestrasse",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      }
+      
+    ]
+  },
+  
+  "Meeting Rooms": {
+    "cities": [
+      
+      {
+        "name": "London      ",
+        "href": "",
+        "target": "false",
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": "beyond Aldgate Tower",
+            "href": "https://aldgatetower.wearebeyond.work/bookings/search?group=Meeting%20rooms",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond Fox Court",
+            "href": "https://www.wearebeyond.work/beyond-fox-court",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond Kingsbourne House",
+            "href": "https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964752",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond The Bower",
+            "href": "https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415499547",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Amsterdam",
+        "href": "",
+        "target": "false",
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": "beyond Zuidtoren",
+            "href": "https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1414964753",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond Gouden Bocht",
+            "href": "https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1420951935",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond Republica Campus",
+            "href": "https://spaces.wearebeyond.work/bookings/search?group=Meeting%20rooms&amp;businessId=1415079491",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      },
+      
+      {
+        "name": "Berlin",
+        "href": "",
+        "target": "false",
+        "rel": "",
+        "locations": [
+          
+          {
+            "label": "beyond Quartier Heidestrasse",
+            "href": "https://qh.wearebeyond.work/bookings/search?group=Meeting%20rooms",
+            "target": true,
+            "rel": "noopener"
+          },
+          
+          {
+            "label": "beyond Chausseestrasse",
+            "href": "https://www.wearebeyond.work/beyond-chausseestrasse",
+            "target": true,
+            "rel": "noopener"
+          }
+          
+        ]
+      }
+      
+    ]
+  }
+  
+}
+</script>
+
+<script>
+  // Define globally
+  function showCityLocations(cityName) {
+    const locationsList = document.getElementById("locations-list");
+    const activeTab = document.querySelector(".service-tab.active")?.textContent?.trim();
+    const rawData = document.getElementById("megaMenuData").textContent;
+    const data = JSON.parse(rawData);
+
+    const cities = data[activeTab]?.cities || [];
+    const cityData = cities.find(c => c.name === cityName);
+    if (!cityData) return;
+
+    locationsList.innerHTML = "";
+    cityData.locations.forEach(loc => {
+      const a = document.createElement("a");
+      a.className = "location-item";
+      a.href = loc.href;
+      a.textContent = loc.label;
+      if (loc.target) a.target = "_blank";
+      if (loc.rel) a.rel = loc.rel;
+      locationsList.appendChild(a);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabs = document.querySelectorAll(".service-tab");
+    const citiesList = document.querySelector(".cities-list");
+    const locationsList = document.getElementById("locations-list");
+
+    const rawData = document.getElementById("megaMenuData").textContent;
+    const data = JSON.parse(rawData);
+
+    // On service tab hover — show cities
+    tabs.forEach(tab => {
+      tab.addEventListener("mouseenter", function () {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        const title = tab.textContent.trim();
+        const cities = data[title]?.cities || [];
+
+        citiesList.innerHTML = "";
+        locationsList.innerHTML = "";
+
+        cities.forEach(city => {
+          const div = document.createElement("div");
+          div.className = "city-item";
+
+          const link = document.createElement("a");
+          link.href = city.href || "#";
+          link.textContent = city.name;
+          if (city.target) link.target = "_blank";
+          if (city.rel) link.rel = city.rel;
+          div.appendChild(link);
+
+          div.addEventListener("mouseenter", () => showCityLocations(city.name));
+
+          div.addEventListener("click", function (e) {
+            if (window.innerWidth < 1090 && e.target.tagName !== "A") {
+              document.querySelectorAll(".city-item").forEach(item => item.classList.remove("active"));
+              this.classList.add("active");
+            }
+          });
+
+          citiesList.appendChild(div);
+        });
+      });
+    });
+
+    // Trigger first tab hover initially
+    if (tabs.length > 0) {
+      tabs[0].dispatchEvent(new Event('mouseenter'));
+    }
+
+    // Clean up mobile active class on resize
+    window.addEventListener("resize", function () {
+      if (window.innerWidth >= 1090) {
+        document.querySelectorAll(".city-item").forEach(item => item.classList.remove("active"));
+      }
+    });
+
+    // Handle tab active/reactive class
+    tabs.forEach(tab => {
+      tab.addEventListener("mouseenter", () => {
+        tabs.forEach(t => t.classList.remove("active", "reactive"));
+        tab.classList.add("active");
+      });
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("reactive"));
+        tab.classList.add("reactive");
+      });
+    });
+  });
+
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const cityItems = document.querySelectorAll(".city-item");
+
+    function handleCityClick(e) {
+      if (window.innerWidth < 1090) {
+        // Remove 'active' from all city items
+        cityItems.forEach(item => item.classList.remove("active"));
+        // Add 'active' to the clicked item
+        this.classList.add("active");
+      }
+    }
+
+    cityItems.forEach(item => {
+      item.addEventListener("click", handleCityClick);
+    });
+
+    // Optional: Remove 'active' when screen resizes above 1090px
+    window.addEventListener("resize", function () {
+      if (window.innerWidth >= 1090) {
+        cityItems.forEach(item => item.classList.remove("active"));
+      }
+    });
+  });
+
+
+</script>
+
+
+
+<!-- Start of HubSpot Analytics Code -->
+<script type="text/javascript">
+var _hsq = _hsq || [];
+_hsq.push(["setContentType", "listing-page"]);
+_hsq.push(["setCanonicalUrl", "https:\/\/www.wearebeyond.work\/blog\/author\/admin"]);
+_hsq.push(["setPageId", "66594199340"]);
+_hsq.push(["setContentMetadata", {
+    "contentPageId": 66594199340,
+    "legacyPageId": "66594199340",
+    "contentFolderId": null,
+    "contentGroupId": 66594199339,
+    "abTestId": null,
+    "languageVariantId": 66594199340,
+    "languageCode": "en",
+    
+    
+}]);
+</script>
+
+<script type="text/javascript" id="hs-script-loader" async defer src="/hs/scriptloader/19741777.js"></script>
+<!-- End of HubSpot Analytics Code -->
+
+
+<script type="text/javascript">
+var hsVars = {
+    render_id: "8179d68c-4a8f-484b-8c12-35543fff6b63",
+    ticks: 1754419398045,
+    page_id: 66594199340,
+    
+    content_group_id: 66594199339,
+    portal_id: 19741777,
+    app_hs_base_url: "https://app.hubspot.com",
+    cp_hs_base_url: "https://cp.hubspot.com",
+    language: "en",
+    analytics_page_type: "listing-page",
+    scp_content_type: "",
+    
+    analytics_page_id: "66594199340",
+    category_id: 7,
+    folder_id: 0,
+    is_hubspot_user: false
+}
+</script>
+
+
+<script defer src="/hs/hsstatic/HubspotToolsMenu/static-1.432/js/index.js"></script>
+
+
+<div id="fb-root"></div>
+  <script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v3.0";
+  fjs.parentNode.insertBefore(js, fjs);
+ }(document, 'script', 'facebook-jssdk'));</script> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+ 
+
+
+    
+    <!-- Generated by the HubSpot Template Builder - template version 1.03 -->
+
+</body></html>

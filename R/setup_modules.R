@@ -77,7 +77,8 @@ setup_modules <- function() {
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
     "sentence-transformers==2.2.2",
     # "tokenizers==0.13.3",
-    "tokenizers==0.21.0"
+    "tokenizers==0.21.0",
+    "findingemo-light" # Latest version, for FindingEmo dataset
   )
   
   # Add platform-specific modules
