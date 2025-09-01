@@ -69,3 +69,8 @@ rsconnect/
 CLAUDE.md
 tests/test_workflow.md
 AGENTS.md
+
+# Misc folders
+
+findingemo_eval_300/*
+findingemo_eval_50/*

@@ -144,10 +144,10 @@ download_findingemo_data <- function(target_dir,
   # Print status message
   if (result$success) {
     if (!is.null(result$partial) && result$partial) {
-      message("⚠ FindingEmo dataset download partially completed")
+      message("FindingEmo dataset download partially completed")
       message("  ", result$message)
     } else {
-      message("✓ FindingEmo dataset download completed successfully")
+      message("FindingEmo dataset download completed successfully")
     }
     
     if (!is.null(result$image_count)) {
@@ -243,7 +243,7 @@ download_findingemo_data <- function(target_dir,
         evaluation_csv <- file.path(target_dir, "evaluation_annotations.csv")
         tryCatch({
           utils::write.csv(evaluation_df, evaluation_csv, row.names = FALSE)
-          message("✓ Prepared evaluation data for ", matched_count, " images")
+          message("Prepared evaluation data for ", matched_count, " images")
           message("  Saved: ", evaluation_csv)
         }, error = function(e) {
           warning("Failed to save evaluation CSV: ", e$message)
@@ -259,7 +259,7 @@ download_findingemo_data <- function(target_dir,
     result$evaluation_csv <- evaluation_csv
     result$matched_count <- matched_count
   } else {
-    warning("✗ FindingEmo dataset download failed: ", result$message)
+    warning("FindingEmo dataset download failed: ", result$message)
   }
   
   return(result)
@@ -420,7 +420,7 @@ load_findingemo_annotations <- function(data_dir,
     }))
     
     # Print summary information
-    message("✓ Loaded ", nrow(annotations_df), " annotations")
+    message("Loaded ", nrow(annotations_df), " annotations")
     if ("valence" %in% names(annotations_df)) {
       message("  Valence range: ", 
               round(min(annotations_df$valence, na.rm = TRUE), 3), " to ",
@@ -444,7 +444,7 @@ load_findingemo_annotations <- function(data_dir,
       metadata = result$data$metadata
     )
     
-    message("✓ Loaded full dataset with ", 
+    message("Loaded full dataset with ", 
             processed_data$metadata$n_annotations, " annotations and ",
             processed_data$metadata$n_urls, " URL entries")
     
@@ -593,7 +593,7 @@ prepare_findingemo_evaluation <- function(annotations,
   }
   
   # Report summary
-  message("✓ Prepared evaluation data with ", nrow(eval_data), " samples")
+  message("Prepared evaluation data with ", nrow(eval_data), " samples")
   
   truth_labels <- unique(eval_data$truth)
   pred_labels <- unique(eval_data$pred)
@@ -653,7 +653,7 @@ prepare_findingemo_evaluation <- function(annotations,
   }
   
   # Print summary
-  message("✓ Loaded ", nrow(annotations_df), " annotations from flat structure")
+  message("Loaded ", nrow(annotations_df), " annotations from flat structure")
   if ("valence" %in% names(annotations_df)) {
     message("  Valence range: ", 
             round(min(annotations_df$valence, na.rm = TRUE), 3), " to ",
@@ -852,7 +852,7 @@ check_findingemo_quality <- function(data_dir, check_images = FALSE, sample_size
   }
   
   if (completeness < 50) {
-    cat("\n⚠ Warning: Low completeness rate suggests many broken URLs\n")
+    cat("\nWarning: Low completeness rate suggests many broken URLs\n")
   }
   
   return(invisible(report))
