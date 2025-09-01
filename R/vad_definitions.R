@@ -1,22 +1,17 @@
-#' VAD Definitional Labels
-#'
-#' @description
-#' This file contains the definitional label pairs for each VAD dimension.
-#' These labels provide rich, educational descriptions that help transformer
-#' models understand the psychological concepts behind each dimension.
-#'
-#' @details
-#' The definitional approach uses the format:
-#' "Dimension name, which refers to [definition], such as [examples]"
-#' 
-#' This approach is more informative than simple polar labels because it:
-#' 1. Educates the model about the psychological theory
-#' 2. Provides clear definitions with multiple examples
-#' 3. Reduces ambiguity in classification
-#' 4. Works robustly across different domains and contexts
-#'
-#' @author Aleksandar Tomasevic <atomashevic@gmail.com>
-#' @noRd
+# VAD Definitional Labels
+#
+# This file contains the definitional label pairs for each VAD dimension.
+# These labels provide rich, educational descriptions that help transformer
+# models understand the psychological concepts behind each dimension.
+#
+# The definitional approach uses the format:
+# "Dimension name, which refers to [definition], such as [examples]"
+# 
+# This approach is more informative than simple polar labels because it:
+# 1. Educates the model about the psychological theory
+# 2. Provides clear definitions with multiple examples
+# 3. Reduces ambiguity in classification
+# 4. Works robustly across different domains and contexts
 
 #' Get default VAD definitional labels
 #' @noRd

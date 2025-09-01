@@ -24,17 +24,14 @@ far right side of the image. "none" will use the whole image without cropping.
 Face_selection method is irrelevant if there is
 only one face in the image.}
 
-\item{model}{A string specifying the CLIP model to use. Options are:
+\item{model}{A string specifying the vision model to use. Options include:
 \itemize{
-  \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
-  \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-  \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
-  \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+  \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
   \item Any valid HuggingFace model ID
+  \item Custom registered models (see \code{\link{register_vision_model}})
 }
-Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
-Large models may cause memory issues or crashes, especially on systems with limited resources.
-The package has been optimized and tested with the recommended models listed above.}
+Use \code{\link{list_vision_models}} to see all available models.
+Note: Using large or untested models may cause memory issues or crashes.}
 
 \item{local_model_path}{Optional. Path to a local directory containing a pre-downloaded 
 HuggingFace model. If provided, the model will be loaded from this directory instead

@@ -24,17 +24,14 @@
 #'   far right side of the image. "none" will use the whole image without cropping.
 #'   Face_selection method is irrelevant if there is
 #'   only one face in the image.
-#' @param model A string specifying the CLIP model to use. Options are:
+#' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
-#'     \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-#'     \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
-#'     \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
 #'     \item Any valid HuggingFace model ID
+#'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
-#'   Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
-#'   Large models may cause memory issues or crashes, especially on systems with limited resources.
-#'   The package has been optimized and tested with the recommended models listed above.
+#'   Use \code{\link{list_vision_models}} to see all available models.
+#'   Note: Using large or untested models may cause memory issues or crashes.
 #' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
@@ -100,26 +97,41 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   stop("Argument face_selection must be one of: largest, left, right, none")
   }
   
-  # Check if model is valid when using predefined shortcuts
-  valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
-  if (model %in% valid_models) {
-    # Using a predefined model
-    available_models <- c(
-      "oai-base" = "openai/clip-vit-base-patch32",
-      "oai-large" = "openai/clip-vit-large-patch14",
-      "eva-8B" = "BAAI/EVA-CLIP-8B-448",
-      "jina-v2" = "jinaai/jina-clip-v2"
-    )
-  } else if (!is.null(local_model_path)) {
-    # Using a local model path - validate it exists
-    if (!dir.exists(local_model_path)) {
-      stop("The specified local_model_path directory does not exist.")
+  # Validate model using registry system
+  # Resolve model name to actual model ID for Python
+  actual_model_id <- model
+  model_config <- NULL
+  model_architecture <- NULL
+  
+  tryCatch({
+    if (is_vision_model_registered(model)) {
+      # Model is registered - get the actual model ID
+      model_config <- get_vision_model_config(model)
+      actual_model_id <- model_config$model_id
+      message("Using registered model: ", model_config$description)
+      model_architecture <- model_config$architecture
+    } else if (!is.null(local_model_path)) {
+      # Using a local model path - validate it exists
+      if (!dir.exists(local_model_path)) {
+        stop("The specified local_model_path directory does not exist.")
+      }
+      message("Using local model from: ", local_model_path)
+    } else {
+      # Assume it's a direct HuggingFace model ID
+      message("Using model directly from HuggingFace Hub: ", model)
+      message("Note: For better support, consider registering custom models with register_vision_model()")
     }
-    message("Using local model from: ", local_model_path)
-  } else {
-    # Assume it's a direct HuggingFace model ID
-    message("Using model directly from HuggingFace Hub: ", model)
-  }
+  }, error = function(e) {
+    # If registry system fails, provide helpful error message
+    available_models <- tryCatch(list_vision_models(), error = function(e2) data.frame())
+    if (nrow(available_models) > 0) {
+      stop("Model '", model, "' not recognized. Available models: ",
+           paste(available_models$name, collapse = ", "),
+           "\nUse list_vision_models() to see details or register_vision_model() to add custom models.")
+    } else {
+      warning("Model registry system not available. Proceeding with model: ", model)
+    }
+  })
   
   # Check if local_model_path exists if provided
   if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
@@ -130,8 +142,9 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
     image = image, 
     labels = classes, 
     face = face_selection, 
-    model_name = model,
-    local_model_path = local_model_path
+    model_name = actual_model_id,  # Use resolved model ID
+    local_model_path = local_model_path,
+    model_architecture = model_architecture
   )
   if (is.null(result)) {
     # No face found or classification failed; return NA row for each class
@@ -178,23 +191,36 @@ image_scores_dir <- function(dir,
   stop("Argument face_selection must be one of: largest, left, right, none")
   }
 
-  # Validate model inputs similar to image_scores
-  valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
-  if (model %in% valid_models) {
-    available_models <- c(
-      "oai-base" = "openai/clip-vit-base-patch32",
-      "oai-large" = "openai/clip-vit-large-patch14",
-      "eva-8B" = "BAAI/EVA-CLIP-8B-448",
-      "jina-v2" = "jinaai/jina-clip-v2"
-    )
-  } else if (!is.null(local_model_path)) {
-    if (!dir.exists(local_model_path)) {
-      stop("The specified local_model_path directory does not exist.")
+  # Resolve model name to actual model ID for Python (same as image_scores)
+  actual_model_id <- model
+  model_config <- NULL
+  model_architecture <- NULL
+  
+  tryCatch({
+    if (is_vision_model_registered(model)) {
+      model_config <- get_vision_model_config(model)
+      actual_model_id <- model_config$model_id
+      message("Using registered model: ", model_config$description)
+      model_architecture <- model_config$architecture
+    } else if (!is.null(local_model_path)) {
+      if (!dir.exists(local_model_path)) {
+        stop("The specified local_model_path directory does not exist.")
+      }
+      message("Using local model from: ", local_model_path)
+    } else {
+      message("Using model directly from HuggingFace Hub: ", model)
+      message("Note: For better support, consider registering custom models with register_vision_model()")
     }
-    message("Using local model from: ", local_model_path)
-  } else {
-    message("Using model directly from HuggingFace Hub: ", model)
-  }
+  }, error = function(e) {
+    available_models <- tryCatch(list_vision_models(), error = function(e2) data.frame())
+    if (nrow(available_models) > 0) {
+      stop("Model '", model, "' not recognized. Available models: ",
+           paste(available_models$name, collapse = ", "),
+           "\nUse list_vision_models() to see details.")
+    } else {
+      warning("Model registry system not available. Proceeding with model: ", model)
+    }
+  })
 
   # Discover images
   files <- list.files(dir, pattern = pattern, full.names = TRUE, recursive = recursive, ignore.case = TRUE)
@@ -220,8 +246,9 @@ image_scores_dir <- function(dir,
     images = files,
     labels = classes,
     face = face_selection,
-    model_name = model,
-    local_model_path = local_model_path
+    model_name = actual_model_id,  # Use resolved model ID
+    local_model_path = local_model_path,
+    model_architecture = model_architecture
   )
 
   # Ensure data.frame and column order
@@ -234,4 +261,3 @@ image_scores_dir <- function(dir,
   df <- df[expected_cols]
   return(df)
 }
-

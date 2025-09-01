@@ -1,6 +1,7 @@
-.onload <- function(libname, pkgname)
+.onLoad <- function(libname, pkgname)
 {
-    library.dynam("transforEmotion", package = pkgname, lib.loc = libname)
+    # Initialize vision model registry with built-in models
+    .init_builtin_models()
 }
 
 .onAttach <- function(libname, pkgname)
@@ -11,6 +12,7 @@
     msg <- paste(msg, "\nFor bugs and errors, submit an issue to <https://github.com/atomashevic/transforEmotion/issues>")
     msg <- paste(msg, "\nBefore running an analysis for the first time after installing the package, please run `transforEmotion::setup_miniconda()` to install the necessary Python modules.")
     msg <- paste(msg, "\nData Privacy: All processing is done locally with the downloaded model, and your data is never sent to any remote server or third-party.")
+    msg <- paste(msg, "\n\nAvailable vision models: Use list_vision_models() to see all models or register_vision_model() to add custom models.")
     packageStartupMessage(msg)
     Sys.unsetenv("RETICULATE_PYTHON")
     Sys.setenv(RETICULATE_PYTHON_ENV = "transforEmotion")
