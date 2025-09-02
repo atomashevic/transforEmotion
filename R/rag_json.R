@@ -154,6 +154,32 @@ parse_rag_json <- function(x, validate = TRUE)
     }
   }
 
+  # - Ensure evidence_chunks exists; then normalize allowing missing fields and character spans
+  if (is.null(obj$evidence_chunks)) {
+    obj$evidence_chunks <- list()
+  }
+  if (!is.null(obj$evidence_chunks)) {
+    ec <- obj$evidence_chunks
+    if (is.list(ec)) {
+      norm <- vector("list", length(ec))
+      for (i in seq_along(ec)) {
+        item <- ec[[i]]
+        if (is.character(item) && length(item) == 1L) {
+          norm[[i]] <- list(doc_id = as.character(i), span = item, score = NA_real_)
+        } else if (is.list(item)) {
+          did <- if (!is.null(item$doc_id)) as.character(item$doc_id) else as.character(i)
+          spn <- if (!is.null(item$span)) as.character(item$span) else ""
+          scr <- if (!is.null(item$score)) as.numeric(item$score) else NA_real_
+          norm[[i]] <- list(doc_id = did, span = spn, score = scr)
+        } else {
+          # Fallback: coerce to string and store as span
+          norm[[i]] <- list(doc_id = as.character(i), span = as.character(item), score = NA_real_)
+        }
+      }
+      obj$evidence_chunks <- norm
+    }
+  }
+
   if (isTRUE(validate)) validate_rag_json(obj, error = TRUE)
 
   # Normalize evidence into data.frame for convenience

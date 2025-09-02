@@ -463,9 +463,13 @@ rag <- function(
       n <- nchar(s)
       paste0(substr(s, 1, min(200L, n)), ifelse(n > 200L, "...", ""))
     }, error = function(e) "")
+    reason <- tryCatch({
+      as.character(parsed)
+    }, error = function(e) "")
     stop(paste0(
       "Model did not return a valid JSON object after strict retry. ",
       "Try response_mode=\"compact\", simplify the query, and ensure the model can emit structured JSON.\n",
+      if (nzchar(reason)) paste0("Reason: ", reason, "\n") else "",
       "First 200 chars of response: ", snippet
     ), call. = FALSE)
   }
