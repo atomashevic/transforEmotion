@@ -21,8 +21,9 @@
     stop("No token provided. Aborting.", call. = FALSE)
   }
 
-  # Set in-session env
+  # Set in-session env (both common var names)
   Sys.setenv(HF_TOKEN = tok)
+  Sys.setenv(HUGGINGFACE_HUB_TOKEN = tok)
 
   # Offer to save
   message(
@@ -42,6 +43,7 @@
     lines <- c(lines, paste0("HF_TOKEN=", tok))
     writeLines(lines, renv_path)
     message("Saved token to ", renv_path)
+    message("Note: restart R for ~/.Renviron changes to take effect in new sessions.")
   } else {
     message("Token kept for current session only.")
   }
@@ -50,7 +52,7 @@
 }
 
 # Ensure HF auth is present (for Gemma). If interactive and missing, prompt.
-ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE) {
+ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE, repo_id = NULL) {
   # Ensure reticulate uses the transforEmotion conda environment
   ensure_te_py_env()
 
@@ -65,6 +67,30 @@ ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE) {
         "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\nif tok:\n    login(token=tok, add_to_git_credential=False)\n"
       )
     }, silent = TRUE)
+    # Also mirror into both env vars in R process for Transformers
+    Sys.setenv(HUGGINGFACE_HUB_TOKEN = tok)
+    Sys.setenv(HF_TOKEN = tok)
+    # Optional: validate access to the gated repo if provided
+    if (!is.null(repo_id)) {
+      ok <- try({
+        reticulate::py_run_string(
+          paste0(
+            "from huggingface_hub import HfApi\n",
+            "import os\n",
+            "api = HfApi()\n",
+            "repo = '", repo_id, "'\n",
+            "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\n",
+            "api.model_info(repo_id=repo, token=tok)\n"
+          )
+        )
+        TRUE
+      }, silent = TRUE)
+      if (inherits(ok, "try-error")) {
+        message(
+          "Could not validate access to ", repo_id, ". If download fails, ensure you've accepted access at https://huggingface.co/", repo_id
+        )
+      }
+    }
     return(invisible(TRUE))
   }
 
@@ -80,6 +106,30 @@ ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE) {
         "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\nif tok:\n    login(token=tok, add_to_git_credential=False)\n"
       )
     }, silent = TRUE)
+    # Validate repo if provided
+    if (!is.null(repo_id)) {
+      ok <- try({
+        reticulate::py_run_string(
+          paste0(
+            "from huggingface_hub import HfApi\n",
+            "import os\n",
+            "api = HfApi()\n",
+            "repo = '", repo_id, "'\n",
+            "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\n",
+            "api.model_info(repo_id=repo, token=tok)\n"
+          )
+        )
+        TRUE
+      }, silent = TRUE)
+      if (inherits(ok, "try-error")) {
+        stop(
+          paste0(
+            "Your token was received but access to the gated repo '", repo_id, "' could not be validated.\n",
+            "Please open https://huggingface.co/", repo_id, " and accept access with your account, then retry."
+          ), call. = FALSE
+        )
+      }
+    }
     return(invisible(TRUE))
   }
 

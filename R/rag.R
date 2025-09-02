@@ -266,7 +266,14 @@ rag <- function(
 
     # If Gemma 3 model requested, ensure HF auth for gated repos
     if (transformer %in% c("gemma3-270m", "gemma3-1b", "gemma3-4b")) {
-      ensure_hf_auth_for_gemma(interactive_ok = TRUE)
+      # Map to exact HF repo for validation
+      repo_id <- switch(
+        transformer,
+        "gemma3-270m" = "google/gemma-3-270m-it",
+        "gemma3-1b"   = "google/gemma-3-1b-it",
+        "gemma3-4b"   = "google/gemma-3-4b-it"
+      )
+      ensure_hf_auth_for_gemma(interactive_ok = TRUE, repo_id = repo_id)
     }
 
     # Set up service context
