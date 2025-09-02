@@ -143,6 +143,17 @@ parse_rag_json <- function(x, validate = TRUE)
 
   if (!is.list(obj)) stop("Unable to parse JSON into a list.", call. = FALSE)
 
+  # Lenient normalization before validation
+  # - If confidences is a single scalar but multiple labels exist, replicate to match length
+  if (!is.null(obj$labels) && !is.null(obj$confidences)) {
+    if (is.atomic(obj$confidences) && is.numeric(obj$confidences) && length(obj$confidences) == 1L) {
+      nlab <- tryCatch(length(obj$labels), error = function(e) 1L)
+      if (is.finite(nlab) && nlab >= 1L) {
+        obj$confidences <- rep(as.numeric(obj$confidences), nlab)
+      }
+    }
+  }
+
   if (isTRUE(validate)) validate_rag_json(obj, error = TRUE)
 
   # Normalize evidence into data.frame for convenience
