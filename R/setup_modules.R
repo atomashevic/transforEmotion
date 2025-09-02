@@ -116,7 +116,7 @@ setup_modules <- function() {
   # Add remaining modules
   final_modules <- c(
     # "transformers==4.30",
-    "transformers==4.47.0",
+    "transformers==4.51.0",
     "pytubefix" #always use the latest version due to frequent fixes
   )
 
