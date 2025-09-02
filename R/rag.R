@@ -18,21 +18,10 @@
 #' Available models include:
 #'
 #' \describe{
-#'
-#' \item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the \{llama-cpp-python\} module. Currently, we do not provide support for Mac and Windows users}
-#'
-#' \item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
-#'
-#' \item{"Orca-2"}{More documentation soon...}
-#'
-#' \item{"Phi-2"}{More documentation soon...}
-#'
-#' \item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
-#'
-#' \item{"Gemma3-270M / Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 family (Instruct) via HuggingFace: \code{google/gemma-3-270m-it}, \code{google/gemma-3-1b-it}, \code{google/gemma-3-4b-it}. 270M/1B support ~32K context; 4B supports up to ~128K.}
-#'
-#' \item{"Ministral-3B"}{Mistral's compact 3B Instruct model via HuggingFace: \code{ministral/Ministral-3b-instruct} (~32K context)}
-#'
+#'   \item{"TinyLLAMA"}{Default. TinyLlama 1.1B Chat via HuggingFace. Fast and light local inference.}
+#'   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via HuggingFace: \code{google/gemma-3-1b-it}, \code{google/gemma-3-4b-it}.}
+#'   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct}, \code{Qwen/Qwen3-1.7B-Instruct}.}
+#'   \item{"Ministral-3B"}{Mistral's compact 3B Instruct via HuggingFace: \code{ministral/Ministral-3b-instruct}.}
 #' }
 #'
 #' @param prompt Character (length = 1).
@@ -71,11 +60,12 @@
 #' These values depend on the number and quality of texts. Adjust as necessary
 #'
 #' @param output Character (length = 1).
-#' Output format: one of \code{"text"}, \code{"json"}, or \code{"table"}.
+#' Output format: one of \code{"text"}, \code{"json"}, \code{"table"}, or \code{"csv"}.
 #' \itemize{
-#'   \item \code{"text"} (default): returns the existing \code{"rag"} object with free-text \code{$response} and retrieval \code{$content}.
-#'   \item \code{"json"}: returns a JSON string with fields \code{labels}, \code{confidences}, \code{intensity}, and \code{evidence_chunks[{doc_id, span, score}]}, validated against the enforced schema.
-#'   \item \code{"table"}: returns a long-form \code{data.frame} with columns \code{label}, \code{confidence}, \code{intensity}, \code{doc_id}, \code{span}, and \code{score}.
+#'   \item \code{"text"} (default): returns a free-text response with retrieved content.
+#'   \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"}) are supported ONLY for Gemma3-1B and Gemma3-4B. For other models, requests for structured outputs fall back to \code{"text"}.
+#'   \item For Gemma3-1B/4B and task = \code{"sentiment"} or \code{"emotion"}, returns per-document dominant \code{label} and \code{confidence}.
+#'   \item For Gemma3-1B/4B and task = \code{"general"}, returns the prior schema with \code{labels}, \code{confidences}, \code{intensity}, and \code{evidence_chunks}.
 #' }
 #'
 #' @param task Character (length = 1).
@@ -89,6 +79,12 @@
 #'
 #' @param max_labels Integer (length = 1).
 #' Maximum number of labels to return in structured outputs; used to guide the model instruction when \code{output != "text"}.
+#'
+#' @param global_analysis Boolean (length = 1).
+#' Whether to perform analysis across all documents globally (legacy behavior) or per-document (default).
+#' When \code{FALSE} (default), each document is analyzed individually then results are aggregated.
+#' When \code{TRUE}, all documents are processed together for a single global analysis.
+#' Defaults to \code{FALSE}.
 #'
 #' @param device Character.
 #' Whether to use CPU or GPU for inference.
@@ -150,9 +146,9 @@
 rag <- function(
     text = NULL, path = NULL,
     transformer = c(
-      "LLAMA-2", "Mistral-7B", "OpenChat-3.5",
-      "Orca-2", "Phi-2", "TinyLLAMA",
-      "Gemma3-270M", "Gemma3-1B", "Gemma3-4B",
+      "TinyLLAMA",
+      "Gemma3-1B", "Gemma3-4B",
+      "Qwen3-1.7B",
       "Ministral-3B"
     ),
     prompt = "You are an expert at extracting themes across many texts",
@@ -160,10 +156,11 @@ rag <- function(
       "accumulate", "compact", "no_text",
       "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
-    output = c("text", "json", "table"),
+    output = c("text", "json", "table", "csv"),
     task = c("general", "emotion", "sentiment"),
     labels_set = NULL,
     max_labels = 5,
+    global_analysis = FALSE,
     device = c("auto", "cpu", "cuda"), keep_in_env = TRUE,
     envir = 1, progress = TRUE
 )
@@ -187,6 +184,11 @@ rag <- function(
     transformer <- "tinyllama"
   }else{transformer <- tolower(match.arg(transformer))}
 
+  # If a non-Gemma small model is requested with structured output, error
+  if (!transformer %in% c("gemma3-1b","gemma3-4b") && !identical(output, "text")) {
+    stop("Structured outputs (json/table/csv) are supported only for Gemma3-1B and Gemma3-4B.", call. = FALSE)
+  }
+
   # Check for 'query'
   if(missing(query)){ # set 'query' to 'prompt' if missing
     query <- prompt
@@ -203,6 +205,9 @@ rag <- function(
   # Set task mode
   task <- match.arg(task)
 
+  # Enforce: structured outputs only for Gemma3-1B / Gemma3-4B
+  # transformer will be lowercased after match.arg below
+
   # Default label sets for emotion/sentiment tasks
   if (is.null(labels_set)) {
     if (identical(task, "emotion")) {
@@ -213,9 +218,11 @@ rag <- function(
   }
 
   # Set default for 'device'
-  if(missing(response_mode)){
+  if(missing(device)){
     device <- "auto"
-  }else{device <- match.arg(device)}
+  } else {
+    device <- match.arg(device)
+  }
 
   # Run setup for modules
   # setup_modules()
@@ -265,31 +272,27 @@ rag <- function(
     device <- auto_device(device, transformer)
 
     # If Gemma 3 model requested, ensure HF auth for gated repos
-    if (transformer %in% c("gemma3-270m", "gemma3-1b", "gemma3-4b")) {
-      # Map to exact HF repo for validation
+    if (transformer %in% c("gemma3-1b", "gemma3-4b")) {
       repo_id <- switch(
         transformer,
-        "gemma3-270m" = "google/gemma-3-270m-it",
         "gemma3-1b"   = "google/gemma-3-1b-it",
         "gemma3-4b"   = "google/gemma-3-4b-it"
       )
-      ensure_hf_auth_for_gemma(interactive_ok = TRUE, repo_id = repo_id)
+      if (exists("ensure_hf_auth_for_gemma", mode = "function")) {
+        ensure_hf_auth_for_gemma(interactive_ok = TRUE, repo_id = repo_id)
+      } else {
+        warning(
+          "ensure_hf_auth_for_gemma() not found; proceeding without explicit gated repo auth. Set HF_TOKEN env var if downloads fail.",
+          call. = FALSE
+        )
+      }
     }
 
-    # Set up service context
+    # Set up service context (restricted model set)
     service_context <- switch(
       transformer,
       "tinyllama" = setup_tinyllama(llama_index, prompt, device),
-      "llama-2" = setup_llama2(llama_index, prompt, device),
-      "mistral-7b" = setup_mistral(llama_index, prompt, device),
-      "openchat-3.5" = setup_openchat(llama_index, prompt, device),
-      "orca-2" = setup_orca2(llama_index, prompt, device),
-      "phi-2" = setup_phi2(llama_index, prompt, device),
       # Gemma 3 (HuggingFace Instruct variants)
-      "gemma3-270m" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "google/gemma-3-270m-it", tokenizer_name = "google/gemma-3-270m-it",
-        context_window = 32000L
-      ),
       "gemma3-1b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "google/gemma-3-1b-it", tokenizer_name = "google/gemma-3-1b-it",
         context_window = 32000L
@@ -297,6 +300,10 @@ rag <- function(
       "gemma3-4b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "google/gemma-3-4b-it", tokenizer_name = "google/gemma-3-4b-it",
         context_window = 128000L
+      ),
+      "qwen3-1.7b" = setup_hf_llm(llama_index, prompt, device,
+        model_name = "Qwen/Qwen3-1.7B-Instruct", tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
+        context_window = 32000L
       ),
       # Ministral 3B (HuggingFace Instruct)
       "ministral-3b" = setup_hf_llm(llama_index, prompt, device,
@@ -347,73 +354,294 @@ rag <- function(
 
   }
 
-  # Send message to user
-  message("Indexing documents...")
-
-  # Set indices
-  index <- llama_index$VectorStoreIndex(
-    documents, service_context = service_context,
-    show_progress = progress
-  )
-
-  # Set up query engine
-  engine <- index$as_query_engine(
-    similarity_top_k = similarity_top_k,
-    response_mode = response_mode
-  )
-
-  # Send message to user
-  message("Querying...", appendLF = FALSE)
-
-  # Start time
-  start <- Sys.time()
+  # Force per-document analysis for sentiment/emotion regardless of global_analysis
+  if (task %in% c("emotion","sentiment")) {
+    global_analysis <- FALSE
+  }
 
   # Build query (structured when output != "text")
   built_query <- if (identical(output, "text")) {
     query
   } else {
-    # Task-specific guidance
-    label_guidance <- if (!is.null(labels_set)) {
+    # Task-specific minimal JSON requirement for single dominant label
+    if (task %in% c("emotion","sentiment")) {
+      allowed <- if (is.null(labels_set)) {
+        if (identical(task, "emotion")) c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation") else c("positive","neutral","negative")
+      } else labels_set
       paste0(
-        "Use only these labels (lowercase exact match), choose up to ", max_labels, ": ",
-        "[", paste(labels_set, collapse = ", "), "]. "
+        query, "\n\n",
+        "Classify the text into EXACTLY ONE label from this set (lowercase exact match): ",
+        "[", paste(tolower(allowed), collapse = ", "), "]. ",
+        "Output ONLY a single JSON object with exactly these keys: ",
+        '{"label": "<one_of_allowed>", "confidence": 0.0}', " where confidence is numeric in [0,1]. ",
+        "No markdown, no extra text."
       )
-    } else { "" }
-
-    paste0(
-      query, "\n\n",
-      if (identical(task, "emotion")) "You are extracting emotions from text. " else if (identical(task, "sentiment")) "You are extracting sentiment polarity from text. " else "",
-      label_guidance,
-      "Output strictly as a single JSON object with EXACTLY these keys: ",
-      "{",
-      "\"labels\": [string,...], ",
-      "\"confidences\": [number 0..1,...], ",
-      "\"intensity\": number 0..1, ",
-      "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
-      "}. ",
-      "Confidences must be numeric between 0 and 1 (no strings like '0..1'); if multiple labels are returned, normalize to sum to 1. ",
-      "Return exactly ONE JSON object only — no markdown fences, no extra numbers, no commentary."
-    )
+    } else {
+      # General task: keep existing richer JSON contract
+      paste0(
+        query, "\n\n",
+        "Output strictly as a single JSON object with EXACTLY these keys: ",
+        "{",
+        "\"labels\": [string,...], ",
+        "\"confidences\": [number 0..1,...], ",
+        "\"intensity\": number 0..1, ",
+        "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
+        "}. ",
+        "Confidences must be numeric between 0 and 1. Return exactly ONE JSON object only — no markdown fences, no commentary."
+      )
+    }
   }
 
-  # Get query
-  extracted_query <- engine$query(built_query)
+  # Start time
+  start <- Sys.time()
 
-  # Stop time
-  message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
-
-  # Organize Python output
-  result <- list(
-    response = if (identical(output, "text")) {
-      response_cleanup(extracted_query$response, transformer = transformer)
-    } else {
-      trimws(extracted_query$response)
-    },
-    content = content_cleanup(extracted_query$source_nodes),
-    document_embeddings = do.call(
-      rbind, silent_call(index$vector_store$to_dict()$embedding_dict)
+  # Process documents based on global_analysis parameter
+  if (isTRUE(global_analysis)) {
+    
+    # Global analysis (legacy behavior) - process all documents together
+    message("Indexing documents...")
+    
+    # Set indices
+    index <- llama_index$VectorStoreIndex(
+      documents, service_context = service_context,
+      show_progress = progress
     )
-  )
+
+    # Set up query engine
+    engine <- index$as_query_engine(
+      similarity_top_k = similarity_top_k,
+      response_mode = response_mode
+    )
+
+    # Send message to user
+    message("Querying...", appendLF = FALSE)
+
+    # Get query
+    extracted_query <- engine$query(built_query)
+
+    # Stop time
+    message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
+
+    # Organize Python output
+    result <- list(
+      response = if (identical(output, "text")) {
+        response_cleanup(extracted_query$response, transformer = transformer)
+      } else {
+        trimws(extracted_query$response)
+      },
+      content = content_cleanup(extracted_query$source_nodes),
+      document_embeddings = do.call(
+        rbind, silent_call(index$vector_store$to_dict()$embedding_dict)
+      )
+    )
+    
+  } else {
+    
+    # Per-document analysis (default behavior)
+    message("Analyzing documents individually...")
+    
+    # Initialize containers for aggregated results
+    all_responses <- character()
+    all_content <- list()
+    all_embeddings <- list()
+    
+    # Process each document individually
+    for (i in seq_along(documents)) {
+      
+      if (progress) {
+        message(paste0("Processing document ", i, "/", length(documents), "..."))
+      }
+      
+      # Create index for single document
+      doc_index <- llama_index$VectorStoreIndex(
+        list(documents[[i]]), service_context = service_context,
+        show_progress = FALSE
+      )
+      
+      # Set up query engine for this document
+      doc_engine <- doc_index$as_query_engine(
+        similarity_top_k = min(similarity_top_k, 3), # Limit for single documents
+        response_mode = response_mode
+      )
+      
+      # Query this document
+      doc_query <- try({
+        doc_engine$query(built_query)
+      }, silent = TRUE)
+
+      # If we expect structured output and parsing fails, retry with stricter JSON-only prompt
+      if (!identical(output, "text") && (task %in% c("emotion","sentiment")) && !inherits(doc_query, "try-error")) {
+        parsed_try_single <- try(parse_single_label_json(trimws(doc_query$response)), silent = TRUE)
+        if (inherits(parsed_try_single, "try-error")) {
+          strict_prompt <- paste0(
+            "Classify the text into EXACTLY ONE label from this set (lowercase exact match): ",
+            "[", paste(tolower(if (is.null(labels_set)) {
+              if (identical(task, "emotion")) c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation") else c("positive","neutral","negative")
+            } else labels_set), collapse = ", "), "]. ",
+            'Return ONLY a JSON object: {"label":"<one_of_allowed>","confidence":0.0} with confidence in [0,1]. No markdown. Now answer: ', query
+          )
+          if (progress) message("  Strict JSON retry for document ", i, "...")
+          strict_res <- try(doc_engine$query(strict_prompt), silent = TRUE)
+          if (!inherits(strict_res, "try-error")) {
+            doc_query <- strict_res
+          }
+        }
+      }
+      
+      # Handle errors gracefully
+      if (inherits(doc_query, "try-error")) {
+        warning(paste0("Failed to process document ", i, ": ", as.character(doc_query)))
+        next
+      }
+      
+      # Store results with debugging
+      raw_response <- doc_query$response
+      if (progress) {
+        message("  Raw response length: ", nchar(raw_response))
+        if (nchar(raw_response) > 0) {
+          message("  First 100 chars: ", substr(trimws(raw_response), 1, 100), "...")
+        } else {
+          message("  WARNING: Empty response from model!")
+        }
+      }
+      
+      all_responses[i] <- if (identical(output, "text")) {
+        cleaned_response <- response_cleanup(raw_response, transformer = transformer)
+        if (progress && nchar(cleaned_response) != nchar(raw_response)) {
+          message("  Cleaned response length: ", nchar(cleaned_response))
+        }
+        cleaned_response
+      } else {
+        trimws(raw_response)
+      }
+      
+      # Clean up content and add document ID
+      doc_content <- content_cleanup(doc_query$source_nodes)
+      if (nrow(doc_content) > 0) {
+        doc_content$document <- paste0("doc_", i)
+        all_content[[i]] <- doc_content
+      }
+      
+      # Store embeddings
+      doc_embeddings <- try({
+        do.call(rbind, silent_call(doc_index$vector_store$to_dict()$embedding_dict))
+      }, silent = TRUE)
+      
+      if (!inherits(doc_embeddings, "try-error") && !is.null(doc_embeddings)) {
+        all_embeddings[[i]] <- doc_embeddings
+      }
+    }
+    
+    # Stop time
+    message(paste0("Per-document analysis completed in ", round(Sys.time() - start), "s"))
+    
+    # Aggregate results based on output type
+    if (identical(output, "text")) {
+      
+      # For text output, combine responses with document separators
+      combined_response <- paste0(
+        paste0("Document ", seq_along(all_responses), ": ", all_responses, collapse = "\n\n"),
+        collapse = ""
+      )
+      
+      # Combine content
+      combined_content <- if (length(all_content) > 0) {
+        do.call(rbind, all_content[!sapply(all_content, is.null)])
+      } else {
+        data.frame(document = character(0), text = character(0), score = numeric(0))
+      }
+      
+      # Combine embeddings
+      combined_embeddings <- if (length(all_embeddings) > 0) {
+        do.call(rbind, all_embeddings[!sapply(all_embeddings, is.null)])
+      } else {
+        matrix(nrow = 0, ncol = 0)
+      }
+      
+      result <- list(
+        response = combined_response,
+        content = combined_content,
+        document_embeddings = combined_embeddings
+      )
+      
+    } else {
+      
+      # For structured outputs, aggregate to per-document dominant label for sent./emo.
+        if (task %in% c("sentiment","emotion")) {
+          # New behavior: return ONE dominant label per document with its confidence
+          doc_ids <- paste0("doc_", seq_along(documents))
+          per_doc <- lapply(seq_along(all_responses), function(i){
+            resp <- all_responses[i]
+            if (is.na(resp) || !nzchar(resp)) {
+              return(list(doc_id = doc_ids[i], text = as.character(documents[[i]]$text), label = NA_character_, confidence = NA_real_))
+            }
+            # Try single-label parser first, fall back to array parser
+            parsed_single <- try(parse_single_label_json(resp), silent = TRUE)
+            if (!inherits(parsed_single, "try-error") && is.list(parsed_single)) {
+              lbls <- parsed_single$label
+              confs <- parsed_single$confidence
+            } else {
+              parsed <- try(parse_rag_json(resp, validate = TRUE), silent = TRUE)
+              if (inherits(parsed, "try-error")) {
+                parsed <- NULL
+              }
+              if (!is.null(parsed)) {
+                lbls <- as.character(parsed$labels)
+                confs <- as.numeric(parsed$confidences)
+              } else {
+                lbls <- character(0)
+                confs <- numeric(0)
+              }
+            }
+            
+            if (length(lbls) > 1 && length(confs) == length(lbls)) {
+              ord <- order(confs, decreasing = TRUE)
+              lbls <- lbls[ord]
+              confs <- confs[ord]
+            }
+            # Normalize label to allowed set and apply synonyms
+            normalized <- normalize_label(lbls[1], task = task, labels_set = labels_set)
+            lbls[1] <- normalized
+            # Clamp confidence
+            if (length(confs) >= 1 && is.finite(confs[1])) {
+              confs[1] <- max(0, min(1, as.numeric(confs[1])))
+            } else {
+              confs[1] <- NA_real_
+            }
+            if (!is.null(labels_set) && length(lbls) > 0) {
+              allowed <- tolower(labels_set)
+              if (!tolower(lbls[1]) %in% allowed) {
+                # If still out-of-set, mark as NA
+                lbls[1] <- NA_character_
+              }
+            }
+            list(
+              doc_id = doc_ids[i],
+              text = as.character(documents[[i]]$text),
+              label = ifelse(length(lbls) >= 1, lbls[1], NA_character_),
+              confidence = ifelse(length(confs) >= 1, as.numeric(confs[1]), NA_real_)
+            )
+          })
+          per_doc_df <- do.call(rbind, lapply(per_doc, as.data.frame, stringsAsFactors = FALSE))
+          # Output formats
+          if (identical(output, "table") || identical(output, "csv")) {
+            result <- per_doc_df
+          } else if (identical(output, "json")) {
+            result <- jsonlite::toJSON(per_doc_df, auto_unbox = TRUE, digits = NA)
+          } else {
+            # Should not reach here because output != text in this branch
+            result <- per_doc_df
+          }
+        } else {
+          result <- aggregate_structured_results(
+            all_responses, all_content, all_embeddings, output,
+            task = task, labels_set = labels_set, max_labels = max_labels
+          )
+        }
+      
+    }
+    
+  }
 
   # If output is text, keep backward-compatible return
   if (identical(output, "text")) {
@@ -421,7 +649,12 @@ rag <- function(
     return(result)
   }
 
-  # For structured outputs, parse and validate
+  # For per-document structured outputs, result is already processed by aggregate_structured_results
+  if (!isTRUE(global_analysis)) {
+    return(result)
+  }
+
+  # For global analysis structured outputs, process the single response
   # Build evidence from retrieved content
   evidence_chunks <- list()
   if (nrow(result$content) > 0) {
@@ -548,6 +781,197 @@ summary.rag <- function(object, ...)
 }
 
 #' @noRd
+# Aggregate structured results from per-document analysis ----
+# Updated 02.09.2025
+aggregate_structured_results <- function(all_responses, all_content, all_embeddings, output,
+                                         task = c("general","emotion","sentiment"),
+                                         labels_set = NULL, max_labels = 5)
+{
+  task <- match.arg(task)
+  
+  # Remove empty responses
+  valid_responses <- all_responses[!is.na(all_responses) & nzchar(all_responses)]
+  
+  if (length(valid_responses) == 0) {
+    # Provide placeholders to avoid downstream aggregation errors.
+    if (task == "sentiment") {
+      empty_result <- list(
+        labels = c("neutral"),
+        confidences = c(1),
+        intensity = 0,
+        evidence_chunks = list()
+      )
+    } else {
+      empty_result <- list(
+        labels = character(0),
+        confidences = numeric(0),
+        intensity = 0,
+        evidence_chunks = list()
+      )
+    }
+    if (identical(output, "json")) {
+      return(jsonlite::toJSON(empty_result, auto_unbox = TRUE, digits = NA))
+    } else if (identical(output, "table")) {
+      return(as_rag_table(empty_result, validate = TRUE))
+    } else {
+      return(empty_result)
+    }
+  }
+  
+  # Parse all valid JSON responses
+  parsed_results <- list()
+  for (i in seq_along(valid_responses)) {
+    parsed <- try(parse_rag_json(valid_responses[i], validate = TRUE), silent = TRUE)
+    if (!inherits(parsed, "try-error")) {
+      parsed_results[[i]] <- parsed
+    }
+  }
+  
+  if (length(parsed_results) == 0) {
+    stop("No valid JSON responses could be parsed from any document.", call. = FALSE)
+  }
+  
+  # Aggregate labels and confidences across documents
+  all_labels <- character()
+  all_confidences <- numeric()
+  all_intensities <- numeric()
+  
+  for (result in parsed_results) {
+    all_labels <- c(all_labels, result$labels)
+    all_confidences <- c(all_confidences, result$confidences)
+    all_intensities <- c(all_intensities, result$intensity)
+  }
+  
+  # Merge duplicate labels by summing confidences
+  unique_labels <- unique(all_labels)
+  merged_confidences <- numeric(length(unique_labels))
+  for (i in seq_along(unique_labels)) {
+    label <- unique_labels[i]
+    label_indices <- which(all_labels == label)
+    merged_confidences[i] <- sum(all_confidences[label_indices])
+  }
+
+  # Enforce allowed label set if provided: filter, synonym-map, and renormalize
+  enforce_allowed <- function(lbls, confs, task, labels_set, max_labels) {
+    if (is.null(labels_set) || length(lbls) == 0) return(list(labels = lbls, confs = confs))
+    allowed <- tolower(labels_set)
+    # Direct keep
+    keep <- tolower(lbls) %in% allowed
+    if (!any(keep)) {
+      # Try synonym mapping
+      map_syn <- function(x) {
+        lx <- tolower(x)
+        if (task == "sentiment") {
+          if (lx %in% c("ok","okay","meh","fine","average","so-so","alright","neutral")) return("neutral")
+          if (lx %in% c("good","great","excellent","awesome","amazing","positive","happy","love")) return("positive")
+          if (lx %in% c("bad","terrible","awful","horrible","negative","sad","angry","disappointed")) return("negative")
+          return(NA_character_)
+        } else if (task == "emotion") {
+          if (lx %in% c("happy","happiness","joyful","delighted")) return("joy")
+          if (lx %in% c("trusting","confidence","secure")) return("trust")
+          if (lx %in% c("fearful","afraid","scared","anxious","anxiety")) return("fear")
+          if (lx %in% c("surprised","astonished","amazed")) return("surprise")
+          if (lx %in% c("sad","sorrow","depressed","downcast")) return("sadness")
+          if (lx %in% c("disgusted","gross","revolted")) return("disgust")
+          if (lx %in% c("angry","rage","mad")) return("anger")
+          if (lx %in% c("anticipating","eager","expectant")) return("anticipation")
+          return(NA_character_)
+        }
+        return(NA_character_)
+      }
+      mapped <- vapply(lbls, map_syn, character(1))
+      ok <- !is.na(mapped) & mapped %in% allowed
+      if (!any(ok)) return(list(labels = character(0), confs = numeric(0)))
+      lbls <- mapped[ok]; confs <- confs[ok]
+    } else {
+      lbls <- lbls[keep]; confs <- confs[keep]
+    }
+    # Deduplicate and sum
+    if (length(lbls) > 1) {
+      u <- unique(lbls)
+      summed <- vapply(u, function(l) sum(confs[lbls == l]), numeric(1))
+      lbls <- u; confs <- as.numeric(summed)
+    }
+    # Limit to max_labels
+    if (length(lbls) > max_labels) {
+      ord <- order(confs, decreasing = TRUE)
+      take <- ord[seq_len(max_labels)]
+      lbls <- lbls[take]; confs <- confs[take]
+    }
+    # Renormalize if >1 label
+    s <- sum(confs)
+    if (length(confs) > 1 && is.finite(s) && s > 0) confs <- confs / s
+    list(labels = lbls, confs = confs)
+  }
+  
+  # Normalize confidences to sum to 1
+  if (sum(merged_confidences) > 0) {
+    merged_confidences <- merged_confidences / sum(merged_confidences)
+  }
+  
+  # Calculate aggregated intensity (weighted average by confidence)
+  if (length(all_intensities) > 0 && sum(all_confidences) > 0) {
+    aggregated_intensity <- sum(all_intensities * all_confidences) / sum(all_confidences)
+  } else {
+    aggregated_intensity <- mean(all_intensities, na.rm = TRUE)
+    if (is.nan(aggregated_intensity)) aggregated_intensity <- 0
+  }
+  
+  # Combine evidence chunks from all documents
+  combined_evidence <- list()
+  evidence_counter <- 1
+  
+  for (i in seq_along(all_content)) {
+    if (!is.null(all_content[[i]]) && nrow(all_content[[i]]) > 0) {
+      content_df <- all_content[[i]]
+      for (j in seq_len(nrow(content_df))) {
+        combined_evidence[[evidence_counter]] <- list(
+          doc_id = paste0("doc_", i),
+          span = as.character(content_df$text[j]),
+          score = as.numeric(content_df$score[j])
+        )
+        evidence_counter <- evidence_counter + 1
+      }
+    }
+  }
+  
+  # Apply enforcement now
+  enforced <- enforce_allowed(unique_labels, merged_confidences, task, labels_set, max_labels)
+  out_labels <- enforced$labels
+  out_conf <- enforced$confs
+  # If all filtered out, keep original merged but limited to top max_labels
+  if (length(out_labels) == 0 && length(unique_labels) > 0) {
+    ord <- order(merged_confidences, decreasing = TRUE)
+    take <- ord[seq_len(min(max_labels, length(ord)))]
+    out_labels <- unique_labels[take]
+    out_conf <- merged_confidences[take]
+    s <- sum(out_conf)
+    if (length(out_conf) > 1 && is.finite(s) && s > 0) out_conf <- out_conf / s
+  }
+
+  # Create final aggregated result
+  aggregated_result <- list(
+    labels = out_labels,
+    confidences = out_conf,
+    intensity = aggregated_intensity,
+    evidence_chunks = combined_evidence
+  )
+  
+  # Validate the aggregated structure
+  validate_rag_json(aggregated_result, error = TRUE)
+  
+  # Return in requested format
+  if (identical(output, "json")) {
+    return(jsonlite::toJSON(aggregated_result, auto_unbox = TRUE, digits = NA))
+  } else if (identical(output, "table")) {
+    return(as_rag_table(aggregated_result, validate = TRUE))
+  }
+  
+  # Fallback (shouldn't reach here)
+  return(aggregated_result)
+}
+
+#' @noRd
 # Clean up response ----
 # Updated 29.01.2024
 response_cleanup <- function(response, transformer)
@@ -569,7 +993,13 @@ response_cleanup <- function(response, transformer)
       "openchat-3.5" = gsub("\n---.*", "", response),
       "orca-2" = response,
       "phi-2" = gsub("\\\n\\\n.*", "", response),
-      "tinyllama" = response
+      "tinyllama" = response,
+      "gemma3-1b" = response,
+      "gemma3-4b" = response,
+      "qwen3-1.7b" = response,
+      "pleias-rag-350m" = pleias_response_cleanup(response, debug = TRUE),
+      "pleias-rag-1b" = pleias_response_cleanup(response, debug = TRUE),
+      response
     )
   )
 
@@ -614,6 +1044,51 @@ content_cleanup <- function(content)
 }
 
 #' @noRd
+# Parse a simple single-label JSON: {"label": string, "confidence": number}
+parse_single_label_json <- function(x)
+{
+  if (is.null(x) || !nzchar(x)) stop("Empty response", call. = FALSE)
+  txt <- try(strip_code_fence(x), silent = TRUE)
+  if (inherits(txt, "try-error")) txt <- x
+  obj <- try(jsonlite::fromJSON(txt, simplifyVector = TRUE), silent = TRUE)
+  if (inherits(obj, "try-error") || !is.list(obj)) stop("Not JSON", call. = FALSE)
+  if (is.null(obj$label) || is.null(obj$confidence)) stop("Missing keys", call. = FALSE)
+  lab <- as.character(obj$label)[1]
+  conf <- suppressWarnings(as.numeric(obj$confidence)[1])
+  if (!is.finite(conf)) conf <- NA_real_
+  list(label = lab, confidence = conf)
+}
+
+#' @noRd
+# Normalize a predicted label to the allowed set using task-specific synonyms
+normalize_label <- function(label, task = c("emotion","sentiment"), labels_set = NULL)
+{
+  if (is.null(label) || !nzchar(label)) return(NA_character_)
+  task <- match.arg(task)
+  lx <- tolower(trimws(label))
+  allowed <- tolower(if (is.null(labels_set)) {
+    if (identical(task, "emotion")) c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation") else c("positive","neutral","negative")
+  } else labels_set)
+  if (lx %in% allowed) return(lx)
+  if (task == "sentiment") {
+    if (lx %in% c("ok","okay","meh","fine","average","so-so","alright","neutral")) return("neutral")
+    if (lx %in% c("good","great","excellent","awesome","amazing","positive","happy","love","like")) return("positive")
+    if (lx %in% c("bad","terrible","awful","horrible","negative","sad","angry","disappointed","hate")) return("negative")
+    return(NA_character_)
+  } else {
+    if (lx %in% c("happy","happiness","joyful","delighted")) return("joy")
+    if (lx %in% c("trusting","confidence","secure","faith")) return("trust")
+    if (lx %in% c("fearful","afraid","scared","anxious","anxiety","worry")) return("fear")
+    if (lx %in% c("surprised","astonished","amazed","shock")) return("surprise")
+    if (lx %in% c("sad","sorrow","depressed","downcast","unhappy")) return("sadness")
+    if (lx %in% c("disgusted","gross","revolted","contempt")) return("disgust")
+    if (lx %in% c("angry","rage","mad","annoyed")) return("anger")
+    if (lx %in% c("anticipating","eager","expectant","anticipation","hope")) return("anticipation")
+    return(NA_character_)
+  }
+}
+
+#' @noRd
 # Setup Ollama-backed models (Gemma3, Ministral)
 # Tries to use llama_index llms.Ollama. Fails with a helpful message if unavailable.
 setup_ollama_model <- function(llama_index, prompt, device, model, context_window)
@@ -655,18 +1130,44 @@ setup_ollama_model <- function(llama_index, prompt, device, model, context_windo
 # Uses llama_index$llms$HuggingFaceLLM without Ollama.
 setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window)
 {
+  # Models that don't support token_type_ids in generation
+  models_without_token_type_ids <- c(
+    "PleIAs/Pleias-RAG-350M",
+    "PleIAs/Pleias-RAG-1B",
+    "meta-llama/Llama-3.2-1B"
+  )
+  
+  # Configure tokenizer kwargs. Avoid explicit token_type_ids manipulation; prior attempts
+  # triggered llama-index to inject an unused `token_type_ids` arg that raised
+  # ValueError for decoder-only models (Gemma / PleIAs / Llama 3.2 1B).
+  tokenizer_kwargs <- list(trust_remote_code = TRUE)
+
+  # Optimize generation parameters for different model types
+  generate_kwargs <- if (grepl("PleIAs/Pleias-RAG", model_name)) {
+    # PleIAs RAG models: optimized for factual accuracy with reasoning
+    list(
+      temperature = as.double(0.2),  # Slightly higher for diverse reasoning
+      do_sample = TRUE,
+      top_p = as.double(0.9),        # Nucleus sampling for quality
+      repetition_penalty = as.double(1.05)  # Light repetition penalty
+    )
+  } else {
+    # Conservative sampling for other structured-ish outputs
+    list(
+      temperature = as.double(0.1), 
+      do_sample = TRUE
+    )
+  }
+
   # Build ServiceContext with HuggingFace LLM
   sc <- llama_index$ServiceContext$from_defaults(
     llm = llama_index$llms$HuggingFaceLLM(
       model_name = model_name,
       tokenizer_name = tokenizer_name,
       device_map = device,
-      # Conservative sampling for structured-ish outputs
-      generate_kwargs = list(
-        temperature = as.double(0.1), do_sample = TRUE
-      ),
+      generate_kwargs = generate_kwargs,
       # Required for newer architectures like Gemma 3 (remote modeling code)
-      tokenizer_kwargs = list(trust_remote_code = TRUE),
+      tokenizer_kwargs = tokenizer_kwargs,
       model_kwargs = list(trust_remote_code = TRUE)
     ),
     context_window = as.integer(context_window),
@@ -861,6 +1362,62 @@ setup_phi2 <- function(llama_index, prompt, device)
   )
 
 }
+
+
+
+#' @noRd
+# Clean up PleIAs RAG response (extract clean answer with citations)
+# Updated 02.01.2025
+pleias_response_cleanup <- function(response, debug = FALSE)
+{
+  # Store original for debugging
+  original_response <- response
+  
+  # Trim whitespace first
+  response <- trimws(response)
+  
+  if (debug && nchar(response) > 0) {
+    message("Original Pleias response length: ", nchar(original_response))
+    message("First 200 chars: ", substr(original_response, 1, 200), "...")
+  }
+  
+  # If response is empty or very short, return original
+  if (nchar(response) < 10) {
+    if (debug) message("Response too short, returning original")
+    return(original_response)
+  }
+  
+  # PleIAs models generate structured outputs with reasoning traces
+  # Be more conservative with cleanup to preserve content
+  
+  # Look for common patterns in PleIAs output structure, but don't be too aggressive
+  if (grepl("\\*\\*Final Answer\\*\\*|\\*\\*Answer\\*\\*", response, ignore.case = TRUE)) {
+    # Extract content after "**Final Answer**" or "**Answer**"
+    answer_split <- strsplit(response, "\\*\\*(?:Final )?Answer\\*\\*:?", perl = TRUE)[[1]]
+    if (length(answer_split) > 1) {
+      response <- trimws(answer_split[2])
+      if (debug) message("Extracted final answer section")
+    }
+  }
+  
+  # Very light cleanup - just normalize whitespace
+  response <- gsub("\\n\\s*\\n", "\n\n", response, perl = TRUE)  # Normalize line breaks
+  response <- trimws(response)
+  
+  # If after cleanup we have very little content, return original
+  if (nchar(response) < 20) {
+    if (debug) message("Cleanup removed too much, returning original")
+    return(original_response)
+  }
+  
+  if (debug) {
+    message("Cleaned response length: ", nchar(response))
+    message("First 200 chars of clean: ", substr(response, 1, 200), "...")
+  }
+  
+  return(response)
+}
+
 
 #' @noRd
 # TinyLLAMA ----

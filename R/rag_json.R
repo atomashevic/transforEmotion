@@ -144,14 +144,30 @@ parse_rag_json <- function(x, validate = TRUE)
           if (!inherits(cand_obj, "try-error") && is.list(cand_obj)) {
             # Lenient normalization before validation on each candidate
             if (!is.null(cand_obj$labels) && !is.null(cand_obj$confidences)) {
+              nlab <- tryCatch(length(cand_obj$labels), error = function(e) 0L)
               if (is.character(cand_obj$confidences)) {
-                suppressWarnings({
-                  numc <- as.numeric(cand_obj$confidences)
-                })
+                suppressWarnings({ numc <- as.numeric(cand_obj$confidences) })
                 if (all(is.finite(numc))) cand_obj$confidences <- numc
               }
-              if (length(cand_obj$confidences) == 1L && length(cand_obj$labels) > 1L) {
-                cand_obj$confidences <- rep(cand_obj$confidences, length(cand_obj$labels))
+              if (length(cand_obj$confidences) == 1L && nlab > 1L) {
+                cand_obj$confidences <- rep(cand_obj$confidences, nlab)
+              }
+              if (length(cand_obj$confidences) != nlab || any(!is.finite(cand_obj$confidences))) {
+                if (nlab > 0L) cand_obj$confidences <- rep(1 / nlab, nlab)
+              }
+              # Clamp and normalize
+              if (length(cand_obj$confidences) > 0L) cand_obj$confidences <- pmax(0, pmin(1, as.numeric(cand_obj$confidences)))
+              if (nlab > 1L) {
+                s <- sum(cand_obj$confidences)
+                if (is.finite(s) && s > 0) cand_obj$confidences <- cand_obj$confidences / s else cand_obj$confidences <- rep(1 / nlab, nlab)
+              }
+            }
+            # If intensity missing, derive
+            if (is.null(cand_obj$intensity)) {
+              if (!is.null(cand_obj$confidences) && length(cand_obj$confidences) > 0L && all(is.finite(cand_obj$confidences))) {
+                cand_obj$intensity <- max(as.numeric(cand_obj$confidences))
+              } else {
+                cand_obj$intensity <- 0
               }
             }
             ok <- try(validate_rag_json(cand_obj, error = FALSE), silent = TRUE)
@@ -174,13 +190,51 @@ parse_rag_json <- function(x, validate = TRUE)
   if (!is.list(obj)) stop("Unable to parse JSON into a list.", call. = FALSE)
 
   # Lenient normalization before validation
-  # - If confidences is a single scalar but multiple labels exist, replicate to match length
+  # - Handle confidences flexibly (coerce, repair, normalize)
+  if (!is.null(obj$labels)) {
+    nlab <- tryCatch(length(obj$labels), error = function(e) 0L)
+    # If confidences missing entirely but labels exist, default to uniform
+    if (is.null(obj$confidences) && nlab > 0L) {
+      obj$confidences <- rep(1 / nlab, nlab)
+    }
+  }
+
   if (!is.null(obj$labels) && !is.null(obj$confidences)) {
-    if (is.atomic(obj$confidences) && is.numeric(obj$confidences) && length(obj$confidences) == 1L) {
-      nlab <- tryCatch(length(obj$labels), error = function(e) 1L)
-      if (is.finite(nlab) && nlab >= 1L) {
-        obj$confidences <- rep(as.numeric(obj$confidences), nlab)
-      }
+    nlab <- tryCatch(length(obj$labels), error = function(e) 0L)
+
+    # Convert character confidences like "0.8" to numeric; if pattern like "0..1", fallback later
+    if (is.character(obj$confidences)) {
+      suppressWarnings({ obj$confidences <- as.numeric(obj$confidences) })
+    }
+
+    # If a single scalar provided for multiple labels, replicate it
+    if (is.atomic(obj$confidences) && length(obj$confidences) == 1L && nlab > 1L) {
+      obj$confidences <- rep(as.numeric(obj$confidences), nlab)
+    }
+
+    # If any non-finite values (including NAs from failed coercion), use uniform distribution
+    if (length(obj$confidences) != nlab || any(!is.finite(obj$confidences))) {
+      if (nlab > 0L) obj$confidences <- rep(1 / nlab, nlab)
+    }
+
+    # Clamp to [0,1]
+    if (length(obj$confidences) > 0L) {
+      obj$confidences <- pmax(0, pmin(1, as.numeric(obj$confidences)))
+    }
+
+    # Normalize to sum to 1 when multiple labels
+    if (nlab > 1L) {
+      s <- sum(obj$confidences)
+      if (is.finite(s) && s > 0) obj$confidences <- obj$confidences / s else obj$confidences <- rep(1 / nlab, nlab)
+    }
+  }
+
+  # - If intensity missing, derive as max(confidences) or 0
+  if (is.null(obj$intensity)) {
+    if (!is.null(obj$confidences) && length(obj$confidences) > 0L && all(is.finite(obj$confidences))) {
+      obj$intensity <- max(as.numeric(obj$confidences))
+    } else {
+      obj$intensity <- 0
     }
   }
 
@@ -264,14 +318,15 @@ as_rag_table <- function(x, validate = TRUE)
   ev <- parsed$evidence
 
   if (nrow(ev) == 0L) {
-    # No evidence: one row per label
+    # No evidence: one row per label; ensure all columns have matching length
+    n <- length(labels)
     out <- data.frame(
       label = labels,
       confidence = confidences,
-      intensity = rep(intensity, length(labels)),
-      doc_id = NA_character_,
-      span = NA_character_,
-      score = NA_real_,
+      intensity = rep(intensity, n),
+      doc_id = rep(NA_character_, n),
+      span = rep(NA_character_, n),
+      score = rep(NA_real_, n),
       stringsAsFactors = FALSE
     )
     return(out)
