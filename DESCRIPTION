@@ -12,7 +12,7 @@ Maintainer: Aleksandar Tomašević <atomashevic@gmail.com>
 Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>.
 License: GPL (>= 3.0)
 Encoding: UTF-8
-Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, progress, remotes, reticulate, textdata
+Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, progress, remotes, reticulate, textdata, jsonlite
 Suggests: knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2

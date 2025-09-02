@@ -66,6 +66,14 @@
 #'
 #' These values depend on the number and quality of texts. Adjust as necessary
 #'
+#' @param output Character (length = 1).
+#' Output format: one of \code{"text"}, \code{"json"}, or \code{"table"}.
+#' \itemize{
+#'   \item \code{"text"} (default): returns the existing \code{"rag"} object with free-text \code{$response} and retrieval \code{$content}.
+#'   \item \code{"json"}: returns a JSON string with fields \code{labels}, \code{confidences}, \code{intensity}, and \code{evidence_chunks[{doc_id, span, score}]}, validated against the enforced schema.
+#'   \item \code{"table"}: returns a long-form \code{data.frame} with columns \code{label}, \code{confidence}, \code{intensity}, \code{doc_id}, \code{span}, and \code{score}.
+#' }
+#'
 #' @param device Character.
 #' Whether to use CPU or GPU for inference.
 #' Defaults to \code{"auto"} which will use
@@ -87,7 +95,11 @@
 #' Whether progress should be displayed.
 #' Defaults to \code{TRUE}
 #'
-#' @return Returns response from TinyLLAMA
+#' @return
+#' For \code{output = "text"}, returns an object of class \code{"rag"} with fields:
+#' \code{$response} (character), \code{$content} (data.frame), and \code{$document_embeddings} (matrix).
+#' For \code{output = "json"}, returns a JSON \code{character(1)} string matching the enforced schema.
+#' For \code{output = "table"}, returns a \code{data.frame} suitable for statistical analysis.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
@@ -104,7 +116,12 @@
 #'  query = "What themes are prevalent across the text?",
 #'  response_mode = "tree_summarize",
 #'  similarity_top_k = 5
-#')}
+#')
+#'
+#' # Structured outputs
+#' rag(text = text, query = "Extract emotions", output = "json")
+#' rag(text = text, query = "Extract emotions", output = "table")
+#'}
 #'
 #' @section Data Privacy:
 #'   All processing is done locally with the downloaded model,
@@ -125,6 +142,7 @@ rag <- function(
       "accumulate", "compact", "no_text",
       "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
+    output = c("text", "json", "table"),
     device = c("auto", "cpu", "cuda"), keep_in_env = TRUE,
     envir = 1, progress = TRUE
 )
@@ -154,6 +172,9 @@ rag <- function(
   if(missing(response_mode)){
     response_mode <- "tree_summarize"
   }else{response_mode <- match.arg(response_mode)}
+
+  # Set output mode
+  output <- match.arg(output)
 
   # Set default for 'device'
   if(missing(response_mode)){
@@ -281,28 +302,85 @@ rag <- function(
   # Start time
   start <- Sys.time()
 
+  # Build query (structured when output != "text")
+  built_query <- if (identical(output, "text")) {
+    query
+  } else {
+    paste0(
+      query,
+      "\n\n",
+      "Return ONLY a valid JSON object matching this schema: ",
+      "{",
+      "\"labels\": [string,...], ",
+      "\"confidences\": [number 0..1,...], ",
+      "\"intensity\": number 0..1, ",
+      "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
+      "}.",
+      " Values must be valid JSON; no markdown or extra text."
+    )
+  }
+
   # Get query
-  extracted_query <- engine$query(query)
+  extracted_query <- engine$query(built_query)
 
   # Stop time
   message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
 
   # Organize Python output
-  output <- list(
-    response = response_cleanup(
-      extracted_query$response, transformer = transformer
-    ),
+  result <- list(
+    response = if (identical(output, "text")) {
+      response_cleanup(extracted_query$response, transformer = transformer)
+    } else {
+      trimws(extracted_query$response)
+    },
     content = content_cleanup(extracted_query$source_nodes),
     document_embeddings = do.call(
       rbind, silent_call(index$vector_store$to_dict()$embedding_dict)
     )
   )
 
-  # Set class
-  class(output) <- "rag"
+  # If output is text, keep backward-compatible return
+  if (identical(output, "text")) {
+    class(result) <- "rag"
+    return(result)
+  }
 
-  # Return response
-  return(output)
+  # For structured outputs, parse and validate
+  # Build evidence from retrieved content
+  evidence_chunks <- list()
+  if (nrow(result$content) > 0) {
+    for (i in seq_len(nrow(result$content))) {
+      evidence_chunks[[i]] <- list(
+        doc_id = as.character(result$content$document[i]),
+        span = as.character(result$content$text[i]),
+        score = as.numeric(result$content$score[i])
+      )
+    }
+  }
+
+  # Parse model response into structured fields
+  struct <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
+
+  # If parsing failed, attempt to extract JSON substring then parse
+  if (inherits(struct, "try-error")) {
+    struct <- parse_rag_json(result$response, validate = TRUE)
+  }
+
+  # Overwrite/attach evidence to ensure provenance from retrieved chunks
+  struct$evidence_chunks <- evidence_chunks
+
+  # Validate final structure
+  validate_rag_json(struct, error = TRUE)
+
+  if (identical(output, "json")) {
+    return(jsonlite::toJSON(struct, auto_unbox = TRUE, digits = NA))
+  } else if (identical(output, "table")) {
+    return(as_rag_table(struct, validate = FALSE))
+  }
+
+  # Fallback (should not reach)
+  class(result) <- "rag"
+  return(result)
 
 }
 

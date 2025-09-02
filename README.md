@@ -171,6 +171,16 @@ The transforEmotion package can be used to implement these models and other
 zero-shot classification model pipelines from the HuggingFace library.> 
 ```
 
+You can also request structured outputs for easier parsing and statistics.
+
+```R
+# JSON output (validated schema)
+rag(text, query = "Extract emotions present in the text", output = "json")
+
+# Tidy table output
+rag(text, query = "Extract emotions present in the text", output = "table")
+```
+
 ## Image Example
 
 For Facial Expression Recognition (FER) task from images we use Open AI's [CLIP](https://huggingface.co/openai/clip-vit-base-patch32) transformer model. Two input arguments are needed: the path to image and list of emotion labels.
@@ -240,6 +250,14 @@ When running the `setup_miniconda()` function, you will be prompted to install G
 Without these requirements, the GPU installation will likely fail. If you're unsure, select "no" to proceed with CPU-only installation. 
 
 If GPU installation fails, you can try running the `setup_modules()` function and selection "[N]o" when prompted to install GPU libraries.
+
+## Example Images
+
+The example images included in this package (`inst/extdata/`) have different licensing terms:
+
+- `trump1.jpg`, `trump2.jpg`: Official U.S. government portraits from Wikipedia. These works are copyright-free and therefore in the public domain under the terms of Title 17, Chapter 1, Section 105 of the U.S Code. Users may freely use, modify, and distribute these images for any purpose without attribution requirements.
+
+- `boris-1.png`, `boris-2.png`: Screenshots from YouTube video (https://www.youtube.com/watch?v=hdYNcv-chgY). These images are licensed under Creative Commons Attribution license (reuse allowed). Users may use, modify, and distribute these images, but must provide appropriate attribution to the original source.
 
 ## References
 
