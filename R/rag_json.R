@@ -244,10 +244,20 @@ strip_code_fence <- function(x)
 #' @noRd
 extract_first_json_object <- function(x)
 {
-  # naive extraction: from first '{' to last '}'
-  start <- regexpr("\\{", x)
-  end <- regexpr(".*\\}", x)
-  if (start[1] == -1L || end[1] == -1L) stop("No JSON object found.", call. = FALSE)
-  substr(x, start[1], attr(end, "match.length"))
+  # Find the first balanced JSON object by tracking brace depth
+  start_match <- regexpr("\\{", x)
+  if (start_match[1] == -1L) stop("No JSON object found.", call. = FALSE)
+  start <- as.integer(start_match[1])
+  n <- nchar(x)
+  depth <- 0L
+  end <- NA_integer_
+  for (i in start:n) {
+    ch <- substr(x, i, i)
+    if (identical(ch, "{")) depth <- depth + 1L else if (identical(ch, "}")) {
+      depth <- depth - 1L
+      if (depth == 0L) { end <- i; break }
+    }
+  }
+  if (is.na(end)) stop("No JSON object found.", call. = FALSE)
+  substr(x, start, end)
 }
-

@@ -396,11 +396,23 @@ rag <- function(
   }
 
   # Parse model response into structured fields
-  # Parse model response into structured fields
+  # Parse model response into structured fields (first attempt)
   parsed <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
 
-  # If parsing failed, attempt to extract JSON substring then parse
+  # If parsing failed, attempt one strict retry asking explicitly for JSON-only
   if (inherits(parsed, "try-error")) {
+    strict_prompt <- paste0(
+      if (identical(task, "emotion")) "You are extracting emotions from text. " else if (identical(task, "sentiment")) "You are extracting sentiment polarity from text. " else "",
+      if (!is.null(labels_set)) paste0("Use only these labels (lowercase exact match), choose up to ", max_labels, ": ", "[", paste(labels_set, collapse = ", "), "]. ") else "",
+      "Return ONLY a valid JSON object with EXACTLY these keys: ",
+      "{\"labels\":[string,...],\"confidences\":[number 0..1,...],\"intensity\":number 0..1,",
+      "\"evidence_chunks\":[{\"doc_id\":string,\"span\":string,\"score\":number},...]}. ",
+      "No markdown, no extra text, no explanations. Now answer for this question: ", query
+    )
+    message("Retrying with strict JSON prompt...", appendLF = FALSE)
+    re <- engine$query(strict_prompt)
+    message(" done")
+    result$response <- trimws(re$response)
     parsed <- parse_rag_json(result$response, validate = TRUE)
   }
 
