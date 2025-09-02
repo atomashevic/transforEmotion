@@ -141,7 +141,7 @@ For \code{output = "table"}, returns a \code{data.frame} suitable for statistica
 \description{
 Performs retrieval-augmented generation \{llama-index\}
 
-Currently limited to the TinyLLAMA model
+Supports multiple local LLM backends via HuggingFace and llama-index.
 }
 \section{Data Privacy}{
 
