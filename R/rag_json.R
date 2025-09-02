@@ -135,9 +135,39 @@ parse_rag_json <- function(x, validate = TRUE)
     # first attempt
     obj <- try(jsonlite::fromJSON(txt, simplifyVector = TRUE), silent = TRUE)
     if (inherits(obj, "try-error") || !is.list(obj)) {
-      # attempt to extract JSON object substring
-      txt2 <- extract_first_json_object(txt)
-      obj <- jsonlite::fromJSON(txt2, simplifyVector = TRUE)
+      # attempt to extract all JSON objects and pick the first valid one
+      candidates <- try(extract_json_objects(txt), silent = TRUE)
+      if (!inherits(candidates, "try-error") && length(candidates) > 0) {
+        obj <- NULL
+        for (cand in candidates) {
+          cand_obj <- try(jsonlite::fromJSON(cand, simplifyVector = TRUE), silent = TRUE)
+          if (!inherits(cand_obj, "try-error") && is.list(cand_obj)) {
+            # Lenient normalization before validation on each candidate
+            if (!is.null(cand_obj$labels) && !is.null(cand_obj$confidences)) {
+              if (is.character(cand_obj$confidences)) {
+                suppressWarnings({
+                  numc <- as.numeric(cand_obj$confidences)
+                })
+                if (all(is.finite(numc))) cand_obj$confidences <- numc
+              }
+              if (length(cand_obj$confidences) == 1L && length(cand_obj$labels) > 1L) {
+                cand_obj$confidences <- rep(cand_obj$confidences, length(cand_obj$labels))
+              }
+            }
+            ok <- try(validate_rag_json(cand_obj, error = FALSE), silent = TRUE)
+            if (isTRUE(ok)) { obj <- cand_obj; break }
+          }
+        }
+        if (is.null(obj)) {
+          # Fallback to first JSON object even if not valid
+          txt2 <- extract_first_json_object(txt)
+          obj <- jsonlite::fromJSON(txt2, simplifyVector = TRUE)
+        }
+      } else {
+        # Fallback to first JSON object
+        txt2 <- extract_first_json_object(txt)
+        obj <- jsonlite::fromJSON(txt2, simplifyVector = TRUE)
+      }
     }
   }
 
@@ -297,4 +327,27 @@ extract_first_json_object <- function(x)
   }
   if (is.na(end)) stop("No JSON object found.", call. = FALSE)
   substr(x, start, end)
+}
+
+#' @noRd
+extract_json_objects <- function(x)
+{
+  # Return all top-level balanced JSON objects in string x
+  n <- nchar(x)
+  starts <- gregexpr("\\{", x)[[1]]
+  if (starts[1] == -1L) return(character(0))
+  out <- character()
+  for (s in as.integer(starts)) {
+    depth <- 0L
+    end <- NA_integer_
+    for (i in s:n) {
+      ch <- substr(x, i, i)
+      if (identical(ch, "{")) depth <- depth + 1L else if (identical(ch, "}")) {
+        depth <- depth - 1L
+        if (depth == 0L) { end <- i; break }
+      }
+    }
+    if (!is.na(end)) out <- c(out, substr(x, s, end))
+  }
+  unique(out)
 }

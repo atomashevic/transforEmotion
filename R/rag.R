@@ -391,8 +391,8 @@ rag <- function(
       "\"intensity\": number 0..1, ",
       "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
       "}. ",
-      "Confidences must be between 0 and 1; if multiple labels are returned, prefer normalizing to sum to 1. ",
-      "Do not include any text outside the JSON; no markdown, no commentary."
+      "Confidences must be numeric between 0 and 1 (no strings like '0..1'); if multiple labels are returned, normalize to sum to 1. ",
+      "Return exactly ONE JSON object only — no markdown fences, no extra numbers, no commentary."
     )
   }
 
@@ -446,7 +446,7 @@ rag <- function(
       "Return ONLY a valid JSON object with EXACTLY these keys: ",
       "{\"labels\":[string,...],\"confidences\":[number 0..1,...],\"intensity\":number 0..1,",
       "\"evidence_chunks\":[{\"doc_id\":string,\"span\":string,\"score\":number},...]}. ",
-      "No markdown, no extra text, no explanations. Now answer for this question: ", query
+      "All numbers must be numeric (not strings like '0..1'); return exactly ONE JSON object; no markdown fences, no extra text. Now answer for this question: ", query
     )
     message("Retrying with strict JSON prompt...", appendLF = FALSE)
     re <- engine$query(strict_prompt)
