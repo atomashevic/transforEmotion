@@ -54,6 +54,8 @@
 #' @export
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")

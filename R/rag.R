@@ -2,7 +2,7 @@
 #'
 #' @description Performs retrieval-augmented generation \{llama-index\}
 #'
-#' Currently limited to the TinyLLAMA model
+#' Supports multiple local LLM backends via HuggingFace and llama-index.
 #'
 #' @param text Character vector or list.
 #' Text in a vector or list data format.
@@ -28,6 +28,10 @@
 #' \item{"Phi-2"}{More documentation soon...}
 #'
 #' \item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
+#'
+#' \item{"Gemma3-270M / Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 family (Instruct) via HuggingFace: \code{google/gemma-3-270m-it}, \code{google/gemma-3-1b-it}, \code{google/gemma-3-4b-it}. 270M/1B support ~32K context; 4B supports up to ~128K.}
+#'
+#' \item{"Ministral-3B"}{Mistral's compact 3B Instruct model via HuggingFace: \code{ministral/Ministral-3b-instruct} (~32K context)}
 #'
 #' }
 #'
@@ -147,7 +151,9 @@ rag <- function(
     text = NULL, path = NULL,
     transformer = c(
       "LLAMA-2", "Mistral-7B", "OpenChat-3.5",
-      "Orca-2", "Phi-2", "TinyLLAMA"
+      "Orca-2", "Phi-2", "TinyLLAMA",
+      "Gemma3-270M", "Gemma3-1B", "Gemma3-4B",
+      "Ministral-3B"
     ),
     prompt = "You are an expert at extracting themes across many texts",
     query, response_mode = c(
@@ -162,6 +168,9 @@ rag <- function(
     envir = 1, progress = TRUE
 )
 {
+
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
 
   # Check that input of 'text' argument is in the appropriate format for the analysis
   if(!is.null(text)){
@@ -255,6 +264,11 @@ rag <- function(
     # Set device
     device <- auto_device(device, transformer)
 
+    # If Gemma 3 model requested, ensure HF auth for gated repos
+    if (transformer %in% c("gemma3-270m", "gemma3-1b", "gemma3-4b")) {
+      ensure_hf_auth_for_gemma(interactive_ok = TRUE)
+    }
+
     # Set up service context
     service_context <- switch(
       transformer,
@@ -264,6 +278,24 @@ rag <- function(
       "openchat-3.5" = setup_openchat(llama_index, prompt, device),
       "orca-2" = setup_orca2(llama_index, prompt, device),
       "phi-2" = setup_phi2(llama_index, prompt, device),
+      # Gemma 3 (HuggingFace Instruct variants)
+      "gemma3-270m" = setup_hf_llm(llama_index, prompt, device,
+        model_name = "google/gemma-3-270m-it", tokenizer_name = "google/gemma-3-270m-it",
+        context_window = 32000L
+      ),
+      "gemma3-1b" = setup_hf_llm(llama_index, prompt, device,
+        model_name = "google/gemma-3-1b-it", tokenizer_name = "google/gemma-3-1b-it",
+        context_window = 32000L
+      ),
+      "gemma3-4b" = setup_hf_llm(llama_index, prompt, device,
+        model_name = "google/gemma-3-4b-it", tokenizer_name = "google/gemma-3-4b-it",
+        context_window = 128000L
+      ),
+      # Ministral 3B (HuggingFace Instruct)
+      "ministral-3b" = setup_hf_llm(llama_index, prompt, device,
+        model_name = "ministral/Ministral-3b-instruct", tokenizer_name = "ministral/Ministral-3b-instruct",
+        context_window = 32000L
+      ),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
 
@@ -413,7 +445,22 @@ rag <- function(
     re <- engine$query(strict_prompt)
     message(" done")
     result$response <- trimws(re$response)
-    parsed <- parse_rag_json(result$response, validate = TRUE)
+    parsed <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
+  }
+
+  # If still no JSON, error clearly with guidance (no fallback)
+  if (inherits(parsed, "try-error")) {
+    snippet <- tryCatch({
+      s <- trimws(result$response)
+      if (!is.character(s) || length(s) == 0) s <- ""
+      n <- nchar(s)
+      paste0(substr(s, 1, min(200L, n)), ifelse(n > 200L, "...", ""))
+    }, error = function(e) "")
+    stop(paste0(
+      "Model did not return a valid JSON object after strict retry. ",
+      "Try response_mode=\"compact\", simplify the query, and ensure the model can emit structured JSON.\n",
+      "First 200 chars of response: ", snippet
+    ), call. = FALSE)
   }
 
   # Post-process labels/confidences for emotion/sentiment tasks
@@ -553,6 +600,66 @@ content_cleanup <- function(content)
   # Return data frame
   return(content_df)
 
+}
+
+#' @noRd
+# Setup Ollama-backed models (Gemma3, Ministral)
+# Tries to use llama_index llms.Ollama. Fails with a helpful message if unavailable.
+setup_ollama_model <- function(llama_index, prompt, device, model, context_window)
+{
+  # Attempt to access Ollama LLM class
+  ollama_llm <- NULL
+  # Try common attribute locations in llama_index
+  if (!is.null(try(llama_index$llms$Ollama, silent = TRUE))) {
+    ollama_llm <- llama_index$llms$Ollama
+  } else if (!is.null(try(llama_index$llms$ollama$Ollama, silent = TRUE))) {
+    ollama_llm <- llama_index$llms$ollama$Ollama
+  }
+
+  if (is.null(ollama_llm)) {
+    stop(
+      paste0(
+        "Ollama backend not available in llama-index. ",
+        "Install and run Ollama (https://ollama.ai), and ensure your Python llama-index installation includes the Ollama LLM."
+      ), call. = FALSE
+    )
+  }
+
+  # Build ServiceContext with Ollama LLM
+  sc <- llama_index$ServiceContext$from_defaults(
+    llm = ollama_llm(
+      model = model,
+      request_timeout = as.double(120)
+      # Note: system prompt support varies by version; we keep wrapper prompt in RAG query
+    ),
+    context_window = as.integer(context_window),
+    embed_model = "local:BAAI/bge-small-en-v1.5"
+  )
+
+  return(sc)
+}
+
+#' @noRd
+# Generic HuggingFace LLM setup (Gemma3/Ministral)
+# Uses llama_index$llms$HuggingFaceLLM without Ollama.
+setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window)
+{
+  # Build ServiceContext with HuggingFace LLM
+  sc <- llama_index$ServiceContext$from_defaults(
+    llm = llama_index$llms$HuggingFaceLLM(
+      model_name = model_name,
+      tokenizer_name = tokenizer_name,
+      device_map = device,
+      # Conservative sampling for structured-ish outputs
+      generate_kwargs = list(
+        temperature = as.double(0.1), do_sample = TRUE
+      )
+    ),
+    context_window = as.integer(context_window),
+    embed_model = "local:BAAI/bge-small-en-v1.5"
+  )
+
+  return(sc)
 }
 
 #' @noRd

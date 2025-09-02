@@ -89,6 +89,8 @@ download_findingemo_data <- function(target_dir,
                                    randomize = FALSE,
                                    skip_existing = TRUE,
                                    force = FALSE) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -331,6 +333,8 @@ download_findingemo_data <- function(target_dir,
 load_findingemo_annotations <- function(data_dir,
                                       output_format = c("dataframe", "list"),
                                       python_path = NULL) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
   
   output_format <- match.arg(output_format)
   

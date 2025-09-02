@@ -171,6 +171,8 @@ The transforEmotion package can be used to implement these models and other
 zero-shot classification model pipelines from the HuggingFace library.> 
 ```
 
+Supported LLMs include TinyLLAMA, LLaMA‑2, Mistral‑7B, OpenChat‑3.5, Orca‑2, Phi‑2, plus Gemma3 (270M/1B/4B) and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-270m-it`, `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, and `ministral/Ministral-3b-instruct`.
+
 You can also request structured outputs for easier parsing and statistics.
 
 ```R

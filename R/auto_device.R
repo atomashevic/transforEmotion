@@ -3,6 +3,7 @@
 # Updated 06.02.2024
 auto_device <- function(device, transformer)
 {
+  ensure_te_py_env()
 
   # Set transformer memory (MB)
   # Assume GPU and 16-bit unless otherwise noted
@@ -11,7 +12,13 @@ auto_device <- function(device, transformer)
     "tinyllama" = 2640, "llama-2" = 4200, # supported by 4-bit
     "mistral-7b" = 16800, "openchat-3.5" = 16800,
     "orca-2" = 33600, # supported by 32-bit
-    "phi-2" = 6480
+    "phi-2" = 6480,
+    # New: Gemma3 and Ministral (approximate memory, MB)
+    "gemma3-270m" = 292,
+    "gemma3-1b" = 815,
+    "gemma3-4b" = 3300,
+    "ministral-3b" = 7000,
+    "ministral-8b" = 18400
   )
 
   # First, check for "auto"

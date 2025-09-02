@@ -8,12 +8,16 @@ rag(
   text = NULL,
   path = NULL,
   transformer = c("LLAMA-2", "Mistral-7B", "OpenChat-3.5", "Orca-2", "Phi-2",
-    "TinyLLAMA"),
+    "TinyLLAMA", "Gemma3-270M", "Gemma3-1B", "Gemma3-4B", "Ministral-3B"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "no_text", "refine", "simple_summarize",
     "tree_summarize"),
   similarity_top_k = 5,
+  output = c("text", "json", "table"),
+  task = c("general", "emotion", "sentiment"),
+  labels_set = NULL,
+  max_labels = 5,
   device = c("auto", "cpu", "cuda"),
   keep_in_env = TRUE,
   envir = 1,
@@ -45,6 +49,10 @@ Available models include:
 \item{"Phi-2"}{More documentation soon...}
 
 \item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
+
+\item{"Gemma3-270M / Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 family (Instruct) via HuggingFace: \code{google/gemma-3-270m-it}, \code{google/gemma-3-1b-it}, \code{google/gemma-3-4b-it}. 270M/1B support ~32K context; 4B supports up to ~128K.}
+
+\item{"Ministral-3B"}{Mistral's compact 3B Instruct model via HuggingFace: \code{ministral/Ministral-3b-instruct} (~32K context)}
 
 }}
 
@@ -83,6 +91,26 @@ Values will vary based on number of texts but some suggested values might be:
 
 These values depend on the number and quality of texts. Adjust as necessary}
 
+\item{output}{Character (length = 1).
+Output format: one of \code{"text"}, \code{"json"}, or \code{"table"}.
+\itemize{
+  \item \code{"text"} (default): returns the existing \code{"rag"} object with free-text \code{$response} and retrieval \code{$content}.
+  \item \code{"json"}: returns a JSON string with fields \code{labels}, \code{confidences}, \code{intensity}, and \code{evidence_chunks[{doc_id, span, score}]}, validated against the enforced schema.
+  \item \code{"table"}: returns a long-form \code{data.frame} with columns \code{label}, \code{confidence}, \code{intensity}, \code{doc_id}, \code{span}, and \code{score}.
+}}
+
+\item{task}{Character (length = 1).
+Task hint for structured extraction: one of \code{"general"}, \code{"emotion"}, or \code{"sentiment"}.
+When \code{"emotion"} or \code{"sentiment"}, the prompt constrains labels to a set (see \code{labels_set}).}
+
+\item{labels_set}{Character vector.
+Allowed labels for classification when \code{task != "general"}. If \code{NULL}, defaults to
+Emo8 labels for \code{task = "emotion"} (\code{c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation")})
+and \code{c("positive","neutral","negative")} for \code{task = "sentiment"}.}
+
+\item{max_labels}{Integer (length = 1).
+Maximum number of labels to return in structured outputs; used to guide the model instruction when \code{output != "text"}.}
+
 \item{device}{Character.
 Whether to use CPU or GPU for inference.
 Defaults to \code{"auto"} which will use
@@ -105,7 +133,10 @@ Whether progress should be displayed.
 Defaults to \code{TRUE}}
 }
 \value{
-Returns response from TinyLLAMA
+For \code{output = "text"}, returns an object of class \code{"rag"} with fields:
+\code{$response} (character), \code{$content} (data.frame), and \code{$document_embeddings} (matrix).
+For \code{output = "json"}, returns a JSON \code{character(1)} string matching the enforced schema.
+For \code{output = "table"}, returns a \code{data.frame} suitable for statistical analysis.
 }
 \description{
 Performs retrieval-augmented generation \{llama-index\}
@@ -131,7 +162,12 @@ rag(
  query = "What themes are prevalent across the text?",
  response_mode = "tree_summarize",
  similarity_top_k = 5
-)}
+)
+
+# Structured outputs
+rag(text = text, query = "Extract emotions", output = "json")
+rag(text = text, query = "Extract emotions", output = "table")
+}
 
 }
 \author{

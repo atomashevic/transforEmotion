@@ -178,6 +178,9 @@ transformer_scores <- function(
 )
 {
 
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
+
   # Check that input of 'text' argument is in the
   # appropriate format for the analysis
   non_text_warning(text) # see utils-transforEmotion.R for function
@@ -193,6 +196,17 @@ transformer_scores <- function(
   # Check for transformer
   if(missing(transformer)){
     transformer <- "cross-encoder-distilroberta"
+  }
+
+  # Disallow non-zero-shot LLMs (Ollama models) here; guide to rag()
+  blocked_llms <- c("gemma3-270m","gemma3-1b","gemma3-4b","ministral-3b","ministral-8b")
+  if (tolower(transformer) %in% blocked_llms) {
+    stop(
+      paste0(
+        "Transformer '", transformer, "' is a general LLM and not compatible with the 'zero-shot-classification' pipeline.\n",
+        "Use rag(..., task=\"emotion\", output=\"table\") for LLM-based structured extraction, or provide a HuggingFace model ID that supports zero-shot classification (MNLI)."
+      ), call. = FALSE
+    )
   }
 
   # Check for multiple transformers

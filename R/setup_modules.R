@@ -47,8 +47,11 @@ return(has_gpu)
 
 
 setup_modules <- function() {
-  # Configure Python encoding
-  reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
+
+  # Configure Python encoding (best-effort)
+  try(reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')"), silent = TRUE)
 
   # Check for NVIDIA GPU first
   has_gpu <- check_nvidia_gpu()

@@ -54,6 +54,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
