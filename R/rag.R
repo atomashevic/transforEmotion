@@ -74,6 +74,18 @@
 #'   \item \code{"table"}: returns a long-form \code{data.frame} with columns \code{label}, \code{confidence}, \code{intensity}, \code{doc_id}, \code{span}, and \code{score}.
 #' }
 #'
+#' @param task Character (length = 1).
+#' Task hint for structured extraction: one of \code{"general"}, \code{"emotion"}, or \code{"sentiment"}.
+#' When \code{"emotion"} or \code{"sentiment"}, the prompt constrains labels to a set (see \code{labels_set}).
+#'
+#' @param labels_set Character vector.
+#' Allowed labels for classification when \code{task != "general"}. If \code{NULL}, defaults to
+#' Emo8 labels for \code{task = "emotion"} (\code{c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation")})
+#' and \code{c("positive","neutral","negative")} for \code{task = "sentiment"}.
+#'
+#' @param max_labels Integer (length = 1).
+#' Maximum number of labels to return in structured outputs; used to guide the model instruction when \code{output != "text"}.
+#'
 #' @param device Character.
 #' Whether to use CPU or GPU for inference.
 #' Defaults to \code{"auto"} which will use
@@ -143,6 +155,9 @@ rag <- function(
       "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
     output = c("text", "json", "table"),
+    task = c("general", "emotion", "sentiment"),
+    labels_set = NULL,
+    max_labels = 5,
     device = c("auto", "cpu", "cuda"), keep_in_env = TRUE,
     envir = 1, progress = TRUE
 )
@@ -175,6 +190,18 @@ rag <- function(
 
   # Set output mode
   output <- match.arg(output)
+
+  # Set task mode
+  task <- match.arg(task)
+
+  # Default label sets for emotion/sentiment tasks
+  if (is.null(labels_set)) {
+    if (identical(task, "emotion")) {
+      labels_set <- c("joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation")
+    } else if (identical(task, "sentiment")) {
+      labels_set <- c("positive", "neutral", "negative")
+    }
+  }
 
   # Set default for 'device'
   if(missing(response_mode)){
@@ -306,17 +333,27 @@ rag <- function(
   built_query <- if (identical(output, "text")) {
     query
   } else {
+    # Task-specific guidance
+    label_guidance <- if (!is.null(labels_set)) {
+      paste0(
+        "Use only these labels (lowercase exact match), choose up to ", max_labels, ": ",
+        "[", paste(labels_set, collapse = ", "), "]. "
+      )
+    } else { "" }
+
     paste0(
-      query,
-      "\n\n",
-      "Return ONLY a valid JSON object matching this schema: ",
+      query, "\n\n",
+      if (identical(task, "emotion")) "You are extracting emotions from text. " else if (identical(task, "sentiment")) "You are extracting sentiment polarity from text. " else "",
+      label_guidance,
+      "Output strictly as a single JSON object with EXACTLY these keys: ",
       "{",
       "\"labels\": [string,...], ",
       "\"confidences\": [number 0..1,...], ",
       "\"intensity\": number 0..1, ",
       "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
-      "}.",
-      " Values must be valid JSON; no markdown or extra text."
+      "}. ",
+      "Confidences must be between 0 and 1; if multiple labels are returned, prefer normalizing to sum to 1. ",
+      "Do not include any text outside the JSON; no markdown, no commentary."
     )
   }
 
@@ -359,23 +396,53 @@ rag <- function(
   }
 
   # Parse model response into structured fields
-  struct <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
+  # Parse model response into structured fields
+  parsed <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
 
   # If parsing failed, attempt to extract JSON substring then parse
-  if (inherits(struct, "try-error")) {
-    struct <- parse_rag_json(result$response, validate = TRUE)
+  if (inherits(parsed, "try-error")) {
+    parsed <- parse_rag_json(result$response, validate = TRUE)
   }
 
-  # Overwrite/attach evidence to ensure provenance from retrieved chunks
-  struct$evidence_chunks <- evidence_chunks
+  # Post-process labels/confidences for emotion/sentiment tasks
+  lbls <- as.character(parsed$labels)
+  conf <- as.numeric(parsed$confidences)
+  if (!is.null(labels_set)) {
+    allowed <- tolower(labels_set)
+    lbls_low <- tolower(lbls)
+    keep <- lbls_low %in% allowed
+    if (any(keep)) {
+      lbls <- lbls[keep]
+      conf <- conf[keep]
+    }
+  }
+  # Limit to max_labels if needed
+  if (length(lbls) > max_labels) {
+    ord <- order(conf, decreasing = TRUE)
+    take <- ord[seq_len(max_labels)]
+    lbls <- lbls[take]
+    conf <- conf[take]
+  }
+  # Normalize confidences to sum to 1 when multiple labels
+  if (length(conf) > 1 && is.finite(sum(conf)) && sum(conf) > 0) {
+    conf <- conf / sum(conf)
+  }
+
+  # Compose schema-only object to avoid extraneous fields
+  schema_out <- list(
+    labels = lbls,
+    confidences = conf,
+    intensity = as.numeric(parsed$intensity),
+    evidence_chunks = evidence_chunks
+  )
 
   # Validate final structure
-  validate_rag_json(struct, error = TRUE)
+  validate_rag_json(schema_out, error = TRUE)
 
   if (identical(output, "json")) {
-    return(jsonlite::toJSON(struct, auto_unbox = TRUE, digits = NA))
+    return(jsonlite::toJSON(schema_out, auto_unbox = TRUE, digits = NA))
   } else if (identical(output, "table")) {
-    return(as_rag_table(struct, validate = FALSE))
+    return(as_rag_table(schema_out, validate = TRUE))
   }
 
   # Fallback (should not reach)

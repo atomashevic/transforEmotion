@@ -175,10 +175,10 @@ You can also request structured outputs for easier parsing and statistics.
 
 ```R
 # JSON output (validated schema)
-rag(text, query = "Extract emotions present in the text", output = "json")
+rag(text, query = "Extract emotions present in the text", output = "json", task = "emotion")
 
 # Tidy table output
-rag(text, query = "Extract emotions present in the text", output = "table")
+rag(text, query = "Extract emotions present in the text", output = "table", task = "emotion")
 ```
 
 ## Image Example
