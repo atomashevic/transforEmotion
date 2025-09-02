@@ -660,7 +660,10 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
       # Conservative sampling for structured-ish outputs
       generate_kwargs = list(
         temperature = as.double(0.1), do_sample = TRUE
-      )
+      ),
+      # Required for newer architectures like Gemma 3 (remote modeling code)
+      tokenizer_kwargs = list(trust_remote_code = TRUE),
+      model_kwargs = list(trust_remote_code = TRUE)
     ),
     context_window = as.integer(context_window),
     embed_model = "local:BAAI/bge-small-en-v1.5"
