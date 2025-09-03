@@ -28,6 +28,7 @@
 #' @return Invisibly returns TRUE if successful
 #' @export
 #'
+#' @importFrom httr HEAD status_code
 #' @examples
 #' \dontrun{
 #' # Add a fine-tuned CLIP model for emotion recognition
@@ -151,7 +152,7 @@ add_vision_model <- function(name,
           # Fallback if httr not available - try to download directly
           temp_file <- tempfile()
           result <- tryCatch({
-            download.file(url, temp_file, mode = "wb", quiet = TRUE, timeout = 10)
+            utils::download.file(url, temp_file, mode = "wb", quiet = TRUE, timeout = 10)
             url
           }, error = function(e) NULL)
           if (file.exists(temp_file)) file.remove(temp_file)
@@ -180,16 +181,16 @@ add_vision_model <- function(name,
       if (is.data.frame(test_result) && nrow(test_result) == 1) {
         expected_cols <- test_labels
         if (all(expected_cols %in% names(test_result))) {
-          message("✓ Model test completed successfully!")
+          message("[OK] Model test completed successfully!")
           message("Sample results:")
           print(test_result)
           
           # Check if probabilities sum to approximately 1
           prob_sum <- sum(as.numeric(test_result[1, test_labels]), na.rm = TRUE)
           if (abs(prob_sum - 1.0) < 0.01) {
-            message("✓ Probability scores are properly normalized")
+            message("[OK] Probability scores are properly normalized")
           } else {
-            message("⚠ Warning: Probability scores sum to ", round(prob_sum, 3), " (expected ~1.0)")
+            message("[WARN] Probability scores sum to ", round(prob_sum, 3), " (expected ~1.0)")
           }
         } else {
           warning("Model test produced unexpected output format")
@@ -236,29 +237,30 @@ add_vision_model <- function(name,
 #' # Show detailed information
 #' show_vision_models(show_details = TRUE)
 show_vision_models <- function(show_details = FALSE, filter_by = NULL) {
-  models_df <- tryCatch(
+  models_obj <- tryCatch(
     {
       list_vision_models(architecture_filter = filter_by, verbose = show_details)
     },
     error = function(e) {
       message("Error retrieving models: ", e$message)
-      return(data.frame())
+      return(if (isTRUE(show_details)) list() else data.frame())
     }
   )
 
-  if (nrow(models_df) == 0) {
+  count <- if (is.data.frame(models_obj)) nrow(models_obj) else length(models_obj)
+  if (is.na(count) || count == 0) {
     message("No vision models found.")
     if (!is.null(filter_by)) {
       message("Try removing the filter or registering models with register_vision_model()")
     }
-    return(invisible(models_df))
+    return(invisible(if (is.data.frame(models_obj)) models_obj else data.frame()))
   }
 
   if (show_details) {
     # Detailed view
     message("\\n=== Available Vision Models (Detailed) ===")
-    for (i in seq_len(length(models_df))) {
-      model <- models_df[[i]]
+    for (i in seq_len(length(models_obj))) {
+      model <- models_obj[[i]]
       message("\\n", i, ". ", model$name)
       message("   Model ID: ", model$model_id)
       message("   Architecture: ", model$architecture)
@@ -270,19 +272,21 @@ show_vision_models <- function(show_details = FALSE, filter_by = NULL) {
   } else {
     # Simple table view
     message("\\n=== Available Vision Models ===")
-    print(models_df)
+    print(models_obj)
 
-    if (nrow(models_df) > 0) {
+    if (nrow(models_obj) > 0) {
       message("\\nUsage: Use the 'name' column values with image_scores() or video_scores()")
       message(
         "Example: image_scores('photo.jpg', c('happy', 'sad'), model = '",
-        models_df$name[1], "')"
+        models_obj$name[1], "')"
       )
       message("\\nFor detailed information: show_vision_models(show_details = TRUE)")
     }
   }
 
-  invisible(models_df)
+  invisible(if (is.data.frame(models_obj)) models_obj else do.call(rbind, lapply(models_obj, function(x) {
+    data.frame(name = x$name, model_id = x$model_id, architecture = x$architecture, description = x$description, stringsAsFactors = FALSE)
+  })))
 }
 
 #' Remove a Vision Model

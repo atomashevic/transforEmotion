@@ -161,6 +161,35 @@ vad_scores <- function(input,
     input_type <- detect_input_type(input)
   }
   
+  # Guard: handle empty text inputs gracefully by returning NA scores
+  if (identical(input_type, "text")) {
+    # Normalize to character vector for checking emptiness
+    norm_input <- if (is.list(input)) unlist(input, use.names = FALSE) else input
+    norm_input <- as.character(norm_input)
+    if (length(norm_input) == 0 || all(!nzchar(trimws(norm_input)))) {
+      n_inputs <- if (is.list(input)) length(input) else max(1L, length(norm_input))
+      # Build NA score vectors per requested dimension
+      results_list <- stats::setNames(lapply(dimensions, function(d) rep(NA_real_, n_inputs)), dimensions)
+      return(combine_vad_results(results_list, input, input_type))
+    }
+  }
+  
+  # Prepare text inputs and mask out empty entries (per-element NA handling)
+  text_mask <- NULL
+  n_inputs <- NULL
+  effective_input <- input
+  if (identical(input_type, "text")) {
+    norm_input <- if (is.list(input)) unlist(input, use.names = FALSE) else input
+    norm_input <- as.character(norm_input)
+    text_mask <- nzchar(trimws(norm_input))
+    n_inputs <- length(norm_input)
+    if (any(!text_mask)) {
+      effective_input <- as.character(norm_input[text_mask])
+    } else {
+      effective_input <- norm_input
+    }
+  }
+
   # Get VAD labels
   vad_labels <- get_vad_labels(label_type, custom_labels)
   
@@ -172,10 +201,22 @@ vad_scores <- function(input,
     classes <- format_labels_for_classification(dim_labels)
     
     # Run classification for this dimension
-    dim_scores <- run_vad_classification(input, input_type, classes, model, ...)
-    
-    # Extract scores for the "high" pole (positive/high arousal/high dominance)
-    high_pole_score <- extract_high_pole_score(dim_scores, dim, classes)
+    if (identical(input_type, "text") && !is.null(text_mask) && any(!text_mask)) {
+      # Partial empty inputs: classify only non-empty, then expand back with NAs
+      if (sum(text_mask) == 0) {
+        high_pole_score <- rep(NA_real_, n_inputs)
+      } else {
+        dim_scores_sub <- run_vad_classification(effective_input, input_type, classes, model, ...)
+        high_sub <- extract_high_pole_score(dim_scores_sub, dim, classes)
+        full <- rep(NA_real_, n_inputs)
+        full[text_mask] <- as.numeric(high_sub)
+        high_pole_score <- full
+      }
+    } else {
+      dim_scores <- run_vad_classification(input, input_type, classes, model, ...)
+      # Extract scores for the "high" pole (positive/high arousal/high dominance)
+      high_pole_score <- extract_high_pole_score(dim_scores, dim, classes)
+    }
     
     # Check if we got NA values and fall back to simple labels if needed
     if (all(is.na(high_pole_score))) {
@@ -187,8 +228,20 @@ vad_scores <- function(input,
       simple_classes <- format_labels_for_classification(simple_labels[[dim]])
       
       # Retry with simple labels
-      dim_scores_simple <- run_vad_classification(input, input_type, simple_classes, model, ...)
-      high_pole_score <- extract_high_pole_score(dim_scores_simple, dim, simple_classes)
+      if (identical(input_type, "text") && !is.null(text_mask) && any(!text_mask)) {
+        if (sum(text_mask) == 0) {
+          high_pole_score <- rep(NA_real_, n_inputs)
+        } else {
+          dim_scores_simple_sub <- run_vad_classification(effective_input, input_type, simple_classes, model, ...)
+          high_sub <- extract_high_pole_score(dim_scores_simple_sub, dim, simple_classes)
+          full <- rep(NA_real_, n_inputs)
+          full[text_mask] <- as.numeric(high_sub)
+          high_pole_score <- full
+        }
+      } else {
+        dim_scores_simple <- run_vad_classification(input, input_type, simple_classes, model, ...)
+        high_pole_score <- extract_high_pole_score(dim_scores_simple, dim, simple_classes)
+      }
     }
     
     results_list[[dim]] <- high_pole_score

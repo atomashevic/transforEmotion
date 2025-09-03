@@ -46,6 +46,21 @@ return(has_gpu)
 }
 
 
+#' Setup Required Python Modules
+#'
+#' @description
+#' Installs and configures required Python modules for transforEmotion,
+#' optionally enabling GPU-accelerated variants when a compatible NVIDIA GPU
+#' is detected. Uses the reticulate-managed 'transforEmotion' conda env.
+#'
+#' @details
+#' This function checks for missing modules, installs them, and can install
+#' additional GPU-specific packages when requested. See also
+#' \code{setup_gpu_modules()} for GPU add-ons and \code{setup_miniconda()}
+#' to install Miniconda.
+#'
+#' @return Invisibly returns NULL.
+#' @export
 setup_modules <- function() {
   # Ensure reticulate uses the transforEmotion conda environment
   ensure_te_py_env()
@@ -79,6 +94,8 @@ setup_modules <- function() {
     "opencv-python", "pandas==1.5.3", "pypdf==4.0.1", "pytz==2024.1",
     "qdrant-client==1.8.2", "sentencepiece==0.2.0",
     "sentence-transformers==2.2.2",
+    # lexical retrieval fallback
+    "rank-bm25==0.2.2",
     # "tokenizers==0.13.3",
     "tokenizers==0.21.0",
     "findingemo-light" # Latest version, for FindingEmo dataset

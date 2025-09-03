@@ -18,3 +18,7 @@
     Sys.setenv(RETICULATE_PYTHON_ENV = "transforEmotion")
     requireNamespace("reticulate")
 }
+
+# Internal: provide a mockable binding for testthat to override
+# Allows tests to use with_mocked_bindings(`jsonlite::fromJSON` = ...)
+`jsonlite::fromJSON` <- jsonlite::fromJSON

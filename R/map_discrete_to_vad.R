@@ -143,7 +143,7 @@ map_discrete_to_vad <- function(results,
       dominance = as.numeric(vad_lexicon[[dom_col]]),
       stringsAsFactors = FALSE
     )
-    vad_data <- vad_data[complete.cases(vad_data), ]
+    vad_data <- vad_data[stats::complete.cases(vad_data), ]
   } else {
     # Load from textdata
     vad_data <- get_vad_lexicon(mapping, cache_lexicon)
@@ -195,9 +195,11 @@ get_vad_lexicon <- function(mapping, cache_lexicon) {
     # Process the lexicon - ensure it has the expected columns
     expected_cols <- c("word", "valence", "arousal", "dominance")
     if (!all(expected_cols %in% names(vad_raw))) {
-      stop("NRC VAD lexicon missing expected columns: ",
-           paste(setdiff(expected_cols, names(vad_raw)), collapse = ", "),
-           call. = FALSE)
+      stop(
+        "Failed to load NRC VAD lexicon. NRC VAD lexicon missing expected columns: ",
+        paste(setdiff(expected_cols, names(vad_raw)), collapse = ", "),
+        call. = FALSE
+      )
     }
 
     # Clean and prepare the data
@@ -205,7 +207,7 @@ get_vad_lexicon <- function(mapping, cache_lexicon) {
     vad_data$word <- tolower(trimws(vad_data$word))
 
     # Remove any rows with missing values
-    vad_data <- vad_data[complete.cases(vad_data), ]
+    vad_data <- vad_data[stats::complete.cases(vad_data), ]
 
     # Cache the lexicon if requested
     if (cache_lexicon) {
@@ -339,7 +341,7 @@ compute_weighted_vad <- function(scores, vad_data) {
   }
 
   # Remove emotions that couldn't be mapped
-  valid_rows <- complete.cases(vad_values)
+  valid_rows <- stats::complete.cases(vad_values)
   if (!any(valid_rows)) {
     warning("No emotions could be mapped to VAD values", call. = FALSE)
     return(c(valence = NA, arousal = NA, dominance = NA))

@@ -12,3 +12,13 @@ LICENSE
 ^CLAUDE\.md$
 ^tests/test_workflow\.md$
 diff_0.1.5_*
+
+# Ignore non-standard top-level files from build
+^AGENTS\.md$
+^VAD\.md$
+^model-registry\.md$
+^debug_.*\.R$
+^trump1\.jpg$
+^\.create_metrics_table$
+^\.claude(/|$)
+^\.ropeproject(/|$)

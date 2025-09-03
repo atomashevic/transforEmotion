@@ -20,6 +20,7 @@ a normalized list: `list(labels=chr, confidences=num, intensity=num,
 evidence=data.frame(doc_id, span, score))`.
 }
 \examples{
-j <- '{"labels":["joy"],"confidences":[0.9],"intensity":0.8,"evidence_chunks":[]}'
+j <- '{"labels":["joy"],"confidences":[0.9],
+  "intensity":0.8,"evidence_chunks":[]}'
 parse_rag_json(j)
 }

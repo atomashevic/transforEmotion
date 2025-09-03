@@ -71,7 +71,7 @@ emotion classification following best practices from the literature.
   \item **Precision/Recall/F1**: Per-class and macro/micro averages
   \item **AUROC**: Area under ROC curve (requires probability scores)
   \item **ECE**: Expected Calibration Error for probability calibration
-  \item **Krippendorff's α**: Inter-rater reliability between human and model
+  \item **Krippendorff's alpha**: Inter-rater reliability between human and model
 }
 
 **Input format:**

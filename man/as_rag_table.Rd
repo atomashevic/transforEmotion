@@ -19,6 +19,7 @@ Produces a long-form data.frame with columns:
 `label`, `confidence`, `intensity`, `doc_id`, `span`, `score`.
 }
 \examples{
-j <- '{"labels":["joy","surprise"],"confidences":[0.8,0.5],"intensity":0.7,"evidence_chunks":[]}'
+j <- '{"labels":["joy","surprise"],"confidences":[0.8,0.5],
+  "intensity":0.7,"evidence_chunks":[]}'
 as_rag_table(j)
 }

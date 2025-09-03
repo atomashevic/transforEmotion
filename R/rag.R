@@ -18,15 +18,22 @@
 #' Available models include:
 #'
 #' \describe{
-#'   \item{"TinyLLAMA"}{Default. TinyLlama 1.1B Chat via HuggingFace. Fast and light local inference.}
-#'   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via HuggingFace: \code{google/gemma-3-1b-it}, \code{google/gemma-3-4b-it}.}
-#'   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct}, \code{Qwen/Qwen3-1.7B-Instruct}.}
-#'   \item{"Ministral-3B"}{Mistral's compact 3B Instruct via HuggingFace: \code{ministral/Ministral-3b-instruct}.}
+#'   \item{"TinyLLAMA"}{Default. TinyLlama 1.1B Chat via HuggingFace.
+#'   Fast and light local inference.}
+#'   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
+#'   HuggingFace: \code{google/gemma-3-1b-it},
+#'   \code{google/gemma-3-4b-it}.}
+#'   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
+#'   HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
+#'   \code{Qwen/Qwen3-1.7B-Instruct}.}
+#'   \item{"Ministral-3B"}{Mistral's compact 3B Instruct via
+#'   HuggingFace: \code{ministral/Ministral-3b-instruct}.}
 #' }
 #'
 #' @param prompt Character (length = 1).
 #' Prompt to feed into TinyLLAMA.
-#' Defaults to \code{"You are an expert at extracting emotional themes across many texts"}
+#' Defaults to \code{"You are an expert at extracting emotional themes
+#' across many texts"}
 #'
 #' @param query Character.
 #' The query you'd like to know from the documents.
@@ -34,7 +41,8 @@
 #'
 #' @param response_mode Character (length = 1).
 #' Different responses generated from the model.
-#' See documentation \href{https://docs.llamaindex.ai/en/stable/module_guides/deploying/query_engine/response_modes.html}{here}
+#' See documentation
+#' \href{https://docs.llamaindex.ai/en/stable/module_guides/}{here}
 #'
 #' Defaults to \code{"tree_summarize"}
 #'
@@ -59,31 +67,61 @@
 #'
 #' These values depend on the number and quality of texts. Adjust as necessary
 #'
+#' @param retriever Character (length = 1).
+#' Retrieval backend: one of \code{"vector"} (default, semantic search using
+#' embeddings) or \code{"bm25"} (lexical BM25 search). BM25 uses llama-index's
+#' retriever when available and falls back to the Python \code{rank_bm25}
+#' implementation otherwise. Scores are normalized to [0,1] for consistency.
+#'
+#' @param retriever_params List.
+#' Optional parameters passed to the selected retriever handler. Reserved keys
+#' include \code{show_progress}.
+#'
 #' @param output Character (length = 1).
-#' Output format: one of \code{"text"}, \code{"json"}, \code{"table"}, or \code{"csv"}.
+#' Output format: one of \code{"text"}, \code{"json"}, \code{"table"},
+#' or \code{"csv"}.
 #' \itemize{
-#'   \item \code{"text"} (default): returns a free-text response with retrieved content.
-#'   \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"}) are supported ONLY for Gemma3-1B and Gemma3-4B. For other models, requests for structured outputs fall back to \code{"text"}.
-#'   \item For Gemma3-1B/4B and task = \code{"sentiment"} or \code{"emotion"}, returns per-document dominant \code{label} and \code{confidence}.
-#'   \item For Gemma3-1B/4B and task = \code{"general"}, returns the prior schema with \code{labels}, \code{confidences}, \code{intensity}, and \code{evidence_chunks}.
+#'   \item \code{"text"} (default): returns a free-text response
+#'   with retrieved content.
+#'   \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"})
+#'   are supported ONLY for Gemma3-1B and Gemma3-4B.
+#'   For other models, requests for structured outputs
+#'   fall back to \code{"text"}.
+#'   \item For Gemma3-1B/4B and task = \code{"sentiment"} or
+#'   \code{"emotion"}, returns per-document dominant
+#'   \code{label} and \code{confidence}.
+#'   \item For Gemma3-1B/4B and task = \code{"general"},
+#'   returns the prior schema with \code{labels},
+#'   \code{confidences}, \code{intensity}, and
+#'   \code{evidence_chunks}.
 #' }
 #'
 #' @param task Character (length = 1).
-#' Task hint for structured extraction: one of \code{"general"}, \code{"emotion"}, or \code{"sentiment"}.
-#' When \code{"emotion"} or \code{"sentiment"}, the prompt constrains labels to a set (see \code{labels_set}).
+#' Task hint for structured extraction: one of \code{"general"},
+#' \code{"emotion"}, or \code{"sentiment"}.
+#' When \code{"emotion"} or \code{"sentiment"}, the prompt constrains
+#' labels to a set (see \code{labels_set}).
 #'
 #' @param labels_set Character vector.
-#' Allowed labels for classification when \code{task != "general"}. If \code{NULL}, defaults to
-#' Emo8 labels for \code{task = "emotion"} (\code{c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation")})
-#' and \code{c("positive","neutral","negative")} for \code{task = "sentiment"}.
+#' Allowed labels for classification when \code{task != "general"}.
+#' If \code{NULL}, defaults to
+#' Emo8 labels for \code{task = "emotion"}
+#'   (\code{c("joy","trust","fear","surprise","sadness",
+#'   "disgust","anger","anticipation")}) for \code{task = "emotion"} and
+#'   \code{c("positive","neutral","negative")} for \code{task = "sentiment"}.
 #'
 #' @param max_labels Integer (length = 1).
-#' Maximum number of labels to return in structured outputs; used to guide the model instruction when \code{output != "text"}.
+#' Maximum number of labels to return in structured outputs;
+#' used to guide the model instruction when
+#' \code{output != "text"}.
 #'
 #' @param global_analysis Boolean (length = 1).
-#' Whether to perform analysis across all documents globally (legacy behavior) or per-document (default).
-#' When \code{FALSE} (default), each document is analyzed individually then results are aggregated.
-#' When \code{TRUE}, all documents are processed together for a single global analysis.
+#' Whether to perform analysis across all documents globally
+#' (legacy behavior) or per-document (default).
+#' When \code{FALSE} (default), each document is analyzed
+#' individually then results are aggregated.
+#' When \code{TRUE}, all documents are processed together
+#' for a single global analysis.
 #' Defaults to \code{FALSE}.
 #'
 #' @param device Character.
@@ -108,10 +146,14 @@
 #' Defaults to \code{TRUE}
 #'
 #' @return
-#' For \code{output = "text"}, returns an object of class \code{"rag"} with fields:
-#' \code{$response} (character), \code{$content} (data.frame), and \code{$document_embeddings} (matrix).
-#' For \code{output = "json"}, returns a JSON \code{character(1)} string matching the enforced schema.
-#' For \code{output = "table"}, returns a \code{data.frame} suitable for statistical analysis.
+#' For \code{output = "text"}, returns an object of class
+#' \code{"rag"} with fields:
+#' \code{$response} (character), \code{$content} (data.frame),
+#' and \code{$document_embeddings} (matrix).
+#' For \code{output = "json"}, returns a JSON \code{character(1)}
+#' string matching the enforced schema.
+#' For \code{output = "table"}, returns a \code{data.frame}
+#' suitable for statistical analysis.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
 #'
@@ -156,6 +198,8 @@ rag <- function(
       "accumulate", "compact", "no_text",
       "refine", "simple_summarize", "tree_summarize"
     ), similarity_top_k = 5,
+    retriever = c("vector", "bm25"),
+    retriever_params = list(),
     output = c("text", "json", "table", "csv"),
     task = c("general", "emotion", "sentiment"),
     labels_set = NULL,
@@ -169,7 +213,8 @@ rag <- function(
   # Ensure reticulate uses the transforEmotion conda environment
   ensure_te_py_env()
 
-  # Check that input of 'text' argument is in the appropriate format for the analysis
+  # Check that input of 'text' argument is in the appropriate format 
+  # for the analysis
   if(!is.null(text)){
     non_text_warning(text) # see utils-transforEmotion.R for function
   }
@@ -185,8 +230,10 @@ rag <- function(
   }else{transformer <- tolower(match.arg(transformer))}
 
   # If a non-Gemma small model is requested with structured output, error
-  if (!transformer %in% c("gemma3-1b","gemma3-4b") && !identical(output, "text")) {
-    stop("Structured outputs (json/table/csv) are supported only for Gemma3-1B and Gemma3-4B.", call. = FALSE)
+  if (!transformer %in% c("gemma3-1b", "gemma3-4b") && 
+      !identical(output, "text")) {
+    stop("Structured outputs (json/table/csv) are supported only for ",
+         "Gemma3-1B and Gemma3-4B.", call. = FALSE)
   }
 
   # Check for 'query'
@@ -205,13 +252,17 @@ rag <- function(
   # Set task mode
   task <- match.arg(task)
 
+  # Set retriever mode
+  retriever <- match.arg(retriever)
+
   # Enforce: structured outputs only for Gemma3-1B / Gemma3-4B
   # transformer will be lowercased after match.arg below
 
   # Default label sets for emotion/sentiment tasks
   if (is.null(labels_set)) {
     if (identical(task, "emotion")) {
-      labels_set <- c("joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation")
+      labels_set <- c("joy", "trust", "fear", "surprise", 
+                       "sadness", "disgust", "anger", "anticipation")
     } else if (identical(task, "sentiment")) {
       labels_set <- c("positive", "neutral", "negative")
     }
@@ -247,7 +298,8 @@ rag <- function(
         setup_modules()
         
         # Try import again
-        llama_index <- if("llama-index-legacy" %in% reticulate::py_list_packages()$package) {
+        llama_index <- if("llama-index-legacy" %in% 
+                        reticulate::py_list_packages()$package) {
             reticulate::import("llama_index.legacy")
         } else {
             reticulate::import("llama_index")
@@ -282,7 +334,8 @@ rag <- function(
         ensure_hf_auth_for_gemma(interactive_ok = TRUE, repo_id = repo_id)
       } else {
         warning(
-          "ensure_hf_auth_for_gemma() not found; proceeding without explicit gated repo auth. Set HF_TOKEN env var if downloads fail.",
+          "ensure_hf_auth_for_gemma() not found; proceeding without ",
+        "explicit gated repo auth. Set HF_TOKEN env var if downloads fail.",
           call. = FALSE
         )
       }
@@ -294,20 +347,24 @@ rag <- function(
       "tinyllama" = setup_tinyllama(llama_index, prompt, device),
       # Gemma 3 (HuggingFace Instruct variants)
       "gemma3-1b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "google/gemma-3-1b-it", tokenizer_name = "google/gemma-3-1b-it",
+        model_name = "google/gemma-3-1b-it", 
+        tokenizer_name = "google/gemma-3-1b-it",
         context_window = 32000L
       ),
       "gemma3-4b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "google/gemma-3-4b-it", tokenizer_name = "google/gemma-3-4b-it",
+        model_name = "google/gemma-3-4b-it", 
+        tokenizer_name = "google/gemma-3-4b-it",
         context_window = 128000L
       ),
       "qwen3-1.7b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "Qwen/Qwen3-1.7B-Instruct", tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
+        model_name = "Qwen/Qwen3-1.7B-Instruct", 
+        tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
         context_window = 32000L
       ),
       # Ministral 3B (HuggingFace Instruct)
       "ministral-3b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "ministral/Ministral-3b-instruct", tokenizer_name = "ministral/Ministral-3b-instruct",
+        model_name = "ministral/Ministral-3b-instruct", 
+        tokenizer_name = "ministral/Ministral-3b-instruct",
         context_window = 32000L
       ),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
@@ -354,8 +411,9 @@ rag <- function(
 
   }
 
-  # Force per-document analysis for sentiment/emotion regardless of global_analysis
-  if (task %in% c("emotion","sentiment")) {
+  # Force per-document analysis for sentiment/emotion regardless of 
+  # global_analysis
+  if (task %in% c("emotion", "sentiment")) {
     global_analysis <- FALSE
   }
 
@@ -364,30 +422,39 @@ rag <- function(
     query
   } else {
     # Task-specific minimal JSON requirement for single dominant label
-    if (task %in% c("emotion","sentiment")) {
+    if (task %in% c("emotion", "sentiment")) {
       allowed <- if (is.null(labels_set)) {
-        if (identical(task, "emotion")) c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation") else c("positive","neutral","negative")
+        if (identical(task, "emotion")) {
+          c("joy", "trust", "fear", "surprise", "sadness", 
+            "disgust", "anger", "anticipation")
+        } else {
+          c("positive", "neutral", "negative")
+        }
       } else labels_set
       paste0(
         query, "\n\n",
-        "Classify the text into EXACTLY ONE label from this set (lowercase exact match): ",
+        "Classify the text into EXACTLY ONE label from this set ",
+        "(lowercase exact match): ",
         "[", paste(tolower(allowed), collapse = ", "), "]. ",
         "Output ONLY a single JSON object with exactly these keys: ",
-        '{"label": "<one_of_allowed>", "confidence": 0.0}', " where confidence is numeric in [0,1]. ",
+        '{"label": "<one_of_allowed>", "confidence": 0.0}', 
+        " where confidence is numeric in [0,1]. ",
         "No markdown, no extra text."
       )
     } else {
       # General task: keep existing richer JSON contract
       paste0(
         query, "\n\n",
-        "Output strictly as a single JSON object with EXACTLY these keys: ",
-        "{",
+        "Output strictly as a single JSON object with ",
+        "EXACTLY these keys: {",
         "\"labels\": [string,...], ",
         "\"confidences\": [number 0..1,...], ",
         "\"intensity\": number 0..1, ",
-        "\"evidence_chunks\": [ {\"doc_id\": string, \"span\": string, \"score\": number } , ... ]",
-        "}. ",
-        "Confidences must be numeric between 0 and 1. Return exactly ONE JSON object only — no markdown fences, no commentary."
+        "\"evidence_chunks\": [ {\"doc_id\": string, ",
+        "\"span\": string, \"score\": number } , ... ]",
+        "}. Confidences must be numeric between 0 and 1. ",
+        "Return exactly ONE JSON object only - no markdown ",
+        "fences, no commentary."
       )
     }
   }
@@ -401,23 +468,22 @@ rag <- function(
     # Global analysis (legacy behavior) - process all documents together
     message("Indexing documents...")
     
-    # Set indices
-    index <- llama_index$VectorStoreIndex(
-      documents, service_context = service_context,
-      show_progress = progress
-    )
-
-    # Set up query engine
-    engine <- index$as_query_engine(
+    # Build retrieval engine based on selected retriever
+    engine <- resolve_retriever_engine(
+      name = retriever,
+      llama_index = llama_index,
+      documents = documents,
+      service_context = service_context,
       similarity_top_k = similarity_top_k,
-      response_mode = response_mode
+      response_mode = response_mode,
+      params = list(show_progress = progress)
     )
 
     # Send message to user
     message("Querying...", appendLF = FALSE)
 
     # Get query
-    extracted_query <- engine$query(built_query)
+    extracted_query <- run_query(engine, built_query)
 
     # Stop time
     message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
@@ -430,9 +496,14 @@ rag <- function(
         trimws(extracted_query$response)
       },
       content = content_cleanup(extracted_query$source_nodes),
-      document_embeddings = do.call(
-        rbind, silent_call(index$vector_store$to_dict()$embedding_dict)
-      )
+      document_embeddings = {
+        emb <- try({index$vector_store$to_dict()$embedding_dict}, silent = TRUE)
+        if (!inherits(emb, "try-error") && !is.null(emb)) {
+          do.call(rbind, silent_call(emb))
+        } else {
+          matrix(nrow = 0, ncol = 0)
+        }
+      }
     )
     
   } else {
@@ -449,36 +520,47 @@ rag <- function(
     for (i in seq_along(documents)) {
       
       if (progress) {
-        message(paste0("Processing document ", i, "/", length(documents), "..."))
+        message(paste0("Processing document ", i, "/", 
+                     length(documents), "..."))
       }
       
-      # Create index for single document
-      doc_index <- llama_index$VectorStoreIndex(
-        list(documents[[i]]), service_context = service_context,
-        show_progress = FALSE
-      )
-      
-      # Set up query engine for this document
-      doc_engine <- doc_index$as_query_engine(
-        similarity_top_k = min(similarity_top_k, 3), # Limit for single documents
-        response_mode = response_mode
+      # Build retrieval engine for this document
+      doc_engine <- resolve_retriever_engine(
+        name = retriever,
+        llama_index = llama_index,
+        documents = list(documents[[i]]),
+        service_context = service_context,
+        similarity_top_k = min(similarity_top_k, 3), 
+        response_mode = response_mode,
+        params = retriever_params
       )
       
       # Query this document
       doc_query <- try({
-        doc_engine$query(built_query)
+        run_query(doc_engine, built_query)
       }, silent = TRUE)
 
-      # If we expect structured output and parsing fails, retry with stricter JSON-only prompt
-      if (!identical(output, "text") && (task %in% c("emotion","sentiment")) && !inherits(doc_query, "try-error")) {
-        parsed_try_single <- try(parse_single_label_json(trimws(doc_query$response)), silent = TRUE)
+      # If we expect structured output and parsing fails, 
+      # retry with stricter JSON-only prompt
+      if (!identical(output, "text") && 
+          (task %in% c("emotion", "sentiment")) && 
+          !inherits(doc_query, "try-error")) {
+        parsed_try_single <- try(parse_single_label_json(
+                              trimws(doc_query$response)), silent = TRUE)
         if (inherits(parsed_try_single, "try-error")) {
           strict_prompt <- paste0(
             "Classify the text into EXACTLY ONE label from this set (lowercase exact match): ",
             "[", paste(tolower(if (is.null(labels_set)) {
-              if (identical(task, "emotion")) c("joy","trust","fear","surprise","sadness","disgust","anger","anticipation") else c("positive","neutral","negative")
+              if (identical(task, "emotion")) 
+                c("joy", "trust", "fear", "surprise", 
+                  "sadness", "disgust", "anger", "anticipation") 
+              else 
+                c("positive", "neutral", "negative")
             } else labels_set), collapse = ", "), "]. ",
-            'Return ONLY a JSON object: {"label":"<one_of_allowed>","confidence":0.0} with confidence in [0,1]. No markdown. Now answer: ', query
+            'Return ONLY a JSON object: ',
+            '{"label":"<one_of_allowed>","confidence":0.0} 
+            with confidence in [0,1]. No markdown. Now answer: ', 
+            query
           )
           if (progress) message("  Strict JSON retry for document ", i, "...")
           strict_res <- try(doc_engine$query(strict_prompt), silent = TRUE)
@@ -490,7 +572,8 @@ rag <- function(
       
       # Handle errors gracefully
       if (inherits(doc_query, "try-error")) {
-        warning(paste0("Failed to process document ", i, ": ", as.character(doc_query)))
+        warning(paste0("Failed to process document ", i, ": ", 
+                     as.character(doc_query)))
         next
       }
       
@@ -522,9 +605,13 @@ rag <- function(
         all_content[[i]] <- doc_content
       }
       
-      # Store embeddings
+      # Store embeddings (vector retriever only)
       doc_embeddings <- try({
-        do.call(rbind, silent_call(doc_index$vector_store$to_dict()$embedding_dict))
+        if (exists("doc_index")) {
+          do.call(rbind, silent_call(doc_index$vector_store$to_dict()$embedding_dict))
+        } else {
+          NULL
+        }
       }, silent = TRUE)
       
       if (!inherits(doc_embeddings, "try-error") && !is.null(doc_embeddings)) {

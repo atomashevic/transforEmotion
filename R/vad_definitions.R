@@ -65,8 +65,8 @@ validate_vad_labels <- function(custom_labels) {
     stop("custom_labels must be a list", call. = FALSE)
   }
   
-  # Check top-level structure
-  if (!all(names(custom_labels) %in% required_structure)) {
+  # Check top-level structure: require all three dimensions to be present
+  if (!all(required_structure %in% names(custom_labels))) {
     stop("custom_labels must have elements named: ", 
          paste(required_structure, collapse = ", "), call. = FALSE)
   }

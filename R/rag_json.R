@@ -62,14 +62,16 @@ validate_rag_json <- function(x, error = TRUE)
       ok <- FALSE; msg <- "'confidences' must be a numeric vector."
     } else if (length(x$confidences) != length(x$labels)) {
       ok <- FALSE; msg <- "'confidences' must match length/order of 'labels'."
-    } else if (any(is.na(x$confidences)) || any(x$confidences < 0 | x$confidences > 1)) {
+    } else if (any(is.na(x$confidences)) || 
+             any(x$confidences < 0 | x$confidences > 1)) {
       ok <- FALSE; msg <- "'confidences' values must be in [0,1]."
     }
   }
 
   # intensity
   if (ok && !is.null(x$intensity)) {
-    if (!is.atomic(x$intensity) || !is.numeric(x$intensity) || length(x$intensity) != 1) {
+    if (!is.atomic(x$intensity) || !is.numeric(x$intensity) || 
+      length(x$intensity) != 1) {
       ok <- FALSE; msg <- "'intensity' must be a single numeric value."
     } else if (is.na(x$intensity) || x$intensity < 0 || x$intensity > 1) {
       ok <- FALSE; msg <- "'intensity' must be in [0,1]."
@@ -87,17 +89,26 @@ validate_rag_json <- function(x, error = TRUE)
     } else if (length(ec) > 0) {
       for (i in seq_along(ec)) {
         item <- ec[[i]]
-        if (!is.list(item) || !all(c("doc_id", "span", "score") %in% names(item))) {
-          ok <- FALSE; msg <- "Each evidence chunk must have doc_id, span, score."; break
+        if (!is.list(item) || 
+            !all(c("doc_id", "span", "score") %in% names(item))) {
+          ok <- FALSE; 
+          msg <- "Each evidence chunk must have doc_id, span, score."; 
+          break
         }
         if (!is.character(item$doc_id) || length(item$doc_id) != 1) {
-          ok <- FALSE; msg <- "evidence_chunks[[i]]$doc_id must be character scalar."; break
+          ok <- FALSE; 
+          msg <- "evidence_chunks[[i]]$doc_id must be character scalar."; 
+          break
         }
         if (!is.character(item$span) || length(item$span) != 1) {
-          ok <- FALSE; msg <- "evidence_chunks[[i]]$span must be character scalar."; break
+          ok <- FALSE; 
+          msg <- "evidence_chunks[[i]]$span must be character scalar."; 
+          break
         }
         if (!is.numeric(item$score) || length(item$score) != 1) {
-          ok <- FALSE; msg <- "evidence_chunks[[i]]$score must be numeric scalar."; break
+          ok <- FALSE; 
+          msg <- "evidence_chunks[[i]]$score must be numeric scalar."; 
+          break
         }
       }
     }
@@ -121,7 +132,8 @@ validate_rag_json <- function(x, error = TRUE)
 #' @param validate Logical; validate structure after parse.
 #' @return A normalized list with atomic vectors and an `evidence` data.frame.
 #' @examples
-#' j <- '{"labels":["joy"],"confidences":[0.9],"intensity":0.8,"evidence_chunks":[]}'
+#' j <- '{"labels":["joy"],"confidences":[0.9],
+#'   "intensity":0.8,"evidence_chunks":[]}'
 #' parse_rag_json(j)
 #' @export
 #' @importFrom jsonlite fromJSON toJSON
@@ -140,7 +152,8 @@ parse_rag_json <- function(x, validate = TRUE)
       if (!inherits(candidates, "try-error") && length(candidates) > 0) {
         obj <- NULL
         for (cand in candidates) {
-          cand_obj <- try(jsonlite::fromJSON(cand, simplifyVector = TRUE), silent = TRUE)
+          cand_obj <- try(jsonlite::fromJSON(cand, simplifyVector = TRUE), 
+                          silent = TRUE)
           if (!inherits(cand_obj, "try-error") && is.list(cand_obj)) {
             # Lenient normalization before validation on each candidate
             if (!is.null(cand_obj$labels) && !is.null(cand_obj$confidences)) {
@@ -152,26 +165,37 @@ parse_rag_json <- function(x, validate = TRUE)
               if (length(cand_obj$confidences) == 1L && nlab > 1L) {
                 cand_obj$confidences <- rep(cand_obj$confidences, nlab)
               }
-              if (length(cand_obj$confidences) != nlab || any(!is.finite(cand_obj$confidences))) {
+              if (length(cand_obj$confidences) != nlab || 
+                  any(!is.finite(cand_obj$confidences))) {
                 if (nlab > 0L) cand_obj$confidences <- rep(1 / nlab, nlab)
               }
               # Clamp and normalize
-              if (length(cand_obj$confidences) > 0L) cand_obj$confidences <- pmax(0, pmin(1, as.numeric(cand_obj$confidences)))
+              if (length(cand_obj$confidences) > 0L) 
+                cand_obj$confidences <- pmax(0, pmin(1, 
+                                        as.numeric(cand_obj$confidences)))
               if (nlab > 1L) {
                 s <- sum(cand_obj$confidences)
-                if (is.finite(s) && s > 0) cand_obj$confidences <- cand_obj$confidences / s else cand_obj$confidences <- rep(1 / nlab, nlab)
+                if (is.finite(s) && s > 0) 
+                  cand_obj$confidences <- cand_obj$confidences / s 
+                else 
+                  cand_obj$confidences <- rep(1 / nlab, nlab)
               }
             }
             # If intensity missing, derive
             if (is.null(cand_obj$intensity)) {
-              if (!is.null(cand_obj$confidences) && length(cand_obj$confidences) > 0L && all(is.finite(cand_obj$confidences))) {
+              if (!is.null(cand_obj$confidences) && 
+                  length(cand_obj$confidences) > 0L && 
+                  all(is.finite(cand_obj$confidences))) {
                 cand_obj$intensity <- max(as.numeric(cand_obj$confidences))
               } else {
                 cand_obj$intensity <- 0
               }
             }
             ok <- try(validate_rag_json(cand_obj, error = FALSE), silent = TRUE)
-            if (isTRUE(ok)) { obj <- cand_obj; break }
+            if (isTRUE(ok)) { 
+              obj <- cand_obj; 
+              break 
+            }
           }
         }
         if (is.null(obj)) {
@@ -202,17 +226,20 @@ parse_rag_json <- function(x, validate = TRUE)
   if (!is.null(obj$labels) && !is.null(obj$confidences)) {
     nlab <- tryCatch(length(obj$labels), error = function(e) 0L)
 
-    # Convert character confidences like "0.8" to numeric; if pattern like "0..1", fallback later
+    # Convert character confidences like "0.8" to numeric; 
+    # if pattern like "0..1", fallback later
     if (is.character(obj$confidences)) {
       suppressWarnings({ obj$confidences <- as.numeric(obj$confidences) })
     }
 
     # If a single scalar provided for multiple labels, replicate it
-    if (is.atomic(obj$confidences) && length(obj$confidences) == 1L && nlab > 1L) {
+    if (is.atomic(obj$confidences) && 
+        length(obj$confidences) == 1L && nlab > 1L) {
       obj$confidences <- rep(as.numeric(obj$confidences), nlab)
     }
 
-    # If any non-finite values (including NAs from failed coercion), use uniform distribution
+    # If any non-finite values (including NAs from failed 
+    # coercion), use uniform distribution
     if (length(obj$confidences) != nlab || any(!is.finite(obj$confidences))) {
       if (nlab > 0L) obj$confidences <- rep(1 / nlab, nlab)
     }
@@ -225,39 +252,65 @@ parse_rag_json <- function(x, validate = TRUE)
     # Normalize to sum to 1 when multiple labels
     if (nlab > 1L) {
       s <- sum(obj$confidences)
-      if (is.finite(s) && s > 0) obj$confidences <- obj$confidences / s else obj$confidences <- rep(1 / nlab, nlab)
+      if (is.finite(s) && s > 0) 
+        obj$confidences <- obj$confidences / s 
+      else 
+        obj$confidences <- rep(1 / nlab, nlab)
     }
   }
 
   # - If intensity missing, derive as max(confidences) or 0
   if (is.null(obj$intensity)) {
-    if (!is.null(obj$confidences) && length(obj$confidences) > 0L && all(is.finite(obj$confidences))) {
+    if (!is.null(obj$confidences) && 
+        length(obj$confidences) > 0L && 
+        all(is.finite(obj$confidences))) {
       obj$intensity <- max(as.numeric(obj$confidences))
     } else {
       obj$intensity <- 0
     }
   }
 
-  # - Ensure evidence_chunks exists; then normalize allowing missing fields and character spans
+  # - Ensure evidence_chunks exists; then normalize allowing 
+  #   missing fields and character spans. Handle data.frame rows correctly.
   if (is.null(obj$evidence_chunks)) {
     obj$evidence_chunks <- list()
   }
   if (!is.null(obj$evidence_chunks)) {
     ec <- obj$evidence_chunks
-    if (is.list(ec)) {
+    if (is.data.frame(ec)) {
+      n <- nrow(ec)
+      norm <- vector("list", if (is.null(n)) 0L else n)
+      if (!is.null(n) && n > 0L) {
+        for (i in seq_len(n)) {
+          did <- tryCatch(as.character(ec$doc_id[i]), error = function(e) as.character(i))
+          if (!is.finite(suppressWarnings(as.numeric(did)))) did <- as.character(did)
+          spn <- tryCatch(as.character(ec$span[i]),    error = function(e) "")
+          scr <- tryCatch(as.numeric(ec$score[i]),     error = function(e) NA_real_)
+          norm[[i]] <- list(doc_id = did, span = spn, score = scr)
+        }
+      }
+      obj$evidence_chunks <- norm
+    } else if (is.list(ec)) {
       norm <- vector("list", length(ec))
       for (i in seq_along(ec)) {
         item <- ec[[i]]
         if (is.character(item) && length(item) == 1L) {
-          norm[[i]] <- list(doc_id = as.character(i), span = item, score = NA_real_)
+          norm[[i]] <- list(doc_id = as.character(i), 
+                             span = item, 
+                             score = NA_real_)
         } else if (is.list(item)) {
-          did <- if (!is.null(item$doc_id)) as.character(item$doc_id) else as.character(i)
+          did <- if (!is.null(item$doc_id)) 
+                    as.character(item$doc_id) 
+                  else 
+                    as.character(i)
           spn <- if (!is.null(item$span)) as.character(item$span) else ""
           scr <- if (!is.null(item$score)) as.numeric(item$score) else NA_real_
           norm[[i]] <- list(doc_id = did, span = spn, score = scr)
         } else {
           # Fallback: coerce to string and store as span
-          norm[[i]] <- list(doc_id = as.character(i), span = as.character(item), score = NA_real_)
+          norm[[i]] <- list(doc_id = as.character(i), 
+                             span = as.character(item), 
+                             score = NA_real_)
         }
       }
       obj$evidence_chunks <- norm
@@ -269,7 +322,9 @@ parse_rag_json <- function(x, validate = TRUE)
   # Normalize evidence into data.frame for convenience
   ev <- obj$evidence_chunks
   if (is.null(ev) || length(ev) == 0L) {
-    ev_df <- data.frame(doc_id = character(0), span = character(0), score = numeric(0))
+    ev_df <- data.frame(doc_id = character(0), 
+                       span = character(0), 
+                       score = numeric(0))
   } else {
     ev_df <- data.frame(
       doc_id = vapply(ev, function(e) as.character(e$doc_id), character(1)),
@@ -296,12 +351,14 @@ parse_rag_json <- function(x, validate = TRUE)
 #' @param validate Logical; validate structure first.
 #' @return A data.frame suitable for statistical analysis.
 #' @examples
-#' j <- '{"labels":["joy","surprise"],"confidences":[0.8,0.5],"intensity":0.7,"evidence_chunks":[]}'
+#' j <- '{"labels":["joy","surprise"],"confidences":[0.8,0.5],
+#'   "intensity":0.7,"evidence_chunks":[]}'
 #' as_rag_table(j)
 #' @export
 as_rag_table <- function(x, validate = TRUE)
 {
-  parsed <- if (is.list(x) && !is.null(x$labels) && !is.null(x$confidences) && !is.null(x$intensity)) {
+  parsed <- if (is.list(x) && !is.null(x$labels) && 
+              !is.null(x$confidences) && !is.null(x$intensity)) {
     # Might be the raw JSON shape or already normalized by parse_rag_json
     if (!is.null(x$evidence) && is.data.frame(x$evidence)) {
       x

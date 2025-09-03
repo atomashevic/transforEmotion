@@ -69,6 +69,7 @@ rsconnect/
 CLAUDE.md
 tests/test_workflow.md
 AGENTS.md
+VAD.md
 
 # Misc folders
 
@@ -78,5 +79,11 @@ model-registry.md
 # Debug scripts
 
 debug_*.R
+
+# Misc media and hidden helper files
+trump1.jpg
+.create_metrics_table
+.claude/
+.ropeproject/
 
 # M

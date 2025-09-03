@@ -45,7 +45,7 @@
 #'   \item **Precision/Recall/F1**: Per-class and macro/micro averages
 #'   \item **AUROC**: Area under ROC curve (requires probability scores)
 #'   \item **ECE**: Expected Calibration Error for probability calibration
-#'   \item **Krippendorff's α**: Inter-rater reliability between human and model
+#'   \item **Krippendorff's alpha**: Inter-rater reliability between human and model
 #' }
 #' 
 #' **Input format:**
@@ -318,7 +318,7 @@ print.emotion_evaluation <- function(x, ...) {
   
   # Remove missing values if requested
   if (na_rm) {
-    complete_cases <- complete.cases(data[, required_cols, drop = FALSE])
+    complete_cases <- stats::complete.cases(data[, required_cols, drop = FALSE])
     if (sum(!complete_cases) > 0) {
       warning("Removed ", sum(!complete_cases), " rows with missing values", 
               call. = FALSE)
@@ -449,7 +449,7 @@ print.emotion_evaluation <- function(x, ...) {
   cm_matrix <- as.matrix(cm)
   
   # Add marginals
-  cm_with_margins <- addmargins(cm_matrix)
+  cm_with_margins <- stats::addmargins(cm_matrix)
   
   return(cm_with_margins)
 }
@@ -586,7 +586,7 @@ print.emotion_evaluation <- function(x, ...) {
   pred <- data[[pred_col]]
   
   # Convert to numeric codes
-  class_to_num <- setNames(seq_along(classes), classes)
+  class_to_num <- stats::setNames(seq_along(classes), classes)
   truth_num <- class_to_num[truth]
   pred_num <- class_to_num[pred]
   
@@ -761,6 +761,8 @@ print.emotion_evaluation <- function(x, ...) {
 #' @param ... Additional arguments passed to plotting functions
 #'
 #' @return A ggplot object or list of ggplot objects
+#' @importFrom ggplot2 ggplot aes geom_tile geom_text scale_fill_gradient labs theme_minimal theme element_text geom_bar scale_y_continuous
+#' @importFrom reshape2 melt
 #' @export
 plot.emotion_evaluation <- function(x, type = "both", ...) {
   
@@ -839,31 +841,31 @@ summary.emotion_evaluation <- function(object, ...) {
   # Dataset summary
   if (!is.null(object$summary)) {
     cat("Dataset Information:\n")
-    cat(sprintf("  • Total instances: %d\n", object$summary$n_instances))
-    cat(sprintf("  • Number of classes: %d\n", object$summary$n_classes))
-    cat(sprintf("  • Classes: %s\n", paste(object$summary$classes, collapse = ", ")))
+    cat(sprintf("  - Total instances: %d\n", object$summary$n_instances))
+    cat(sprintf("  - Number of classes: %d\n", object$summary$n_classes))
+    cat(sprintf("  - Classes: %s\n", paste(object$summary$classes, collapse = ", ")))
     cat("\n")
   }
   
   # Overall performance
   cat("Overall Performance:\n")
   if (!is.null(object$accuracy)) {
-    cat(sprintf("  • Accuracy: %.3f\n", object$accuracy))
+    cat(sprintf("  - Accuracy: %.3f\n", object$accuracy))
   }
   if (!is.null(object$f1_macro)) {
-    cat(sprintf("  • Macro F1: %.3f\n", object$f1_macro))
+    cat(sprintf("  - Macro F1: %.3f\n", object$f1_macro))
   }
   if (!is.null(object$f1_micro)) {
-    cat(sprintf("  • Micro F1: %.3f\n", object$f1_micro))
+    cat(sprintf("  - Micro F1: %.3f\n", object$f1_micro))
   }
   if (!is.null(object$auroc) && is.list(object$auroc) && !is.null(object$auroc$macro) && !is.na(object$auroc$macro)) {
-    cat(sprintf("  • Macro AUROC: %.3f\n", object$auroc$macro))
+    cat(sprintf("  - Macro AUROC: %.3f\n", object$auroc$macro))
   }
   if (!is.null(object$ece)) {
-    cat(sprintf("  • Expected Calibration Error: %.3f\n", object$ece))
+    cat(sprintf("  - Expected Calibration Error: %.3f\n", object$ece))
   }
   if (!is.null(object$krippendorff_alpha)) {
-    cat(sprintf("  • Krippendorff's α: %.3f\n", object$krippendorff_alpha))
+    cat(sprintf("  - Krippendorff's alpha: %.3f\n", object$krippendorff_alpha))
   }
   cat("\n")
   
