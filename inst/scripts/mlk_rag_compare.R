@@ -3,6 +3,27 @@
 
 suppressPackageStartupMessages(library(transforEmotion))
 
+# Ensure we're using a build that supports retriever= (dev code)
+has_retriever <- FALSE
+try({ has_retriever <- "retriever" %in% names(formals(get("rag", asNamespace("transforEmotion")))) }, silent = TRUE)
+if (!isTRUE(has_retriever)) {
+  message("Installed transforEmotion lacks 'retriever' argument; attempting to load dev code from repo...")
+  if (requireNamespace("devtools", quietly = TRUE)) {
+    args <- commandArgs(trailingOnly = FALSE)
+    file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
+    if (length(file_arg)) {
+      root <- normalizePath(file.path(dirname(file_arg), "..", ".."))
+    } else {
+      root <- getwd()
+    }
+    devtools::load_all(root, quiet = TRUE)
+    has_retriever <- "retriever" %in% names(formals(transforEmotion::rag))
+  }
+}
+if (!isTRUE(has_retriever)) {
+  stop("This script requires transforEmotion with retriever support. Please reinstall from source or run devtools::load_all().")
+}
+
 # --- Configuration ---------------------------------------------------------
 
 # Gemma 3 access: ensure you have an HF token set, e.g.:
@@ -91,4 +112,3 @@ run_case("general", "vector")
 run_case("general", "bm25")
 
 cat("\nDone.\n")
-
