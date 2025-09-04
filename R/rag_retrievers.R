@@ -111,13 +111,23 @@ bm25_retriever_handler <- function(llama_index, documents, service_context,
 
   # Extract plain texts per document
   doc_texts <- vapply(documents, function(d) as.character(d$text), character(1))
-  # Simple tokenization for BM25
-  tokenize <- function(x) {
-    tokens <- unlist(strsplit(tolower(x), "[^a-z0-9]+"))
-    tokens[nzchar(tokens)]
+  # Tokenization for BM25 (Unicode-aware). Allow custom override via params$tokenize
+  tokenize <- if (!is.null(params$tokenize) && is.function(params$tokenize)) {
+    params$tokenize
+  } else {
+    function(x) {
+      x <- tolower(x)
+      # Keep letters and decimal digits from all scripts; collapse others to space
+      x <- gsub("[^\\p{L}\\p{Nd}]+", " ", x, perl = TRUE)
+      tokens <- unlist(strsplit(x, "\\s+"))
+      tokens[nzchar(tokens)]
+    }
   }
   corpus <- lapply(doc_texts, tokenize)
-  bm25 <- rank_bm25$BM25Okapi(corpus)
+  # Allow BM25 parameters from retriever_params
+  k1 <- if (!is.null(params$k1)) as.numeric(params$k1) else 1.5
+  b  <- if (!is.null(params$b))  as.numeric(params$b)  else 0.75
+  bm25 <- rank_bm25$BM25Okapi(corpus, k1 = k1, b = b)
 
   # Build query function closure
   query_fn <- function(q) {

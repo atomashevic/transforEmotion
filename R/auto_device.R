@@ -1,7 +1,7 @@
 #' @noRd
 # Automatically detect appropriate device
 # Updated 06.02.2024
-auto_device <- function(device, transformer)
+auto_device <- function(device, transformer, verbose = TRUE)
 {
   ensure_te_py_env()
 
@@ -87,7 +87,7 @@ auto_device <- function(device, transformer)
   }
 
   # Send device to user
-  message(paste0("Using device: ", device))
+  if (isTRUE(verbose)) message(paste0("Using device: ", device))
 
   # Return device
   return(device)

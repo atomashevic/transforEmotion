@@ -58,16 +58,8 @@ ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE, repo_id = NULL) {
 
   tok <- .hf_get_token()
   if (!is.na(tok) && nzchar(tok)) {
-    # Ensure huggingface_hub sees it (login caches credential). Best-effort.
-    try({
-      reticulate::py_run_string(
-        "import os\nfrom huggingface_hub import login\n"
-      )
-      reticulate::py_run_string(
-        "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\nif tok:\n    login(token=tok, add_to_git_credential=False)\n"
-      )
-    }, silent = TRUE)
-    # Also mirror into both env vars in R process for Transformers
+    # Token already present in environment; rely on env vars and avoid calling login()
+    # to prevent the note about HF_TOKEN precedence.
     Sys.setenv(HUGGINGFACE_HUB_TOKEN = tok)
     Sys.setenv(HF_TOKEN = tok)
     # Optional: validate access to the gated repo if provided
@@ -97,15 +89,7 @@ ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE, repo_id = NULL) {
   # No token in env
   if (interactive_ok && interactive()) {
     .hf_prompt_token()
-    # Attempt login post-prompt
-    try({
-      reticulate::py_run_string(
-        "import os\nfrom huggingface_hub import login\n"
-      )
-      reticulate::py_run_string(
-        "tok = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACE_HUB_TOKEN')\nif tok:\n    login(token=tok, add_to_git_credential=False)\n"
-      )
-    }, silent = TRUE)
+    # Token is now set in env by prompt; skip login() and rely on env vars to avoid noisy notes.
     # Validate repo if provided
     if (!is.null(repo_id)) {
       ok <- try({

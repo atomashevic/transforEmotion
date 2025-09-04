@@ -87,3 +87,8 @@ trump1.jpg
 .ropeproject/
 
 # M
+
+# Warp terminal files
+.warp/
+*.warp
+WARP.md

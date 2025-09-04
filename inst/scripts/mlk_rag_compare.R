@@ -55,7 +55,7 @@ run_case <- function(task = c("sentiment","emotion","general"),
     general   = "Identify salient emotional themes and supporting evidence."
   )
 
-  out_mode <- if (task %in% c("sentiment","emotion")) "table" else "table"
+  out_mode <- "table"
 
   cat(sprintf("\n=== Task: %s | Retriever: %s ===\n", task, retriever))
   t0 <- Sys.time()
@@ -69,7 +69,7 @@ run_case <- function(task = c("sentiment","emotion","general"),
       retriever = retriever,
       output = out_mode,
       task = task,
-      progress = TRUE
+      progress = FALSE
     ), silent = TRUE
   )
   dt <- round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1)

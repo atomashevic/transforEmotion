@@ -229,11 +229,11 @@ rag <- function(
     transformer <- "tinyllama"
   }else{transformer <- tolower(match.arg(transformer))}
 
-  # If a non-Gemma small model is requested with structured output, error
+  # If a non-Gemma small model is requested with structured output, fallback to text with warning
   if (!transformer %in% c("gemma3-1b", "gemma3-4b") && 
       !identical(output, "text")) {
-    stop("Structured outputs (json/table/csv) are supported only for ",
-         "Gemma3-1B and Gemma3-4B.", call. = FALSE)
+    warning("Structured outputs (json/table/csv) are supported only for Gemma3-1B and Gemma3-4B. Falling back to output = 'text'.", call. = FALSE)
+    output <- "text"
   }
 
   # Check for 'query'
@@ -320,8 +320,8 @@ rag <- function(
   # Get service context
   if(!exists("service_context", envir = as.environment(envir))){
 
-    # Set device
-    device <- auto_device(device, transformer)
+    # Set device (only print when progress is requested)
+    device <- auto_device(device, transformer, verbose = isTRUE(progress))
 
     # If Gemma 3 model requested, ensure HF auth for gated repos
     if (transformer %in% c("gemma3-1b", "gemma3-4b")) {
@@ -466,7 +466,7 @@ rag <- function(
   if (isTRUE(global_analysis)) {
     
     # Global analysis (legacy behavior) - process all documents together
-    message("Indexing documents...")
+    if (progress) message("Indexing documents...")
     
     # Build retrieval engine based on selected retriever
     engine <- resolve_retriever_engine(
@@ -480,13 +480,13 @@ rag <- function(
     )
 
     # Send message to user
-    message("Querying...", appendLF = FALSE)
+    if (progress) message("Querying...", appendLF = FALSE)
 
     # Get query
     extracted_query <- run_query(engine, built_query)
 
     # Stop time
-    message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
+    if (progress) message(paste0(" elapsed: ", round(Sys.time() - start), "s"))
 
     # Organize Python output
     result <- list(
@@ -496,20 +496,16 @@ rag <- function(
         trimws(extracted_query$response)
       },
       content = content_cleanup(extracted_query$source_nodes),
-      document_embeddings = {
-        emb <- try({index$vector_store$to_dict()$embedding_dict}, silent = TRUE)
-        if (!inherits(emb, "try-error") && !is.null(emb)) {
-          do.call(rbind, silent_call(emb))
-        } else {
-          matrix(nrow = 0, ncol = 0)
-        }
-      }
+      document_embeddings = matrix(nrow = 0, ncol = 0)
     )
     
   } else {
     
     # Per-document analysis (default behavior)
-    message("Analyzing documents individually...")
+    if (progress) message("Analyzing documents individually...")
+    
+    # Detailed progress (off by default; enable via retriever_params$verbose = TRUE)
+    verbose_progress <- isTRUE(retriever_params$verbose)
     
     # Initialize containers for aggregated results
     all_responses <- character()
@@ -519,7 +515,7 @@ rag <- function(
     # Process each document individually
     for (i in seq_along(documents)) {
       
-      if (progress) {
+      if (isTRUE(progress) && isTRUE(verbose_progress)) {
         message(paste0("Processing document ", i, "/", 
                      length(documents), "..."))
       }
@@ -562,8 +558,8 @@ rag <- function(
             with confidence in [0,1]. No markdown. Now answer: ', 
             query
           )
-          if (progress) message("  Strict JSON retry for document ", i, "...")
-          strict_res <- try(doc_engine$query(strict_prompt), silent = TRUE)
+          if (isTRUE(progress) && isTRUE(verbose_progress)) message("  Strict JSON retry for document ", i, "...")
+          strict_res <- try(run_query(doc_engine, strict_prompt), silent = TRUE)
           if (!inherits(strict_res, "try-error")) {
             doc_query <- strict_res
           }
@@ -577,23 +573,11 @@ rag <- function(
         next
       }
       
-      # Store results with debugging
+      # Store results
       raw_response <- doc_query$response
-      if (progress) {
-        message("  Raw response length: ", nchar(raw_response))
-        if (nchar(raw_response) > 0) {
-          message("  First 100 chars: ", substr(trimws(raw_response), 1, 100), "...")
-        } else {
-          message("  WARNING: Empty response from model!")
-        }
-      }
       
       all_responses[i] <- if (identical(output, "text")) {
-        cleaned_response <- response_cleanup(raw_response, transformer = transformer)
-        if (progress && nchar(cleaned_response) != nchar(raw_response)) {
-          message("  Cleaned response length: ", nchar(cleaned_response))
-        }
-        cleaned_response
+        response_cleanup(raw_response, transformer = transformer)
       } else {
         trimws(raw_response)
       }
@@ -605,22 +589,16 @@ rag <- function(
         all_content[[i]] <- doc_content
       }
       
-      # Store embeddings (vector retriever only)
-      doc_embeddings <- try({
-        if (exists("doc_index")) {
-          do.call(rbind, silent_call(doc_index$vector_store$to_dict()$embedding_dict))
-        } else {
-          NULL
-        }
-      }, silent = TRUE)
+      # Store embeddings placeholder (not available for BM25 and current engine abstraction)
+      doc_embeddings <- NULL
       
-      if (!inherits(doc_embeddings, "try-error") && !is.null(doc_embeddings)) {
+      if (!is.null(doc_embeddings)) {
         all_embeddings[[i]] <- doc_embeddings
       }
     }
     
     # Stop time
-    message(paste0("Per-document analysis completed in ", round(Sys.time() - start), "s"))
+    if (progress) message(paste0("Per-document analysis completed in ", round(Sys.time() - start), "s"))
     
     # Aggregate results based on output type
     if (identical(output, "text")) {
@@ -704,7 +682,6 @@ rag <- function(
             }
             list(
               doc_id = doc_ids[i],
-              text = as.character(documents[[i]]$text),
               label = ifelse(length(lbls) >= 1, lbls[1], NA_character_),
               confidence = ifelse(length(confs) >= 1, as.numeric(confs[1]), NA_real_)
             )
@@ -712,6 +689,14 @@ rag <- function(
           per_doc_df <- do.call(rbind, lapply(per_doc, as.data.frame, stringsAsFactors = FALSE))
           # Output formats
           if (identical(output, "table") || identical(output, "csv")) {
+            # Return concise summary and sort by confidence (desc)
+            keep <- c("doc_id","label","confidence")
+            keep <- keep[keep %in% names(per_doc_df)]
+            per_doc_df <- per_doc_df[, keep, drop = FALSE]
+            if (nrow(per_doc_df) > 0 && "confidence" %in% names(per_doc_df)) {
+              per_doc_df <- per_doc_df[order(-as.numeric(per_doc_df$confidence)), , drop = FALSE]
+              rownames(per_doc_df) <- NULL
+            }
             result <- per_doc_df
           } else if (identical(output, "json")) {
             result <- jsonlite::toJSON(per_doc_df, auto_unbox = TRUE, digits = NA)
@@ -768,9 +753,9 @@ rag <- function(
       "\"evidence_chunks\":[{\"doc_id\":string,\"span\":string,\"score\":number},...]}. ",
       "All numbers must be numeric (not strings like '0..1'); return exactly ONE JSON object; no markdown fences, no extra text. Now answer for this question: ", query
     )
-    message("Retrying with strict JSON prompt...", appendLF = FALSE)
+    if (progress) message("Retrying with strict JSON prompt...", appendLF = FALSE)
     re <- engine$query(strict_prompt)
-    message(" done")
+    if (progress) message(" done")
     result$response <- trimws(re$response)
     parsed <- try(parse_rag_json(result$response, validate = TRUE), silent = TRUE)
   }
@@ -832,7 +817,15 @@ rag <- function(
   if (identical(output, "json")) {
     return(jsonlite::toJSON(schema_out, auto_unbox = TRUE, digits = NA))
   } else if (identical(output, "table")) {
-    return(as_rag_table(schema_out, validate = TRUE))
+    # Concise summary table: label + confidence, sorted
+    df <- data.frame(
+      label = as.character(schema_out$labels),
+      confidence = as.numeric(schema_out$confidences),
+      stringsAsFactors = FALSE
+    )
+    if (nrow(df) > 0) df <- df[order(-df$confidence), , drop = FALSE]
+    rownames(df) <- NULL
+    return(df)
   }
 
   # Fallback (should not reach)
@@ -899,7 +892,7 @@ aggregate_structured_results <- function(all_responses, all_content, all_embeddi
     if (identical(output, "json")) {
       return(jsonlite::toJSON(empty_result, auto_unbox = TRUE, digits = NA))
     } else if (identical(output, "table")) {
-      return(as_rag_table(empty_result, validate = TRUE))
+      return(data.frame(label = character(0), confidence = numeric(0), stringsAsFactors = FALSE))
     } else {
       return(empty_result)
     }
@@ -1051,7 +1044,15 @@ aggregate_structured_results <- function(all_responses, all_content, all_embeddi
   if (identical(output, "json")) {
     return(jsonlite::toJSON(aggregated_result, auto_unbox = TRUE, digits = NA))
   } else if (identical(output, "table")) {
-    return(as_rag_table(aggregated_result, validate = TRUE))
+    # Concise summary table: labels + confidences, sorted
+    df <- data.frame(
+      label = as.character(aggregated_result$labels),
+      confidence = as.numeric(aggregated_result$confidences),
+      stringsAsFactors = FALSE
+    )
+    if (nrow(df) > 0) df <- df[order(-df$confidence), , drop = FALSE]
+    rownames(df) <- NULL
+    return(df)
   }
   
   # Fallback (shouldn't reach here)

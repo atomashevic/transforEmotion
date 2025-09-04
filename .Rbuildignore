@@ -22,3 +22,4 @@ diff_0.1.5_*
 ^\.create_metrics_table$
 ^\.claude(/|$)
 ^\.ropeproject(/|$)
+^WARP\.md$

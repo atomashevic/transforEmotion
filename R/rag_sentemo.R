@@ -74,11 +74,11 @@ rag_sentemo <- function(
   response_mode <- match.arg(response_mode)
   output <- match.arg(output)
 
-  # Enforce: structured outputs supported only by Gemma3-1B / Gemma3-4B
+  # Enforce: if not Gemma, fallback to text with warning
   t_lower <- tolower(transformer)
   if (!t_lower %in% c("gemma3-1b", "gemma3-4b") && output != "text") {
-    stop("Structured outputs (json/table/csv) are supported only for ",
-         "Gemma3-1B and Gemma3-4B.", call. = FALSE)
+    warning("Structured outputs (json/table/csv) are supported only for Gemma3-1B and Gemma3-4B. Falling back to output = 'text'.", call. = FALSE)
+    output <- "text"
   }
 
   # Default label sets if not provided
