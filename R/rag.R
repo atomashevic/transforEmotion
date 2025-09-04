@@ -130,6 +130,20 @@
 #' GPU over CPU (if CUDA-capable GPU is setup).
 #' Set to \code{"cpu"} to perform over CPU
 #'
+#' @param temperature Numeric or NULL.
+#' Overrides the LLM sampling temperature when using local HF models.
+#' Recommended: 0.0–0.2 for structured/classification; 0.3–0.7 for summaries.
+#'
+#' @param do_sample Logical or NULL.
+#' If \code{FALSE}, forces greedy decoding for maximum determinism.
+#' Defaults are conservative; set explicitly for reproducibility.
+#'
+#' @param max_new_tokens Integer or NULL.
+#' Maximum new tokens to generate. Suggested: 64–128 for label decisions; 256–512 for summaries.
+#'
+#' @param top_p Numeric or NULL.
+#' Nucleus sampling parameter. Typical: 0.7–0.95. Use with \code{do_sample=TRUE}.
+#'
 #' @param keep_in_env Boolean (length = 1).
 #' Whether the classifier should be kept in your global environment.
 #' Defaults to \code{TRUE}.
@@ -205,7 +219,9 @@ rag <- function(
     labels_set = NULL,
     max_labels = 5,
     global_analysis = FALSE,
-    device = c("auto", "cpu", "cuda"), keep_in_env = TRUE,
+    device = c("auto", "cpu", "cuda"),
+    temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL,
+    keep_in_env = TRUE,
     envir = 1, progress = TRUE
 )
 {
@@ -344,28 +360,39 @@ rag <- function(
     # Set up service context (restricted model set)
     service_context <- switch(
       transformer,
-      "tinyllama" = setup_tinyllama(llama_index, prompt, device),
+      "tinyllama" = setup_tinyllama(llama_index, prompt, device,
+        temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
+      ),
       # Gemma 3 (HuggingFace Instruct variants)
       "gemma3-1b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "google/gemma-3-1b-it", 
         tokenizer_name = "google/gemma-3-1b-it",
-        context_window = 32000L
+        context_window = 32000L,
+        temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
       ),
       "gemma3-4b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "google/gemma-3-4b-it", 
         tokenizer_name = "google/gemma-3-4b-it",
-        context_window = 128000L
+        context_window = 128000L,
+        temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
       ),
       "qwen3-1.7b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "Qwen/Qwen3-1.7B-Instruct", 
         tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
-        context_window = 32000L
+        context_window = 32000L,
+        temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
       ),
       # Ministral 3B (HuggingFace Instruct)
       "ministral-3b" = setup_hf_llm(llama_index, prompt, device,
         model_name = "ministral/Ministral-3b-instruct", 
         tokenizer_name = "ministral/Ministral-3b-instruct",
-        context_window = 32000L
+        context_window = 32000L,
+        temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
       ),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
@@ -1216,7 +1243,8 @@ setup_ollama_model <- function(llama_index, prompt, device, model, context_windo
 #' @noRd
 # Generic HuggingFace LLM setup (Gemma3/Ministral)
 # Uses llama_index$llms$HuggingFaceLLM without Ollama.
-setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window)
+setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window,
+                          temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL)
 {
   # Models that don't support token_type_ids in generation
   models_without_token_type_ids <- c(
@@ -1246,6 +1274,12 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
       do_sample = TRUE
     )
   }
+
+  # Apply user overrides if provided
+  if (!is.null(temperature)) generate_kwargs$temperature <- as.double(temperature)
+  if (!is.null(do_sample))    generate_kwargs$do_sample    <- isTRUE(do_sample)
+  if (!is.null(top_p))        generate_kwargs$top_p        <- as.double(top_p)
+  if (!is.null(max_new_tokens)) generate_kwargs$max_new_tokens <- as.integer(max_new_tokens)
 
   # Build ServiceContext with HuggingFace LLM
   sc <- llama_index$ServiceContext$from_defaults(
@@ -1510,10 +1544,19 @@ pleias_response_cleanup <- function(response, debug = FALSE)
 #' @noRd
 # TinyLLAMA ----
 # Updated 28.01.2024
-setup_tinyllama <- function(llama_index, prompt, device)
+setup_tinyllama <- function(llama_index, prompt, device,
+                             temperature = NULL, do_sample = NULL,
+                             max_new_tokens = NULL, top_p = NULL)
 {
 
   # Return model
+  # Build generate kwargs from overrides
+  gen <- list()
+  if (!is.null(temperature))    gen$temperature    <- as.double(temperature)
+  if (!is.null(do_sample))       gen$do_sample      <- isTRUE(do_sample)
+  if (!is.null(top_p))           gen$top_p          <- as.double(top_p)
+  if (!is.null(max_new_tokens))  gen$max_new_tokens <- as.integer(max_new_tokens)
+
   return(
     llama_index$ServiceContext$from_defaults(
       llm = llama_index$llms$HuggingFaceLLM(
@@ -1524,7 +1567,8 @@ setup_tinyllama <- function(llama_index, prompt, device)
             "<|system|>\n", prompt,
             "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
           )
-        ), device_map = device
+        ), device_map = device,
+        generate_kwargs = gen
       ), context_window = 2048L,
       embed_model = "local:BAAI/bge-small-en-v1.5"
     )

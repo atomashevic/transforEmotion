@@ -21,6 +21,10 @@ rag(
   max_labels = 5,
   global_analysis = FALSE,
   device = c("auto", "cpu", "cuda"),
+  temperature = NULL,
+  do_sample = NULL,
+  max_new_tokens = NULL,
+  top_p = NULL,
   keep_in_env = TRUE,
   envir = 1,
   progress = TRUE
@@ -152,6 +156,20 @@ Whether to use CPU or GPU for inference.
 Defaults to \code{"auto"} which will use
 GPU over CPU (if CUDA-capable GPU is setup).
 Set to \code{"cpu"} to perform over CPU}
+
+\item{temperature}{Numeric or NULL.
+Overrides the LLM sampling temperature when using local HF models.
+Recommended: 0.0–0.2 for structured/classification; 0.3–0.7 for summaries.}
+
+\item{do_sample}{Logical or NULL.
+If \code{FALSE}, forces greedy decoding for maximum determinism.
+Defaults are conservative; set explicitly for reproducibility.}
+
+\item{max_new_tokens}{Integer or NULL.
+Maximum new tokens to generate. Suggested: 64–128 for label decisions; 256–512 for summaries.}
+
+\item{top_p}{Numeric or NULL.
+Nucleus sampling parameter. Typical: 0.7–0.95. Use with \code{do_sample=TRUE}.}
 
 \item{keep_in_env}{Boolean (length = 1).
 Whether the classifier should be kept in your global environment.
