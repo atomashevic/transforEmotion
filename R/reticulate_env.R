@@ -95,8 +95,90 @@ ensure_te_py_env <- function() {
   try({ initialized <- reticulate::py_available(initialize = FALSE) }, silent = TRUE)
   if (isTRUE(initialized)) return(invisible(TRUE))
 
+  # Recommend uv if not available
+  ensure_uv_available(prompt = TRUE)
+
   # Not initialized yet — configure uv environment (CPU default)
   use_gpu <- te_should_use_gpu()
   try(.configure_uv_env(use_gpu = use_gpu), silent = TRUE)
   invisible(TRUE)
+}
+
+#' @noRd
+uv_is_available <- function() {
+  nzchar(Sys.which("uv"))
+}
+
+#' @noRd
+install_uv_interactive <- function() {
+  os <- tolower(Sys.info()[["sysname"]])  # linux, windows, darwin
+  if (os == "darwin") {
+    if (nzchar(Sys.which("brew"))) {
+      message("Installing uv via Homebrew ...")
+      rc <- try(suppressWarnings(system2("brew", c("install", "uv"))), silent = TRUE)
+      return(invisible(!inherits(rc, "try-error")))
+    } else {
+      message("Homebrew not found. Installing uv via official script ...")
+      rc <- try(suppressWarnings(system2("sh", c("-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"))), silent = TRUE)
+      return(invisible(!inherits(rc, "try-error")))
+    }
+  } else if (os == "linux") {
+    cmd <- if (nzchar(Sys.which("curl"))) {
+      "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    } else if (nzchar(Sys.which("wget"))) {
+      "wget -qO- https://astral.sh/uv/install.sh | sh"
+    } else {
+      message("Neither curl nor wget is available. Please install one of them and rerun.")
+      return(invisible(FALSE))
+    }
+    message("Installing uv via official script ...")
+    rc <- try(suppressWarnings(system2("sh", c("-c", cmd))), silent = TRUE)
+    return(invisible(!inherits(rc, "try-error")))
+  } else if (os == "windows") {
+    if (nzchar(Sys.which("winget"))) {
+      message("Installing uv via winget ...")
+      rc <- try(suppressWarnings(system2("winget", c("install", "AstralSoftware.UV"))), silent = TRUE)
+      return(invisible(!inherits(rc, "try-error")))
+    } else {
+      message("Please install uv from: https://docs.astral.sh/uv/getting-started/installation/")
+      return(invisible(FALSE))
+    }
+  } else {
+    message("Unsupported OS for automatic uv install. See https://docs.astral.sh/uv/")
+    return(invisible(FALSE))
+  }
+}
+
+#' @noRd
+ensure_uv_available <- function(prompt = TRUE) {
+  if (uv_is_available()) return(invisible(TRUE))
+  if (!interactive() || !isTRUE(prompt)) {
+    message(paste0(
+      "uv not found on PATH. reticulate will fall back to a default venv if needed.
+",
+      "To use uv (recommended), install it and restart R.
+",
+      "- Linux/macOS: curl -LsSf https://astral.sh/uv/install.sh | sh
+",
+      "- macOS (Homebrew): brew install uv
+",
+      "- Windows (winget): winget install AstralSoftware.UV"))
+    return(invisible(FALSE))
+  }
+  ans <- tryCatch(tolower(readline("uv not found. Install uv now? [Y/n]: ")), error = function(e) "")
+  if (ans %in% c("", "y", "yes")) {
+    ok <- isTRUE(install_uv_interactive())
+    if (ok && uv_is_available()) {
+      message("uv installed. Please ensure ~/.local/bin is on PATH and restart R.")
+      return(invisible(TRUE))
+    } else {
+      message(paste0("uv installation did not complete or uv not on PATH.
+",
+                     "You may need to add ~/.local/bin to PATH and restart R."))
+      return(invisible(FALSE))
+    }
+  } else {
+    message("Continuing without uv. reticulate may prompt to create a default venv.")
+    return(invisible(FALSE))
+  }
 }
