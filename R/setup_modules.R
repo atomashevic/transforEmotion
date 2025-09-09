@@ -27,22 +27,29 @@
 # Updated 07.01.2025
 
 check_nvidia_gpu <- function() {
-# This functions checks if a NVIDIA GPU is available before we have access to `torch`
-if (.Platform$OS.type == "windows") {
-  # Windows: Check using nvidia-smi
-  gpu_check <- try(system("nvidia-smi", intern = TRUE, ignore.stderr = TRUE), silent = TRUE)
-  has_gpu <- !inherits(gpu_check, "try-error")
-} else {
-  # Linux/MacOS: Check using lspci or nvidia-smi
-  gpu_check_lspci <- suppressWarnings(
-    system("lspci | grep -i nvidia", ignore.stdout = TRUE, ignore.stderr = TRUE)
-  )
-  gpu_check_nvidia <- suppressWarnings(
-    system("nvidia-smi", ignore.stdout = TRUE, ignore.stderr = TRUE)
-  )
-  has_gpu <- gpu_check_lspci == 0 || gpu_check_nvidia == 0
-}
-return(has_gpu)
+  # This function checks if an NVIDIA GPU is available before we have access to `torch`
+  if (.Platform$OS.type == "windows") {
+    # Windows: Check using nvidia-smi if available
+    has_nvidia_smi <- nzchar(Sys.which("nvidia-smi"))
+    if (!has_nvidia_smi) return(FALSE)
+    rc <- suppressWarnings(system("nvidia-smi", ignore.stdout = TRUE, ignore.stderr = TRUE))
+    return(rc == 0)
+  } else {
+    # Linux/macOS: Prefer command existence checks to avoid noisy "command not found"
+    has_gpu <- FALSE
+    has_lspci <- nzchar(Sys.which("lspci"))
+    has_nvidia_smi <- nzchar(Sys.which("nvidia-smi"))
+
+    if (has_lspci) {
+      rc <- suppressWarnings(system("lspci | grep -i nvidia", ignore.stdout = TRUE, ignore.stderr = TRUE))
+      has_gpu <- has_gpu || (rc == 0)
+    }
+    if (has_nvidia_smi) {
+      rc2 <- suppressWarnings(system("nvidia-smi", ignore.stdout = TRUE, ignore.stderr = TRUE))
+      has_gpu <- has_gpu || (rc2 == 0)
+    }
+    return(has_gpu)
+  }
 }
 
 
@@ -196,16 +203,20 @@ setup_modules <- function() {
                       "--extra-index-url", "https://download.pytorch.org/whl/cpu")
     }
 
-    # Install modules with appropriate pip options (silently)
+    # Install modules with appropriate pip options (silently), only if needed
     pb$tick(0, tokens = list(what = "Installing main modules"))
-    suppressWarnings(
-      reticulate::conda_install(
-        envname = "transforEmotion",
-        packages = missing_modules,
-        pip_options = pip_options,
-        pip = TRUE
+    if (length(missing_modules) > 0) {
+      suppressWarnings(
+        reticulate::conda_install(
+          envname = "transforEmotion",
+          packages = missing_modules,
+          pip_options = pip_options,
+          pip = TRUE
+        )
       )
-    )
+    } else {
+      message("No new Python modules to install; only OpenSSL/pip updated.")
+    }
     pb$tick(1)
 
     # If GPU was selected, install additional GPU modules

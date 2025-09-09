@@ -19,7 +19,7 @@ With `transforEmotion` you can use cutting-edge transformer models for zero-shot
 - [How to run facial expression recognition on images?](#image-example)
 - [How to run facial expression recognition on videos?](#video-example)
 
-<!-- Implements sentiment analysis using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines. The default pipeline for text is [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). All other zero-shot classification model pipelines can be implemented using their model name from https://huggingface.co/models?pipeline_tag=zero-shot-classification. -->
+<!-- Implements sentiment analysis using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines. The default pipeline for text is [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/nyu-mll/multi_nli) (MultiNLI) datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). All other zero-shot classification model pipelines can be implemented using their model name from https://huggingface.co/models?pipeline_tag=zero-shot-classification. -->
 
 ## How to Install
 
@@ -142,7 +142,7 @@ text <- "With `transforEmotion` you can use cutting-edge transformer models for 
         The default pipeline for text is
         [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base)
         trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and
-        [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets.
+        [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/nyu-mll/multi_nli) (MultiNLI) datasets.
         Using similar models, zero-shot classification transformers have demonstrated
         superior performance relative to other natural language processing models
         (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)).
@@ -277,7 +277,7 @@ Roberta: A robustly optimized bert pretraining approach.
 
 ### CLIP
 
-Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., & Sutskever, I. (2021). Learning Transferable Visual Models From Natural Language Supervision. [arXiv preprint arXiv:2103.00020](http://arxiv.org/abs/2103.00020)
+Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., & Sutskever, I. (2021). Learning Transferable Visual Models From Natural Language Supervision. [arXiv preprint arXiv:2103.00020](https://arxiv.org/abs/2103.00020)
 
 ### Comparison of Methods
 Yin, W., Hay, J., & Roth, D. (2019).

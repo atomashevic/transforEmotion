@@ -53,7 +53,7 @@ setup_miniconda <- function()
 
   reticulate::use_condaenv("transforEmotion", required = TRUE)
 
-  # Check if all required Python libraries are installed
+  # Check if all required Python libraries are installed (pip-level)
   installed_modules <- suppressMessages(
     reticulate::py_list_packages(envname = "transforEmotion")
   )
@@ -61,11 +61,18 @@ setup_miniconda <- function()
   # Extract installed package names without versions
   installed_packages <- installed_modules$package
 
-  # Define the required modules (same as in setup_modules)
+  # Define required pip modules (subset of setup_modules; exclude conda-only like 'openssl')
+  OS <- tolower(Sys.info()["sysname"])  # linux, windows, darwin
   required_modules <- c(
-    "openssl", "numpy", "scipy", "transformers", "torch", "tensorflow-cpu", "llama-index", "accelerate","bitsandbytes", "pandas", "sentence-transformers" )
+    "numpy", "scipy", "transformers", "torch", "tensorflow-cpu",
+    "llama-index", "accelerate", "pandas", "sentence-transformers"
+  )
+  # bitsandbytes is unsupported on macOS; include only where applicable
+  if (OS %in% c("linux", "windows")) {
+    required_modules <- c(required_modules, "bitsandbytes")
+  }
 
-  # Check for missing modules
+  # Check for missing modules (pip)
   missing_modules <- required_modules[!required_modules %in% installed_packages]
 
   if (length(missing_modules) > 0) {
@@ -75,4 +82,3 @@ setup_miniconda <- function()
     print("All required Python libraries are already installed.")
   }
 }
-
