@@ -26,7 +26,7 @@ te_should_use_gpu <- function() {
 .configure_uv_env <- function(use_gpu = FALSE) {
   # Define baseline packages and versions (aligned with previous setup)
   base_modules <- c(
-    "numpy==1.26",
+    "numpy>=1.26,<2.0",
     "scipy==1.10.1",
     "accelerate==0.29.3",
     "llama-index==0.10.30",
