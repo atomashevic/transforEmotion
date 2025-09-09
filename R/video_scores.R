@@ -62,7 +62,6 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
 
   # Try to import required Python modules
   modules_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
     list(image = image_module, video = video_module)
@@ -72,7 +71,6 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }

@@ -239,10 +239,33 @@ logging.getLogger('transformers').setLevel(logging.ERROR)  # Suppress transforme
 logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress huggingface_hub logs
 ")
 
-  # Check for classifiers in environment
-  if(exists(transformer, envir = as.environment(envir))){
-    classifier <- get(transformer, envir = as.environment(envir))
-  }else{
+  # Check for a cached classifier in the environment; only reuse if Python is
+  # already initialized and the object pointer is valid for this session.
+  classifier <- NULL
+  if (exists(transformer, envir = as.environment(envir))) {
+    py_inited <- FALSE
+    try({ py_inited <- reticulate::py_available(initialize = FALSE) }, silent = TRUE)
+    if (isTRUE(py_inited)) {
+      cand <- get(transformer, envir = as.environment(envir))
+      valid <- FALSE
+      suppressWarnings(try({
+        valid <- reticulate::is_py_object(cand) && !reticulate::py_is_null_xptr(cand)
+      }, silent = TRUE))
+      if (isTRUE(valid)) {
+        classifier <- cand
+        # Ensure the transformers module is bound as well for consistency
+        transformers <- try(reticulate::import("transformers"), silent = TRUE)
+      } else {
+        # Drop invalid cached object; will rebuild below
+        try(rm(list = transformer, envir = as.environment(envir)), silent = TRUE)
+      }
+    } else {
+      # Python not initialized yet; cached pointer will be invalid in new session
+      try(rm(list = transformer, envir = as.environment(envir)), silent = TRUE)
+    }
+  }
+
+  if (is.null(classifier)){
 
     # Try to import required modules
     modules_import <- try({

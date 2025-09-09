@@ -145,7 +145,6 @@ download_findingemo_data <- function(target_dir,
   
   # Try to import required Python module
   module_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     download_module <- reticulate::source_python(system.file("python", "download_findingemo.py", package = "transforEmotion"))
     download_module
   }, silent = TRUE)
@@ -154,7 +153,6 @@ download_findingemo_data <- function(target_dir,
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     download_module <- reticulate::source_python(system.file("python", "download_findingemo.py", package = "transforEmotion"))
   }
 

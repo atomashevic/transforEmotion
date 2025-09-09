@@ -62,7 +62,6 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   
   # Try to import required Python module
   module_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     image_module
   }, silent = TRUE)
@@ -71,7 +70,6 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 
@@ -181,6 +179,8 @@ image_scores_dir <- function(dir,
                              recursive = FALSE,
                              model = "oai-base",
                              local_model_path = NULL) {
+  # Ensure Python environment is ready
+  ensure_te_py_env()
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -233,13 +233,11 @@ image_scores_dir <- function(dir,
 
   # Import python module (use same environment as image_scores)
   module_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }, silent = TRUE)
   if (inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 

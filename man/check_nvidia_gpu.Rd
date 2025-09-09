@@ -7,26 +7,26 @@
 check_nvidia_gpu()
 }
 \description{
-Installs required Python modules for the \{transforEmotion\} package, with automatic GPU detection
-and optional GPU-enabled module installation.
+Installs required Python modules for the \{transforEmotion\} package, using uv
+for fast, reproducible environments. Optionally detects GPU and can add
+GPU-oriented packages.
 }
 \details{
 This function performs the following steps:
 \itemize{
-  \item Checks for NVIDIA GPU availability
-  \item If GPU is detected, prompts user to choose between CPU or GPU installation
+  \item Detects NVIDIA GPU availability automatically
   \item Installs core modules including transformers, torch, tensorflow, and other dependencies
-  \item For GPU installations, sets up additional GPU-specific modules via \code{setup_gpu_modules()}
+  \item For GPU systems, adds GPU-specific packages (and optional extras via \code{setup_gpu_modules()})
 }
 
-The function automatically manages dependencies and versions, ensuring compatibility
-between CPU and GPU variants of packages like torch, tensorflow, and torchvision.
-It uses \code{\link[reticulate]{conda_install}} for package management in the
-'transforEmotion' conda environment.
+The function declares Python requirements via \code{\link[reticulate]{py_require}},
+which uses uv to resolve and cache an ephemeral environment on first use. No
+conda/Miniconda is required.
 }
 \note{
-Ensure that miniconda is installed and properly configured before running this function.
-For GPU support, NVIDIA drivers must be properly installed on your system.
+For GPU support, NVIDIA drivers must be properly installed on your system. If
+you need vendor-specific wheels (e.g., for CUDA), configure package indexes
+prior to calling this function (see Notes in documentation).
 }
 \author{
 Alexander P. Christensen <alexpaulchristensen@gmail.com>

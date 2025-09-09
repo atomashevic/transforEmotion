@@ -7,7 +7,7 @@
 setup_gpu_modules()
 }
 \description{
-Installs GPU-specific Python modules for the \{transforEmotion\} conda environment.
+Installs GPU-specific Python modules using uv-managed environments.
 }
 \details{
 This function installs additional GPU-specific modules including:
@@ -19,7 +19,7 @@ This function installs additional GPU-specific modules including:
 }
 
 The function is typically called by \code{setup_modules()} when GPU installation
-is selected, but can also be run independently to update GPU-specific modules.
+is selected, but can also be run independently to add GPU-related packages.
 }
 \note{
 This function requires NVIDIA GPU and drivers to be properly installed.

@@ -12,11 +12,10 @@ Invisibly returns NULL.
 \description{
 Installs and configures required Python modules for transforEmotion,
 optionally enabling GPU-accelerated variants when a compatible NVIDIA GPU
-is detected. Uses the reticulate-managed 'transforEmotion' conda env.
+is detected. Uses reticulate's uv-backed ephemeral environment.
 }
 \details{
-This function checks for missing modules, installs them, and can install
+This function ensures required modules are available and can add
 additional GPU-specific packages when requested. See also
-\code{setup_gpu_modules()} for GPU add-ons and \code{setup_miniconda()}
-to install Miniconda.
+\code{setup_gpu_modules()} for GPU add-ons.
 }

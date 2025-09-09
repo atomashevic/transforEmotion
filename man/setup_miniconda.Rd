@@ -2,17 +2,12 @@
 % Please edit documentation in R/setup_miniconda.R
 \name{setup_miniconda}
 \alias{setup_miniconda}
-\title{Install Miniconda and activate the transforEmotion environment}
+\title{Deprecated: Miniconda setup (use uv instead)}
 \usage{
 setup_miniconda()
 }
 \description{
-Installs miniconda and activates the transforEmotion environment
-}
-\details{
-Installs miniconda using \code{\link[reticulate]{install_miniconda}} and activates the transforEmotion environment using \code{\link[reticulate]{use_condaenv}}. If the transforEmotion environment does not exist, it will be created using \code{\link[reticulate]{conda_create}}.
-}
-\author{
-Alexander P. Christensen <alexpaulchristensen@gmail.com>
-        Aleksandar Tomasevic <atomashevic@gmail.com>
+setup_miniconda() is deprecated. The transforEmotion package now uses
+reticulate's uv-based ephemeral environments managed via `py_require()`.
+No conda or Miniconda installation is required.
 }
