@@ -6,6 +6,19 @@
 
 .onAttach <- function(libname, pkgname)
 {
+    # Prevent reticulate from auto-creating a default venv; we manage envs via uv
+    if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
+        Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
+    }
+
+    # Suggest installing uv early (interactive prompt), before reticulate initializes Python
+    if (interactive()) {
+        try(ensure_uv_available(prompt = TRUE), silent = TRUE)
+    } else {
+        # Non-interactive: gentle nudge only
+        try(ensure_uv_available(prompt = FALSE), silent = TRUE)
+    }
+
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")
     msg <- paste(msg, '\nImportant: If you are using RStudio, please make sure you have the latest version installed.')
     msg <- paste(msg, '\nFor help getting started, type browseVignettes("transforEmotion")\n')
@@ -16,6 +29,18 @@
     packageStartupMessage(msg)
     Sys.unsetenv("RETICULATE_PYTHON")
     requireNamespace("reticulate")
+
+    # If the default reticulate venv exists, offer to remove it to avoid conflicts
+    default_venv <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
+    if (interactive() && dir.exists(default_venv)) {
+        ans <- tolower(tryCatch(readline(
+            "Detected default reticulate venv at ~/.virtualenvs/r-reticulate. Remove it to prefer uv? [Y/n]: "
+        ), error = function(e) ""))
+        if (ans %in% c("", "y", "yes")) {
+            try(reticulate::virtualenv_remove("r-reticulate", confirm = FALSE), silent = TRUE)
+            message("Removed ~/.virtualenvs/r-reticulate. Restart R so changes take effect.")
+        }
+    }
 }
 
 # Internal: provide a mockable binding for testthat to override
