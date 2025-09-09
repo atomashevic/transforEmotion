@@ -82,12 +82,26 @@ te_should_use_gpu <- function() {
     # You may add exclude_newer = "YYYY-MM-DD" here for strict reproducibility
   )
 
+  # Eagerly resolve the ephemeral uv environment and set it as the active Python
+  # for this session to avoid reticulate's default venv prompt.
+  ep <- try(reticulate:::uv_get_or_create_env(
+    packages = modules,
+    python_version = ">=3.10,<3.11"
+  ), silent = TRUE)
+  if (!inherits(ep, "try-error") && is.character(ep) && length(ep) > 0 && nzchar(ep[1])) {
+    try(reticulate::use_python(ep[1], required = FALSE), silent = TRUE)
+  }
+
   invisible(TRUE)
 }
 
 #' @noRd
 # Ensure Python is initialized via uv with the required packages
 ensure_te_py_env <- function() {
+  if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
+    Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
+  }
+
   if (!requireNamespace("reticulate", quietly = TRUE)) return(invisible(FALSE))
 
   # If Python already initialized, nothing to do
