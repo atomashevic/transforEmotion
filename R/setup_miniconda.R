@@ -45,7 +45,7 @@ setup_miniconda <- function()
   if (!te_ENV){
     print("Creating 'transforEmotion' environment...")
     path_to_env <- try(
-      conda_create("transforEmotion"),
+      conda_create("transforEmotion", python_version = "3.10", forge = TRUE),
       silent = TRUE
     )
     
