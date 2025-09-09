@@ -43,14 +43,28 @@ setup_miniconda <- function()
   # Create transformEmotion enviroment if it doesn't exist
   te_ENV <- conda_check()
   if (!te_ENV){
-  print("Creating 'transforEmotion' environment...")
-  path_to_env <- try(
-    conda_create("transforEmotion"),
-    silent = TRUE
-  )
+    print("Creating 'transforEmotion' environment...")
+    path_to_env <- try(
+      conda_create("transforEmotion"),
+      silent = TRUE
+    )
+    
+    # Check if environment creation was successful
+    if(any(class(path_to_env) == "try-error")){
+      stop("Failed to create 'transforEmotion' conda environment. Error: ", 
+           attr(path_to_env, "condition")$message)
+    }
+    
+    # Verify the environment was actually created
+    te_ENV_after_creation <- conda_check()
+    if (!te_ENV_after_creation) {
+      stop("Environment 'transforEmotion' was not found after creation attempt")
+    }
+    
+    print("Environment 'transforEmotion' created successfully.")
   }
+  
   # Activate the environment
-
   reticulate::use_condaenv("transforEmotion", required = TRUE)
 
   # Check if all required Python libraries are installed (pip-level)
