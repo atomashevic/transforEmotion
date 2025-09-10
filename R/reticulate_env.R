@@ -35,6 +35,7 @@ te_should_use_gpu <- function() {
     "einops",
     "safetensors==0.4.3",
     "opencv-python",
+    "pytubefix",
     "pandas==1.5.3",
     "pypdf==4.0.1",
     "pytz==2024.1",
@@ -61,7 +62,17 @@ te_should_use_gpu <- function() {
     c("tensorflow-cpu==2.14.1", "torch==2.1.1", "torchvision==0.16.1")
   }
 
-  modules <- c(base_modules, ml_modules)
+  # Workaround for uv first-match with PyTorch index:
+  # qdrant-client==1.8.2 requires urllib3>=1.26.14,<3, but the PyTorch wheel index may expose 1.26.13 only.
+  # Force urllib3 via a vetted direct wheel URL with SHA256 (PEP 508), bypassing index order while preserving
+  # the PyTorch-first index for all other packages.
+  pinned_urllib3 <- "urllib3 @ https://files.pythonhosted.org/packages/b0/53/aa91e163dcfd1e5b82d8a890ecf13314e3e149c05270cc644581f77f17fd/urllib3-1.26.18-py2.py3-none-any.whl#sha256=34b97092d7e0a3a8cf7cd10e386f401b3737364026c45e622aa02903dffe0f07"
+
+  # llama-index-core (required by llama-index==0.10.30) needs requests>=2.31.0, but the PyTorch index may only provide 2.28.1.
+  # Pin requests via direct URL to satisfy the constraint while keeping the PyTorch index first.
+  pinned_requests <- "requests @ https://files.pythonhosted.org/packages/70/8e/0e2d847013cb52cd35b38c009bb167a1a26b2ce6cd6965bf26b47bc0bf44/requests-2.31.0-py3-none-any.whl#sha256=58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"
+
+  modules <- c(base_modules, ml_modules, pinned_requests, pinned_urllib3)
 
   # For PyTorch wheels, set extra index for CPU/GPU flavors (best-effort)
   extra_index <- if (isTRUE(use_gpu)) "https://download.pytorch.org/whl/cu121" else "https://download.pytorch.org/whl/cpu"
@@ -133,7 +144,7 @@ install_uv_interactive <- function() {
       return(invisible(!inherits(rc, "try-error")))
     } else {
       message("Homebrew not found. Installing uv via official script ...")
-      rc <- try(suppressWarnings(system2("sh", c("-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"))), silent = TRUE)
+      rc <- try(suppressWarnings(system("curl -fsSL https://astral.sh/uv/install.sh | sh")), silent = TRUE)
       return(invisible(!inherits(rc, "try-error")))
     }
   } else if (os == "linux") {
@@ -146,7 +157,7 @@ install_uv_interactive <- function() {
       return(invisible(FALSE))
     }
     message("Installing uv via official script ...")
-    rc <- try(suppressWarnings(system2("sh", c("-c", cmd))), silent = TRUE)
+    rc <- try(suppressWarnings(system("curl -fsSL https://astral.sh/uv/install.sh | sh")), silent = TRUE)
     return(invisible(!inherits(rc, "try-error")))
   } else if (os == "windows") {
     if (nzchar(Sys.which("winget"))) {

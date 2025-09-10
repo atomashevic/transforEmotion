@@ -173,6 +173,12 @@ zero-shot classification model pipelines from the HuggingFace library.>
 
 Supported LLMs include TinyLLAMA, LLaMA‑2, Mistral‑7B, OpenChat‑3.5, Orca‑2, Phi‑2, plus Gemma3 (270M/1B/4B) and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-270m-it`, `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, and `ministral/Ministral-3b-instruct`.
 
+> Note on Gemma 3 access
+> - Gemma 3 repos are gated. You must log in to Hugging Face and accept the model license on the model page (e.g., https://huggingface.co/google/gemma-3-1b-it).
+> - You also need a Hugging Face access token with WRITE scope set in your environment (e.g., in `~/.Renviron`):
+>   - `HF_TOKEN=hf_...` or `HUGGINGFACE_HUB_TOKEN=hf_...`
+> - You can remove these lines later if you prefer not to persist the token.
+
 You can also request structured outputs for easier parsing and statistics.
 
 ```R

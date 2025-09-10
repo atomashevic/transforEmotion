@@ -3,6 +3,7 @@ import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer, AutoModel, BitsAndBytesConfig
+from transformers import CLIPTokenizerFast, CLIPImageProcessor
 import torch
 import requests
 import cv2
@@ -121,10 +122,60 @@ class CLIPAdapter(VisionModelAdapter):
         source_type = "local directory" if self.local_model_path else "HuggingFace"
         print(f"Loading CLIP model from {source_type}: {source_path}")
         
-        self.processor = CLIPProcessor.from_pretrained(
-            source_path, 
-            local_files_only=bool(self.local_model_path)
-        )
+        # Try the standard processor first
+        try:
+            self.processor = CLIPProcessor.from_pretrained(
+                source_path,
+                local_files_only=bool(self.local_model_path)
+            )
+        except Exception as e:
+            # Handle legacy/slow tokenizer format (e.g., MetaCLIP2)
+            msg = str(e)
+            needs_convert = (
+                ("backend_tokenizer" in msg and "CLIP tokenizer" in msg) or
+                ("from_slow=True" in msg) or
+                ("convert the tokenizer" in msg)
+            )
+            if needs_convert:
+                print("Falling back to CLIPTokenizerFast(from_slow=True) + CLIPImageProcessor due to tokenizer format mismatch")
+                # Build processor components explicitly
+                tok = None
+                # 1) Try converting repo tokenizer to fast
+                try:
+                    tok = CLIPTokenizerFast.from_pretrained(
+                        source_path,
+                        from_slow=True,
+                        local_files_only=bool(self.local_model_path)
+                    )
+                except Exception as e_tok_fast:
+                    # 2) Try slow tokenizer from the same repo
+                    try:
+                        tok = CLIPTokenizer.from_pretrained(
+                            source_path,
+                            local_files_only=bool(self.local_model_path)
+                        )
+                    except Exception as e_tok_slow:
+                        # 3) Final fallback: use canonical OpenAI CLIP tokenizer
+                        print("Tokenizer files missing/incompatible; using OpenAI CLIP tokenizer as fallback")
+                        try:
+                            tok = CLIPTokenizerFast.from_pretrained(
+                                "openai/clip-vit-base-patch32",
+                                local_files_only=False
+                            )
+                        except Exception:
+                            tok = CLIPTokenizer.from_pretrained(
+                                "openai/clip-vit-base-patch32",
+                                local_files_only=False
+                            )
+                # Image processor should come from the target model (vision config)
+                img_proc = CLIPImageProcessor.from_pretrained(
+                    source_path,
+                    local_files_only=bool(self.local_model_path)
+                )
+                self.processor = CLIPProcessor(tokenizer=tok, image_processor=img_proc)
+            else:
+                raise
+        
         self.model = CLIPModel.from_pretrained(
             source_path, 
             ignore_mismatched_sizes=True,

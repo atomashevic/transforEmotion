@@ -14,7 +14,7 @@
 .hf_prompt_token <- function() {
   message(
     "A Hugging Face access token is required to use Gemma 3 models (gated repos).\n",
-    "Open https://huggingface.co/settings/tokens and create a token with read scope.\n"
+    "Open https://huggingface.co/settings/tokens and create a token with WRITE scope.\n"
   )
   tok <- trimws(readline(prompt = "Paste your Hugging Face token (starts with 'hf_'): "))
   if (!nzchar(tok)) {
@@ -25,28 +25,28 @@
   Sys.setenv(HF_TOKEN = tok)
   Sys.setenv(HUGGINGFACE_HUB_TOKEN = tok)
 
-  # Offer to save
-  message(
-    "\nSave this token for future sessions? [y/N]\n",
-    "Warning: it will be stored in plaintext in ~/.Renviron."
-  )
-  ans <- tolower(trimws(readline(prompt = "> ")))
-  if (ans %in% c("y", "yes")) {
-    renv_path <- path.expand("~/.Renviron")
-    lines <- character()
-    if (file.exists(renv_path)) {
-      lines <- readLines(renv_path, warn = FALSE)
-      # Drop existing HF_TOKEN/HUGGINGFACE_HUB_TOKEN if present
-      keep <- !grepl("^(HF_TOKEN|HUGGINGFACE_HUB_TOKEN)=", lines)
-      lines <- lines[keep]
-    }
-    lines <- c(lines, paste0("HF_TOKEN=", tok))
-    writeLines(lines, renv_path)
-    message("Saved token to ", renv_path)
-    message("Note: restart R for ~/.Renviron changes to take effect in new sessions.")
-  } else {
-    message("Token kept for current session only.")
+  # Save automatically (no prompt), warn about plaintext and how to remove
+  renv_path <- path.expand("~/.Renviron")
+  # Backup existing file
+  if (file.exists(renv_path)) {
+    bak <- paste0(renv_path, ".bak.", format(Sys.time(), "%Y%m%d%H%M%S"))
+    try(suppressWarnings(file.copy(renv_path, bak, overwrite = TRUE)), silent = TRUE)
   }
+  lines <- character()
+  if (file.exists(renv_path)) {
+    lines <- readLines(renv_path, warn = FALSE)
+    # Drop existing HF_TOKEN/HUGGINGFACE_HUB_TOKEN if present
+    keep <- !grepl("^(HF_TOKEN|HUGGINGFACE_HUB_TOKEN)=", lines)
+    lines <- lines[keep]
+  }
+  # Write both env vars (do not print the token value)
+  lines <- c(lines,
+             paste0("HF_TOKEN=", tok),
+             paste0("HUGGINGFACE_HUB_TOKEN=", tok))
+  writeLines(lines, renv_path)
+  message("Saved Hugging Face token to ", renv_path, " (plaintext).")
+  message("You can delete the HF_TOKEN or HUGGINGFACE_HUB_TOKEN lines at any time.")
+  message("Restart R for ~/.Renviron changes to apply in new sessions.")
 
   invisible(tok)
 }
@@ -120,8 +120,8 @@ ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE, repo_id = NULL) {
   stop(
     paste0(
       "Hugging Face token not found. Gemma 3 models are gated.\n",
-      "Set env var HF_TOKEN (or HUGGINGFACE_HUB_TOKEN) with a read-scoped token,\n",
-      "or run interactively to be prompted."
+      "Set env var HF_TOKEN (or HUGGINGFACE_HUB_TOKEN) with a WRITE-scoped token,\n",
+      "and ensure you have accepted the model license on the model page; or run interactively to be prompted."
     ), call. = FALSE
   )
 }
