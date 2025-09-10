@@ -34,7 +34,7 @@ te_should_use_gpu <- function() {
     "timm",
     "einops",
     "safetensors==0.4.3",
-    "opencv-python",
+    "opencv-python==4.10.0.84",
     "pytubefix",
     "pandas==1.5.3",
     "pypdf==4.0.1",
@@ -102,6 +102,13 @@ te_should_use_gpu <- function() {
   if (!inherits(ep, "try-error") && is.character(ep) && length(ep) > 0 && nzchar(ep[1])) {
     try(reticulate::use_python(ep[1], required = FALSE), silent = TRUE)
   }
+
+  # Best-effort validation: show OpenCV version and haarcascades path
+  try({
+    reticulate::py_run_string(
+      "import cv2; p=getattr(getattr(cv2,'data',None),'haarcascades', None); print('[transforEmotion] OpenCV', cv2.__version__, 'haarcascades:', p)"
+    )
+  }, silent = TRUE)
 
   invisible(TRUE)
 }
