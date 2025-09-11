@@ -23,3 +23,4 @@ diff_0.1.5_*
 ^\.claude(/|$)
 ^\.ropeproject(/|$)
 ^WARP\.md$
+misc/
