@@ -93,15 +93,9 @@ te_should_use_gpu <- function() {
     # You may add exclude_newer = "YYYY-MM-DD" here for strict reproducibility
   )
 
-  # Eagerly resolve the ephemeral uv environment and set it as the active Python
-  # for this session to avoid reticulate's default venv prompt.
-  ep <- try(reticulate:::uv_get_or_create_env(
-    packages = modules,
-    python_version = ">=3.10,<3.11"
-  ), silent = TRUE)
-  if (!inherits(ep, "try-error") && is.character(ep) && length(ep) > 0 && nzchar(ep[1])) {
-    try(reticulate::use_python(ep[1], required = FALSE), silent = TRUE)
-  }
+  # Initialize Python to realize the environment without relying on internal APIs.
+  # reticulate will select the uv-managed environment declared via py_require().
+  try(reticulate::py_available(initialize = TRUE), silent = TRUE)
 
   # Best-effort validation: show OpenCV version and haarcascades path
   try({

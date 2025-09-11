@@ -30,16 +30,12 @@
     Sys.unsetenv("RETICULATE_PYTHON")
     requireNamespace("reticulate")
 
-    # If the default reticulate venv exists, offer to remove it to avoid conflicts
+    # If the default reticulate venv exists, suggest the cleanup helper (no prompts on attach)
     default_venv <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
-    if (interactive() && dir.exists(default_venv)) {
-        ans <- tolower(tryCatch(readline(
-            "Detected default reticulate venv at ~/.virtualenvs/r-reticulate. Remove it to prefer uv? [Y/n]: "
-        ), error = function(e) ""))
-        if (ans %in% c("", "y", "yes")) {
-            try(reticulate::virtualenv_remove("r-reticulate", confirm = FALSE), silent = TRUE)
-            message("Removed ~/.virtualenvs/r-reticulate. Restart R so changes take effect.")
-        }
+    if (dir.exists(default_venv)) {
+        packageStartupMessage(
+          "Detected ~/.virtualenvs/r-reticulate; run transforEmotion::te_cleanup_default_venv() to remove it and prefer uv."
+        )
     }
 }
 

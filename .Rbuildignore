@@ -24,3 +24,4 @@ diff_0.1.5_*
 ^\.ropeproject(/|$)
 ^WARP\.md$
 misc/
+changes.md

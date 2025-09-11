@@ -1,4 +1,4 @@
-### CRAN 0.1.6 | GitHub 0.1.6
+### CRAN 0.1.6 | GitHub 0.1.7
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) 
 
@@ -12,7 +12,7 @@
   <img src="man/figures/logo.png" alt="Logo" width="35%" style="display: block; margin: 0 auto;">
 </div>
 
-With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R, *all without the need for a GPU, subscriptions, paid services, or using Python*. All data is processed locally on your machine, and nothing is sent to any external server or third-party service. This ensures full privacy for your data.
+With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R — without the need for a GPU, subscriptions, or paid services, and without any manual Python setup. All data is processed locally on your machine, and nothing is sent to any external server or third-party service. This ensures full privacy for your data.
 
 - [How to install the package?](#how-to-install)
 - [How to run sentiment analysis on text?](#text-example)
@@ -46,26 +46,25 @@ After installing the package, load it in R.
 library(transforEmotion)
 ```
 
-After loading package **for the first time**, you need to setup the Python virtual environment. This will download the necessary Python packages and models. This step can take a few minutes but it is only required once after installing the package on a new system.
+After loading the package for the first time, the Python environment is provisioned automatically on first use via `uv`. You can optionally pre‑warm dependencies to speed up the first call:
 
 ```R
-# Run Python setup
-setup_miniconda()
+# Optional one-time environment warmup (uv-managed)
+setup_modules()
 ```
 
-You will be prompted to install GPU libraries. If you have an NVIDIA GPU, select "[Y]es" to install GPU libraries. If you don't have an NVIDIA GPU, select "[N]o" to proceed with CPU-only installation.
-
-You will gain access to all functionalities of the package even without GPU, but be aware that some functions will be significantly slower.
-
-If you have doubts whether you should install GPU libraries, see [GPU Support](#gpu-support) section below.
+If `uv` is not found, you’ll be prompted to install it. If that fails or you prefer manual install:
+- macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
+- Windows: `winget install AstralSoftware.UV`
+After installing, restart R so your PATH is updated. If you cannot install `uv`, you can continue; `reticulate` will create a default virtual environment on first use (setup may be slower).
 
 > [!WARNING]
-> If you using [radian](https://github.com/randy3k/radian) console in VSCode or in a terminal emulator, you won't be able to set up the transforEmotion package. Radian is written in Python and (in most cases) already runs in your default Python environment. This prevents transforEmotion package from setting up the new virtual environment and installing the correct versions of necessary Python packages. Switch to default R console and everything should work fine.
+> If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
 
 
 ## Text Example
 
-Next load some data with text for analysis. The example below uses item descriptions from the personality trait extraversion in the NEO-PI-R inventory found on the [IPIP](https://ipip.ori.org/newNEOFacetsKey.htm) website.
+The example below uses item descriptions from the personality trait extraversion in the NEO-PI-R inventory found on the [IPIP](https://ipip.ori.org/newNEOFacetsKey.htm) website.
 
 ```R
 # Load data
@@ -79,7 +78,6 @@ For the example, the positively worded item descriptions will be used.
 # Example text 
 text <- neo_ipip_extraversion$friendliness[1:5]
 ```
-
 
 Next, the text can be loaded in the function `transformer_scores()` to obtain the probability that item descriptions correspond to a certain class. The classes defined below are the facets of extraversion in the NEO-PI-R. The example text data draws from the friendliness facet.
 
@@ -130,7 +128,7 @@ transformer_scores(
 
 The `rag` function  is designed to enhance text generation using Retrieval-Augmented Generation (RAG) techniques. This function allows users to input text data or specify a path to local PDF files, which are then used to retrieve relevant documents.
 
-The rag function supports various large language models (LLMs), including TinyLLAMA, LLAMA-2, Mistral-7B, Orca-2, and Phi-2, each offering different levels of computational efficiency and quality. The default model is TinyLLAMA, which is the fastest model.
+Supported local LLMs include TinyLLAMA, Gemma3‑1B/4B, Qwen3‑1.7B, and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, `Qwen/Qwen3-1.7B-Instruct`, and `ministral/Ministral-3b-instruct`. The default model is TinyLLAMA for speed.
 
 Here's an example based on the decription of this package. First, we specify the text data.
 
@@ -171,22 +169,54 @@ The transforEmotion package can be used to implement these models and other
 zero-shot classification model pipelines from the HuggingFace library.> 
 ```
 
-Supported LLMs include TinyLLAMA, LLaMA‑2, Mistral‑7B, OpenChat‑3.5, Orca‑2, Phi‑2, plus Gemma3 (270M/1B/4B) and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-270m-it`, `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, and `ministral/Ministral-3b-instruct`.
+Supported local LLMs include TinyLLAMA, Gemma3‑1B/4B, Qwen3‑1.7B, and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, `Qwen/Qwen3-1.7B-Instruct`, and `ministral/Ministral-3b-instruct`.
 
-> Note on Gemma 3 access
+> [!IMPORTANT] Gemma 3 access
 > - Gemma 3 repos are gated. You must log in to Hugging Face and accept the model license on the model page (e.g., https://huggingface.co/google/gemma-3-1b-it).
-> - You also need a Hugging Face access token with WRITE scope set in your environment (e.g., in `~/.Renviron`):
->   - `HF_TOKEN=hf_...` or `HUGGINGFACE_HUB_TOKEN=hf_...`
-> - You can remove these lines later if you prefer not to persist the token.
+
+> [!TIP] Hugging Face token handling
+> - On first use, you’ll be prompted to paste a Hugging Face access token (WRITE scope).
+> - After confirmation, the token is written to your `~/.Renviron` as `HF_TOKEN=...` (or `HUGGINGFACE_HUB_TOKEN=...`).
+> - You can choose not to persist it (token will apply only to the current R session).
+> - To remove or change it later, edit/delete the line, and restart R; or run `Sys.unsetenv("HF_TOKEN")` in-session.
+> - Create a token at https://huggingface.co/settings/tokens. For Gemma 3, accept the model license on the model page first.
 
 You can also request structured outputs for easier parsing and statistics.
 
 ```R
 # JSON output (validated schema)
-rag(text, query = "Extract emotions present in the text", output = "json", task = "emotion")
+j <- rag(text, query = "Extract emotions present in the text", output = "json", task = "emotion")
 
 # Tidy table output
 rag(text, query = "Extract emotions present in the text", output = "table", task = "emotion")
+
+# Helpers for parsing/flattening
+as_rag_table(j)
+parse_rag_json(j)
+```
+
+### RAG structured outputs (per-document)
+
+For per-document emotion/sentiment with small local LLMs (Gemma3‑1B/4B), use the convenience wrapper:
+
+```R
+texts <- c(
+  "I feel so happy and grateful today!",
+  "This is frustrating and makes me angry."
+)
+rag_sentemo(texts, task = "emotion", output = "table", transformer = "Gemma3-1B")
+```
+
+## VAD Example
+
+Directly predict Valence–Arousal–Dominance (VAD) with definitional labels and automatic fallbacks:
+
+```R
+texts <- c("I'm absolutely thrilled!", "I feel so helpless and sad", "This is boring")
+vad_scores(texts, input_type = "text")
+
+# Single dimension, simple labels
+vad_scores(texts, input_type = "text", dimensions = "valence", label_type = "simple")
 ```
 
 ## Image Example
@@ -246,18 +276,49 @@ The `image_scores` and `video_scores` functions support different models. The av
 
 > **Note:** The memory requirements listed above are approximate and represent the minimum RAM needed. For optimal performance, we recommend having at least 16GB of system RAM when using any of these models. If you're processing videos or multiple images in batch, more RAM might be needed. When using GPU acceleration, similar VRAM requirements apply. We recommend using 'oai-base' or 'oai-large' for most applications as they provide a good balance between accuracy and resource usage.
 
+## Vision Model Registry (experimental)
+
+Register custom/experimental vision models and list them for use in `image_scores()` and `video_scores()`:
+
+```R
+# Quick add of popular experimental models
+setup_popular_models(c("blip-base", "align-base"))
+
+# Show models
+show_vision_models()
+
+# Register a custom CLIP model
+register_vision_model(
+  name = "my-clip",
+  model_id = "openai/clip-vit-base-patch32",
+  architecture = "clip",
+  description = "My CLIP baseline"
+)
+```
+
 ## GPU Support
 
-When running the `setup_miniconda()` function, you will be prompted to install GPU libraries. If you select "[Y]es" when prompted to install GPU libraries, make sure you have:
+The package uses uv-managed Python environments and auto-detects GPU on supported systems. For successful GPU use, ensure:
 
 1. An NVIDIA GPU (GTX 1060 or newer)
 2. CUDA Toolkit 11.7+ installed
 3. Updated NVIDIA drivers
 4. GCC/G++ version 9 or newer (Linux only)
 
-Without these requirements, the GPU installation will likely fail. If you're unsure, select "no" to proceed with CPU-only installation. 
+If your system does not meet these requirements or you prefer not to use GPU, everything works in CPU mode (just slower). You can optionally run `setup_modules()` once to pre-warm dependencies; otherwise, the environment is provisioned automatically on first use.
 
-If GPU installation fails, you can try running the `setup_modules()` function and selection "[N]o" when prompted to install GPU libraries.
+## Datasets: FindingEmo-Light
+
+Reproducibly download and prepare the FindingEmo-Light dataset:
+
+```R
+# Download (optionally limit images for quick start)
+download_findingemo_data("data/findingemo", max_images = 200, randomize = TRUE)
+
+# Load and inspect annotations
+ann <- load_findingemo_annotations("data/findingemo")
+head(ann)
+```
 
 ## Example Images
 
