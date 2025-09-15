@@ -13,10 +13,10 @@
 
     # Suggest installing uv early (interactive prompt), before reticulate initializes Python
     if (interactive()) {
-        try(ensure_uv_available(prompt = TRUE), silent = TRUE)
+        try(te_ensure_uv_available(prompt = TRUE), silent = TRUE)
     } else {
         # Non-interactive: gentle nudge only
-        try(ensure_uv_available(prompt = FALSE), silent = TRUE)
+        try(te_ensure_uv_available(prompt = FALSE), silent = TRUE)
     }
 
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")
