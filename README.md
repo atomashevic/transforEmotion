@@ -175,10 +175,9 @@ Supported local LLMs include TinyLLAMA, Gemma3‑1B/4B, Qwen3‑1.7B, and Minist
 > - Gemma 3 repos are gated. You must log in to Hugging Face and accept the model license on the model page (e.g., https://huggingface.co/google/gemma-3-1b-it).
 
 > [!TIP] Hugging Face token handling
-> - On first use, you’ll be prompted to paste a Hugging Face access token (WRITE scope).
-> - After confirmation, the token is written to your `~/.Renviron` as `HF_TOKEN=...` (or `HUGGINGFACE_HUB_TOKEN=...`).
-> - You can choose not to persist it (token will apply only to the current R session).
-> - To remove or change it later, edit/delete the line, and restart R; or run `Sys.unsetenv("HF_TOKEN")` in-session.
+> - No long-term storage: The package never writes tokens to disk.
+> - Gemma only: It first tries to download without a token; on 401/forbidden, it prompts you to paste a token and uses it once for that download, then discards it.
+> - Public models: Downloads always ignore tokens to avoid unnecessary 401s from stale credentials.
 > - Create a token at https://huggingface.co/settings/tokens. For Gemma 3, accept the model license on the model page first.
 
 You can also request structured outputs for easier parsing and statistics.

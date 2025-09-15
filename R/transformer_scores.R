@@ -300,16 +300,18 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
       "cross-encoder-roberta", "cross-encoder-distilroberta", "facebook-bart"
     )){
 
-      # Load pipeline
-      classifier <- transformers$pipeline(
-        "zero-shot-classification", device = device,
-        model = switch(
-          transformer,
-          "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
-          "cross-encoder-distilroberta" = "cross-encoder/nli-distilroberta-base",
-          "facebook-bart" = "facebook/bart-large-mnli"
+      # Load pipeline (ensure no HF token is sent for public models)
+      classifier <- without_hf_token({
+        transformers$pipeline(
+          "zero-shot-classification", device = device,
+          model = switch(
+            transformer,
+            "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
+            "cross-encoder-distilroberta" = "cross-encoder/nli-distilroberta-base",
+            "facebook-bart" = "facebook/bart-large-mnli"
+          )
         )
-      )
+      })
 
     }else{
 
@@ -322,18 +324,22 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
             stop("The specified local_model_path directory does not exist: ", local_model_path)
           }
           message("Using local model from: ", local_model_path)
-          classifier <- transformers$pipeline(
-            "zero-shot-classification",
-            model = local_model_path,
-            device = device,
-            local_files_only = TRUE
-          )
+          classifier <- without_hf_token({
+            transformers$pipeline(
+              "zero-shot-classification",
+              model = local_model_path,
+              device = device,
+              local_files_only = TRUE
+            )
+          })
         } else {
-          classifier <- transformers$pipeline(
-            "zero-shot-classification",
-            model = transformer,
-            device = device
-          )
+          classifier <- without_hf_token({
+            transformers$pipeline(
+              "zero-shot-classification",
+              model = transformer,
+              device = device
+            )
+          })
         }
       }, silent = TRUE)
 
@@ -357,18 +363,22 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
           # Try again without device_map or fallback to CPU if the first attempt fails
           pipeline_catch <- try({
             if (!is.null(local_model_path)) {
-              classifier <- transformers$pipeline(
-                "zero-shot-classification",
-                model = local_model_path,
-                local_files_only = TRUE,
-                device = "cpu" # Fallback to CPU
-              )
+              classifier <- without_hf_token({
+                transformers$pipeline(
+                  "zero-shot-classification",
+                  model = local_model_path,
+                  local_files_only = TRUE,
+                  device = "cpu" # Fallback to CPU
+                )
+              })
             } else {
-              classifier <- transformers$pipeline(
-                "zero-shot-classification",
-                model = transformer,
-                device = "cpu" # Fallback to CPU
-              )
+              classifier <- without_hf_token({
+                transformers$pipeline(
+                  "zero-shot-classification",
+                  model = transformer,
+                  device = "cpu" # Fallback to CPU
+                )
+              })
             }
           }, silent = TRUE);
 

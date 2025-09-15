@@ -339,61 +339,92 @@ rag <- function(
     # Set device (only print when progress is requested)
     device <- auto_device(device, transformer, verbose = isTRUE(progress))
 
-    # If Gemma 3 model requested, ensure HF auth for gated repos
-    if (transformer %in% c("gemma3-1b", "gemma3-4b")) {
-      repo_id <- switch(
-        transformer,
-        "gemma3-1b"   = "google/gemma-3-1b-it",
-        "gemma3-4b"   = "google/gemma-3-4b-it"
-      )
-      if (exists("ensure_hf_auth_for_gemma", mode = "function")) {
-        ensure_hf_auth_for_gemma(interactive_ok = TRUE, repo_id = repo_id)
-      } else {
-        warning(
-          "ensure_hf_auth_for_gemma() not found; proceeding without ",
-        "explicit gated repo auth. Set HF_TOKEN env var if downloads fail.",
-          call. = FALSE
-        )
-      }
-    }
-
     # Set up service context (restricted model set)
     service_context <- switch(
       transformer,
-      "tinyllama" = setup_tinyllama(llama_index, prompt, device,
-        temperature = temperature, do_sample = do_sample,
-        max_new_tokens = max_new_tokens, top_p = top_p
-      ),
-      # Gemma 3 (HuggingFace Instruct variants)
-      "gemma3-1b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "google/gemma-3-1b-it", 
-        tokenizer_name = "google/gemma-3-1b-it",
-        context_window = 32000L,
-        temperature = temperature, do_sample = do_sample,
-        max_new_tokens = max_new_tokens, top_p = top_p
-      ),
-      "gemma3-4b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "google/gemma-3-4b-it", 
-        tokenizer_name = "google/gemma-3-4b-it",
-        context_window = 128000L,
-        temperature = temperature, do_sample = do_sample,
-        max_new_tokens = max_new_tokens, top_p = top_p
-      ),
-      "qwen3-1.7b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "Qwen/Qwen3-1.7B-Instruct", 
-        tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
-        context_window = 32000L,
-        temperature = temperature, do_sample = do_sample,
-        max_new_tokens = max_new_tokens, top_p = top_p
-      ),
+      # Non-gated: avoid sending any HF token during downloads
+      "tinyllama" = without_hf_token({
+        setup_tinyllama(
+          llama_index, prompt, device,
+          temperature = temperature, do_sample = do_sample,
+          max_new_tokens = max_new_tokens, top_p = top_p
+        )
+      }),
+      # Gemma 3 (HuggingFace Instruct variants) — try without token, then prompt-if-needed
+      "gemma3-1b" = {
+        repo <- "google/gemma-3-1b-it"
+        load_sc <- function() setup_hf_llm(
+          llama_index, prompt, device,
+          model_name = repo, tokenizer_name = repo,
+          context_window = 32000L,
+          temperature = temperature, do_sample = do_sample,
+          max_new_tokens = max_new_tokens, top_p = top_p
+        )
+        sc_try <- try(load_sc(), silent = TRUE)
+        if (inherits(sc_try, "try-error") && .is_hf_auth_error(sc_try)) {
+          if (interactive()) {
+            tok <- .hf_prompt_token()
+            sc_try <- try(with_hf_token(tok, { load_sc() }), silent = TRUE)
+            if (inherits(sc_try, "try-error")) stop(sc_try)
+          } else {
+            stop(
+              paste0(
+                "Gemma 3 model download requires a token. Run interactively to be prompted, ",
+                "or wrap your call with with_hf_token('<token>', { rag(...) }) after accepting the model license."
+              ), call. = FALSE
+            )
+          }
+        }
+        sc_try
+      },
+      "gemma3-4b" = {
+        repo <- "google/gemma-3-4b-it"
+        load_sc <- function() setup_hf_llm(
+          llama_index, prompt, device,
+          model_name = repo, tokenizer_name = repo,
+          context_window = 128000L,
+          temperature = temperature, do_sample = do_sample,
+          max_new_tokens = max_new_tokens, top_p = top_p
+        )
+        sc_try <- try(load_sc(), silent = TRUE)
+        if (inherits(sc_try, "try-error") && .is_hf_auth_error(sc_try)) {
+          if (interactive()) {
+            tok <- .hf_prompt_token()
+            sc_try <- try(with_hf_token(tok, { load_sc() }), silent = TRUE)
+            if (inherits(sc_try, "try-error")) stop(sc_try)
+          } else {
+            stop(
+              paste0(
+                "Gemma 3 model download requires a token. Run interactively to be prompted, ",
+                "or wrap your call with with_hf_token('<token>', { rag(...) }) after accepting the model license."
+              ), call. = FALSE
+            )
+          }
+        }
+        sc_try
+      },
+      # Non-gated: avoid sending any HF token during downloads
+      "qwen3-1.7b" = without_hf_token({
+        setup_hf_llm(
+          llama_index, prompt, device,
+          model_name = "Qwen/Qwen3-1.7B-Instruct",
+          tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
+          context_window = 32000L,
+          temperature = temperature, do_sample = do_sample,
+          max_new_tokens = max_new_tokens, top_p = top_p
+        )
+      }),
       # Ministral 3B (HuggingFace Instruct)
-      "ministral-3b" = setup_hf_llm(llama_index, prompt, device,
-        model_name = "ministral/Ministral-3b-instruct", 
-        tokenizer_name = "ministral/Ministral-3b-instruct",
-        context_window = 32000L,
-        temperature = temperature, do_sample = do_sample,
-        max_new_tokens = max_new_tokens, top_p = top_p
-      ),
+      "ministral-3b" = without_hf_token({
+        setup_hf_llm(
+          llama_index, prompt, device,
+          model_name = "ministral/Ministral-3b-instruct",
+          tokenizer_name = "ministral/Ministral-3b-instruct",
+          context_window = 32000L,
+          temperature = temperature, do_sample = do_sample,
+          max_new_tokens = max_new_tokens, top_p = top_p
+        )
+      }),
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
 

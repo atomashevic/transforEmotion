@@ -138,14 +138,16 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
     stop("The specified local_model_path directory does not exist: ", local_model_path)
   }
 
-  result <- reticulate::py$classify_image(
-    image = image, 
-    labels = classes, 
-    face = face_selection, 
-    model_name = actual_model_id,  # Use resolved model ID
-    local_model_path = local_model_path,
-    model_architecture = model_architecture
-  )
+  result <- without_hf_token({
+    reticulate::py$classify_image(
+      image = image, 
+      labels = classes, 
+      face = face_selection, 
+      model_name = actual_model_id,  # Use resolved model ID
+      local_model_path = local_model_path,
+      model_architecture = model_architecture
+    )
+  })
   if (is.null(result)) {
     # No face found or classification failed; return NA row for each class
     out <- as.list(rep(NA_real_, length(classes)))
@@ -241,15 +243,17 @@ image_scores_dir <- function(dir,
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 
-  # Call batch classifier in Python
-  df <- reticulate::py$classify_images_batch(
-    images = files,
-    labels = classes,
-    face = face_selection,
-    model_name = actual_model_id,  # Use resolved model ID
-    local_model_path = local_model_path,
-    model_architecture = model_architecture
-  )
+  # Call batch classifier in Python (avoid sending tokens for non-gated models)
+  df <- without_hf_token({
+    reticulate::py$classify_images_batch(
+      images = files,
+      labels = classes,
+      face = face_selection,
+      model_name = actual_model_id,  # Use resolved model ID
+      local_model_path = local_model_path,
+      model_architecture = model_architecture
+    )
+  })
 
   # Ensure data.frame and column order
   df <- as.data.frame(df, stringsAsFactors = FALSE)

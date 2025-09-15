@@ -136,21 +136,23 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
   }
 
-  result <- reticulate::py$yt_analyze(
-    url = video,
-    nframes = nframes,
-    labels = classes,
-    side = face_selection,
-    start = start,
-    end = end,
-    uniform = uniform,
-    ff = ffreq,
-    frame_dir = save_dir,
-    video_name = video_name,
-    model_name = actual_model_id,
-    model_architecture = model_architecture,
-    local_model_path = local_model_path
-  )
+  result <- without_hf_token({
+    reticulate::py$yt_analyze(
+      url = video,
+      nframes = nframes,
+      labels = classes,
+      side = face_selection,
+      start = start,
+      end = end,
+      uniform = uniform,
+      ff = ffreq,
+      frame_dir = save_dir,
+      video_name = video_name,
+      model_name = actual_model_id,
+      model_architecture = model_architecture,
+      local_model_path = local_model_path
+    )
+  })
 
   if (!save_video && grepl("youtu", video)){
     file.remove(paste0(save_dir, video_name, ".mp4"))
