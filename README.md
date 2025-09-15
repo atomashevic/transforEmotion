@@ -39,7 +39,7 @@ if(!"devtools" %in% row.names(installed.packages())){
 devtools::install_github("atomashevic/transforEmotion")
 ```
 
-After installing the package, load it in R.
+After installing the package, you can load it in R.
 
 ```R
 # Load package
