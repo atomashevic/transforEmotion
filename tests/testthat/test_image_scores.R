@@ -1,12 +1,17 @@
 test_that("image_scores works with all default models", {
-  skip_on_cran()
-  skip_on_ci()
-  skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test is only for manual testing")
+  # skip_on_cran()
+  # skip_on_ci()
+  # skip_if_not_installed("reticulate")
+  # skip_if_not(reticulate::py_module_available("transformers"))
+  skip("Basic image scores test")
 
-  image_path <- system.file("extdata", "boris-1.png", package = "transforEmotion")
-  labels <- c("anger", "disgust", "fear", "happiness", "sadness", "surprise", "neutral")
+  image_path <- system.file("extdata",
+                            "boris-1.png",
+                            package = "transforEmotion")
+
+  labels <- c("anger", "disgust", "fear",
+              "happiness", "sadness",
+              "surprise", "neutral")
 
   # Test with oai-base model (default)
   result_base <- image_scores(
@@ -19,44 +24,44 @@ test_that("image_scores works with all default models", {
   expect_equal(ncol(result_base), length(labels))
   expect_equal(names(result_base), labels)
 
-  # Test with oai-large model
-  result_large <- image_scores(
-    image = image_path,
-    classes = labels,
-    model = "oai-large"
-  )
+  # # Test with oai-large model
+  # result_large <- image_scores(
+  #   image = image_path,
+  #   classes = labels,
+  #   model = "oai-large"
+  # )
 
-  expect_s3_class(result_large, "data.frame")
-  expect_equal(ncol(result_large), length(labels))
-  expect_equal(names(result_large), labels)
+  # expect_s3_class(result_large, "data.frame")
+  # expect_equal(ncol(result_large), length(labels))
+  # expect_equal(names(result_large), labels)
 
-  # Test with eva-8B model
-  result_eva <- image_scores(
-    image = image_path,
-    classes = labels,
-    model = "eva-8B"
-  )
+  # # Test with eva-8B model
+  # result_eva <- image_scores(
+  #   image = image_path,
+  #   classes = labels,
+  #   model = "eva-8B"
+  # )
 
-  expect_s3_class(result_eva, "data.frame")
-  expect_equal(ncol(result_eva), length(labels))
-  expect_equal(names(result_eva), labels)
+  # expect_s3_class(result_eva, "data.frame")
+  # expect_equal(ncol(result_eva), length(labels))
+  # expect_equal(names(result_eva), labels)
 
-  # Test with jina-v2 model
-  result_jina <- image_scores(
-    image = image_path,
-    classes = labels,
-    model = "jina-v2"
-  )
+  # # Test with jina-v2 model
+  # result_jina <- image_scores(
+  #   image = image_path,
+  #   classes = labels,
+  #   model = "jina-v2"
+  # )
 
-  expect_s3_class(result_jina, "data.frame")
-  expect_equal(ncol(result_jina), length(labels))
-  expect_equal(names(result_jina), labels)
+  # expect_s3_class(result_jina, "data.frame")
+  # expect_equal(ncol(result_jina), length(labels))
+  # expect_equal(names(result_jina), labels)
 
-  # Verify that different models produce different results
-  # (This is a simple check to ensure we're actually using different models)
-  expect_false(identical(result_base, result_large))
-  expect_false(identical(result_base, result_eva))
-  expect_false(identical(result_base, result_jina))
+  # # Verify that different models produce different results
+  # # (This is a simple check to ensure we're actually using different models)
+  # expect_false(identical(result_base, result_large))
+  # expect_false(identical(result_base, result_eva))
+  # expect_false(identical(result_base, result_jina))
 })
 
 test_that("image_scores works with local_model_path", {

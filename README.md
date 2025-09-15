@@ -1,6 +1,6 @@
 ### CRAN 0.1.6 | GitHub 0.1.7
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) 
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion)
 
 <!--[![Downloads per month](http://cranlogs.r-pkg.org/badges/transforEmotion)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://zenodo.org/badge/464199787.svg)](https://zenodo.org/doi/10.5281/zenodo.10471354) -->
 
@@ -61,6 +61,8 @@ After installing, restart R so your PATH is updated. If you cannot install `uv`,
 > [!WARNING]
 > If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
 
+> [!INFO]
+> If you are using RStudio, please make sure that you are using the latest version of both R and RStudio.
 
 ## Text Example
 
@@ -75,7 +77,7 @@ For the example, the positively worded item descriptions will be used.
 
 
 ```R
-# Example text 
+# Example text
 text <- neo_ipip_extraversion$friendliness[1:5]
 ```
 
@@ -109,7 +111,7 @@ transformer_scores(
 )
 ```
 
-### Any Text Classification Model with a Pipeline on [huggingface](https://huggingface.co/models?pipeline_tag=zero-shot-classification) 
+### Any Text Classification Model with a Pipeline on [huggingface](https://huggingface.co/models?pipeline_tag=zero-shot-classification)
 Text classification models with a pipeline on huggingface can be used so long as there is a pipeline available for them. Below is an example of [Typeform's DistilBERT](https://huggingface.co/typeform/distilbert-base-uncased-mnli) model.
 
 ```R
@@ -124,7 +126,7 @@ transformer_scores(
 )
 ```
 
-## RAG 
+## RAG
 
 The `rag` function  is designed to enhance text generation using Retrieval-Augmented Generation (RAG) techniques. This function allows users to input text data or specify a path to local PDF files, which are then used to retrieve relevant documents.
 
@@ -145,7 +147,7 @@ text <- "With `transforEmotion` you can use cutting-edge transformer models for 
         superior performance relative to other natural language processing models
         (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)).
         All other zero-shot classification model pipelines can be implemented using their model name
-        from https://huggingface.co/models?pipeline_tag=zero-shot-classification." 
+        from https://huggingface.co/models?pipeline_tag=zero-shot-classification."
 ```
 
 And then we run the `rag` function.
@@ -166,7 +168,7 @@ Using similar models, zero-shot classification transformers have demonstrated
 superior performance relative to other natural language processing models
 (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)).
 The transforEmotion package can be used to implement these models and other
-zero-shot classification model pipelines from the HuggingFace library.> 
+zero-shot classification model pipelines from the HuggingFace library.>
 ```
 
 Supported local LLMs include TinyLLAMA, Gemma3‑1B/4B, Qwen3‑1.7B, and Ministral‑3B via HuggingFace — no Ollama required. Specifically: `google/gemma-3-1b-it`, `google/gemma-3-4b-it`, `Qwen/Qwen3-1.7B-Instruct`, and `ministral/Ministral-3b-instruct`.
@@ -256,11 +258,11 @@ video_url <- "https://www.youtube.com/watch?v=hdYNcv-chgY&ab_channel=Conservativ
 emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
 
 # Run FER on `nframes` of the video with large model
-result <- video_scores(video_url, classes = emotions, 
+result <- video_scores(video_url, classes = emotions,
                     nframes = 10, save_video = TRUE,
                     save_frames = TRUE, video_name = 'boris-johnson',
                     start = 10, end = 120, model = "oai-large")
-```            
+```
 
 Working with videos is more computationally complex. This example extracts only 10 frames from the video and shouldn't take longer than a few minutes on an average laptop without GPU (depending on your internet connection needed to download the entire video and CLIP model). In research applications, we will usually extract 100-300 frames from the video. This can take much longer, so patience is advised while waiting for the results.
 
