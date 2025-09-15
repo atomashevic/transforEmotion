@@ -136,7 +136,7 @@ uv_is_available <- function() {
 }
 
 #' @noRd
-install_uv_interactive <- function() {
+install_uv_interactive <- function(quiet = FALSE) {
   os <- tolower(Sys.info()[["sysname"]])  # linux, windows, darwin
 
   # Helpers return TRUE only on success (exit status 0)
@@ -151,40 +151,40 @@ install_uv_interactive <- function() {
 
   if (os == "darwin") {
     # 1) Try official script to user directory to avoid permission issues
-    message("Installing uv via official script (user) ...")
-    if (run_cmd("curl -fsSL https://astral.sh/uv/install.sh | sh -s -- --to ~/.local/bin")) {
+    if (!quiet) message("Installing uv via official script (user) ...")
+    if (run_cmd("curl -fsSL https://astral.sh/uv/install.sh | sh")) {
       return(invisible(TRUE))
     }
     # 2) Fallback to Homebrew if available (no sudo)
     if (nzchar(Sys.which("brew"))) {
-      message("Installing uv via Homebrew ...")
+      if (!quiet) message("Installing uv via Homebrew ...")
       return(invisible(run2("brew", c("install", "uv"))))
     } else {
-      message("Homebrew not found. Skipping.")
+      if (!quiet) message("Homebrew not found. Skipping.")
       return(invisible(FALSE))
     }
   } else if (os == "linux") {
     # Prefer user install location; honor available fetcher
     cmd <- if (nzchar(Sys.which("curl"))) {
-      "curl -LsSf https://astral.sh/uv/install.sh | sh -s -- --to ~/.local/bin"
+      "curl -LsSf https://astral.sh/uv/install.sh | sh"
     } else if (nzchar(Sys.which("wget"))) {
-      "wget -qO- https://astral.sh/uv/install.sh | sh -s -- --to ~/.local/bin"
+      "wget -qO- https://astral.sh/uv/install.sh | sh"
     } else {
-      message("Neither curl nor wget is available. Please install one of them and rerun.")
+      if (!quiet) message("Neither curl nor wget is available. Please install one of them and rerun.")
       return(invisible(FALSE))
     }
-    message("Installing uv via official script (user) ...")
+    if (!quiet) message("Installing uv via official script (user) ...")
     return(invisible(run_cmd(cmd)))
   } else if (os == "windows") {
     if (nzchar(Sys.which("winget"))) {
-      message("Installing uv via winget ...")
+      if (!quiet) message("Installing uv via winget ...")
       return(invisible(run2("winget", c("install", "AstralSoftware.UV"))))
     } else {
-      message("Please install uv from: https://docs.astral.sh/uv/getting-started/installation/")
+      if (!quiet) message("Please install uv from: https://docs.astral.sh/uv/getting-started/installation/")
       return(invisible(FALSE))
     }
   } else {
-    message("Unsupported OS for automatic uv install. See https://docs.astral.sh/uv/")
+    if (!quiet) message("Unsupported OS for automatic uv install. See https://docs.astral.sh/uv/")
     return(invisible(FALSE))
   }
 }
@@ -200,7 +200,7 @@ te_ensure_uv_available <- function(prompt = TRUE) {
   if (file.exists(local_uv) && !grepl(local_bin, current_path, fixed = TRUE)) {
     Sys.setenv(PATH = paste(local_bin, current_path, sep = ":"))
     if (uv_is_available()) {
-      message("Found uv in ~/.local/bin; added to PATH for this session.")
+      if (interactive()) message("Found uv in ~/.local/bin; added to PATH for this session.")
       return(invisible(TRUE))
     }
   }
@@ -213,24 +213,18 @@ te_ensure_uv_available <- function(prompt = TRUE) {
       nzchar(v) && v %in% c("1", "true", "t", "yes", "y") || opt
     }
     if (isTRUE(auto_install)) {
-      ok <- isTRUE(install_uv_interactive())
+      ok <- isTRUE(install_uv_interactive(quiet = TRUE))
       # Ensure PATH for the session if installed to ~/.local/bin
       current_path <- Sys.getenv("PATH")
       if (file.exists(local_uv) && !grepl(local_bin, current_path, fixed = TRUE)) {
         Sys.setenv(PATH = paste(local_bin, current_path, sep = ":"))
       }
       if (ok && uv_is_available()) {
-        message("uv installed in CI; added ~/.local/bin for this session.")
         return(invisible(TRUE))
       } else {
-        message("uv CI install failed or not on PATH. Tip: export PATH=\"$HOME/.local/bin:$PATH\"")
         return(invisible(FALSE))
       }
     } else {
-      message(paste0(
-        "uv not found. Using default venv if needed.\n",
-        "Install uv and restart R: curl -LsSf https://astral.sh/uv/install.sh | sh\n",
-        "macOS (Homebrew alternative): brew install uv"))
       return(invisible(FALSE))
     }
   }
