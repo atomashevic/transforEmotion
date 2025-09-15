@@ -1,29 +1,25 @@
 test_that("transformer_scores works with default settings", {
-  skip_on_cran()
-  skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test only for manual testing")
+  # skip_on_cran()
+  skip("This is the basic functionality test")
 
-  test_text <- "With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion
-        classification of text, image, and video in R, *all without the need for a GPU,
-        subscriptions, paid services, or using Python. Implements sentiment analysis
-        using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines.
-        The default pipeline for text is
-        [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base)
-        trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and
-        [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/multi_nli) (MultiNLI) datasets.
-        Using similar models, zero-shot classification transformers have demonstrated
-        superior performance relative to other natural language processing models
-        (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)).
-        All other zero-shot classification model pipelines can be implemented using their model name
-        from https://huggingface.co/models?pipeline_tag=zero-shot-classification."
+  text <- "So even though we face the difficulties
+          of today and tomorrow, I still have a dream.
+          It is a dream deeply rooted in the American dream.
+          I have a dream that one day this nation will rise
+          up and live out the true meaning of its creed:
+          We hold these truths to be self-evident,
+          that all men are created equal."
 
-  test_classes <- c("technical", "informative", "promotional", "educational")
+  # Define custom emotion categories
+  # Researchers can customize these based on their needs
+  emotions <- c("anger", "fear", "joy", "sadness",
+                "optimism", "hope", "surprise", "disgust")
 
-  result <- transformer_scores(
-    text = test_text,
-    classes = test_classes,
-    transformer = "cross-encoder-distilroberta"
+  # Run analysis with default DistilRoBERTa
+  # Fast and efficient model
+  results <- transformer_scores(
+    text = text,         # Text to analyze
+    classes = emotions   # List of emotions to detect
   )
 
   expect_type(result, "list")
