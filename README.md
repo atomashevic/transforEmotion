@@ -55,7 +55,7 @@ setup_modules()
 
 If `uv` is not found, you’ll be prompted to install it. If that fails or you prefer manual install:
 - macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
-- Windows: `winget install AstralSoftware.UV`
+- Windows: `winget install --id=astral-sh.uv -e`
 After installing, restart R so your PATH is updated. If you cannot install `uv`, you can continue; `reticulate` will create a default virtual environment on first use (setup may be slower).
 
 > [!WARNING]

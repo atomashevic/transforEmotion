@@ -150,19 +150,14 @@ install_uv_interactive <- function(quiet = FALSE) {
   }
 
   if (os == "darwin") {
-    # 1) Try official script to user directory to avoid permission issues
-    if (!quiet) message("Installing uv via official script (user) ...")
-    if (run_cmd("curl -fsSL https://astral.sh/uv/install.sh | sh")) {
-      return(invisible(TRUE))
-    }
-    # 2) Fallback to Homebrew if available (no sudo)
+    # Prefer Homebrew when available, per uv docs
     if (nzchar(Sys.which("brew"))) {
       if (!quiet) message("Installing uv via Homebrew ...")
       return(invisible(run2("brew", c("install", "uv"))))
-    } else {
-      if (!quiet) message("Homebrew not found. Skipping.")
-      return(invisible(FALSE))
     }
+    # Fallback to the official install script (user scope)
+    if (!quiet) message("Installing uv via official script (user) ...")
+    return(invisible(run_cmd("curl -LsSf https://astral.sh/uv/install.sh | sh")))
   } else if (os == "linux") {
     # Prefer user install location; honor available fetcher
     cmd <- if (nzchar(Sys.which("curl"))) {
@@ -176,9 +171,26 @@ install_uv_interactive <- function(quiet = FALSE) {
     if (!quiet) message("Installing uv via official script (user) ...")
     return(invisible(run_cmd(cmd)))
   } else if (os == "windows") {
+    # Avoid invoking winget in non-interactive environments (e.g., R CMD check/CI)
+    if (!interactive()) {
+      if (!quiet) message("Skipping winget in non-interactive session. Install uv manually: https://docs.astral.sh/uv/")
+      return(invisible(FALSE))
+    }
     if (nzchar(Sys.which("winget"))) {
       if (!quiet) message("Installing uv via winget ...")
-      return(invisible(run2("winget", c("install", "AstralSoftware.UV"))))
+      # Use non-interactive flags to pre-accept agreements and suppress prompts
+      return(invisible(run2(
+        "winget",
+        c(
+          "install",
+          "--id=astral-sh.uv",
+          "-e",
+          "--disable-interactivity",
+          "--silent",
+          "--accept-package-agreements",
+          "--accept-source-agreements"
+        )
+      )))
     } else {
       if (!quiet) message("Please install uv from: https://docs.astral.sh/uv/getting-started/installation/")
       return(invisible(FALSE))
@@ -270,7 +282,7 @@ ensure_uv_available <- function(prompt = TRUE) {
 ",
       "- macOS (Homebrew): brew install uv
 ",
-      "- Windows (winget): winget install AstralSoftware.UV"))
+      "- Windows (winget): winget install --id=astral-sh.uv -e"))
     return(invisible(FALSE))
   }
   ans <- tryCatch(tolower(readline("uv not found. Install uv now? [Y/n]: ")), error = function(e) "")

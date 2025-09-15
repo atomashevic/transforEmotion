@@ -11,12 +11,9 @@
         Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
     }
 
-    # Suggest installing uv early (interactive prompt), before reticulate initializes Python
+    # Only suggest installing uv in truly interactive sessions to avoid CI prompts
     if (interactive()) {
         try(te_ensure_uv_available(prompt = TRUE), silent = TRUE)
-    } else {
-        # Non-interactive: gentle nudge only
-        try(te_ensure_uv_available(prompt = FALSE), silent = TRUE)
     }
 
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")
