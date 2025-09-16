@@ -69,3 +69,31 @@ rsconnect/
 CLAUDE.md
 tests/test_workflow.md
 AGENTS.md
+VAD.md
+QWEN.md
+
+# Misc folders
+
+findingemo_eval_300/*
+findingemo_eval_50/*
+model-registry.md
+# Debug scripts
+
+debug_*.R
+
+# Misc media and hidden helper files
+trump1.jpg
+.create_metrics_table
+.claude/
+.ropeproject/
+
+# M
+
+# Warp terminal files
+.warp/
+*.warp
+WARP.md
+misc/
+changes.md
+
+.qwen/

@@ -33,6 +33,7 @@
 # Updated 27.01.2024
 delete_transformer <- function(model_name, delete = FALSE)
 {
+  ensure_te_py_env()
 
   # Check for model name
   if(missing(model_name)){

@@ -27,6 +27,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      TE_AUTO_INSTALL_UV: "1"
 
     steps:
         
@@ -47,6 +48,17 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      # Ensure ~/.local/bin is on PATH across subsequent steps
+      - name: Add ~/.local/bin to PATH (Unix)
+        if: runner.os != 'Windows'
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Add ~/.local/bin to PATH (Windows)
+        if: runner.os == 'Windows'
+        run: echo "$Env:USERPROFILE/.local/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: powershell
 
       - uses: r-lib/actions/check-r-package@v2
         with:

@@ -7,14 +7,24 @@
 rag(
   text = NULL,
   path = NULL,
-  transformer = c("LLAMA-2", "Mistral-7B", "OpenChat-3.5", "Orca-2", "Phi-2",
-    "TinyLLAMA"),
+  transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen3-1.7B", "Ministral-3B"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "no_text", "refine", "simple_summarize",
     "tree_summarize"),
   similarity_top_k = 5,
+  retriever = c("vector", "bm25"),
+  retriever_params = list(),
+  output = c("text", "json", "table", "csv"),
+  task = c("general", "emotion", "sentiment"),
+  labels_set = NULL,
+  max_labels = 5,
+  global_analysis = FALSE,
   device = c("auto", "cpu", "cuda"),
+  temperature = NULL,
+  do_sample = NULL,
+  max_new_tokens = NULL,
+  top_p = NULL,
   keep_in_env = TRUE,
   envir = 1,
   progress = TRUE
@@ -35,22 +45,22 @@ Large language model to use for RAG.
 Available models include:
 
 \describe{
-
-\item{"LLAMA-2"}{The largest model available (13B parameters) but also the most challenging to get up and running for Mac and Windows. Linux operating systems run smooth. The challenge comes with installing the \{llama-cpp-python\} module. Currently, we do not provide support for Mac and Windows users}
-
-\item{"Mistral-7B"}{Mistral's 7B parameter model that serves as a high quality but more computationally expensive (more time consuming)}
-
-\item{"Orca-2"}{More documentation soon...}
-
-\item{"Phi-2"}{More documentation soon...}
-
-\item{"TinyLLAMA"}{Default. A smaller, 1B parameter version of LLAMA-2 that offers fast inference with reasonable quality}
-
+  \item{"TinyLLAMA"}{Default. TinyLlama 1.1B Chat via HuggingFace.
+  Fast and light local inference.}
+  \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
+  HuggingFace: \code{google/gemma-3-1b-it},
+  \code{google/gemma-3-4b-it}.}
+  \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
+  HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
+  \code{Qwen/Qwen3-1.7B-Instruct}.}
+  \item{"Ministral-3B"}{Mistral's compact 3B Instruct via
+  HuggingFace: \code{ministral/Ministral-3b-instruct}.}
 }}
 
 \item{prompt}{Character (length = 1).
 Prompt to feed into TinyLLAMA.
-Defaults to \code{"You are an expert at extracting emotional themes across many texts"}}
+Defaults to \code{"You are an expert at extracting emotional themes
+across many texts"}}
 
 \item{query}{Character.
 The query you'd like to know from the documents.
@@ -58,7 +68,8 @@ Defaults to \code{prompt} if not provided}
 
 \item{response_mode}{Character (length = 1).
 Different responses generated from the model.
-See documentation \href{https://docs.llamaindex.ai/en/stable/module_guides/deploying/query_engine/response_modes.html}{here}
+See documentation
+\href{https://docs.llamaindex.ai/en/stable/module_guides/}{here}
 
 Defaults to \code{"tree_summarize"}}
 
@@ -83,11 +94,82 @@ Values will vary based on number of texts but some suggested values might be:
 
 These values depend on the number and quality of texts. Adjust as necessary}
 
+\item{retriever}{Character (length = 1).
+Retrieval backend: one of \code{"vector"} (default, semantic search using
+embeddings) or \code{"bm25"} (lexical BM25 search). BM25 uses llama-index's
+retriever when available and falls back to the Python \code{rank_bm25}
+implementation otherwise. Scores are normalized to [0,1] for consistency.}
+
+\item{retriever_params}{List.
+Optional parameters passed to the selected retriever handler. Reserved keys
+include \code{show_progress}.}
+
+\item{output}{Character (length = 1).
+Output format: one of \code{"text"}, \code{"json"}, \code{"table"},
+or \code{"csv"}.
+\itemize{
+  \item \code{"text"} (default): returns a free-text response
+  with retrieved content.
+  \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"})
+  are supported ONLY for Gemma3-1B and Gemma3-4B.
+  For other models, requests for structured outputs
+  fall back to \code{"text"}.
+  \item For Gemma3-1B/4B and task = \code{"sentiment"} or
+  \code{"emotion"}, returns per-document dominant
+  \code{label} and \code{confidence}.
+  \item For Gemma3-1B/4B and task = \code{"general"},
+  returns the prior schema with \code{labels},
+  \code{confidences}, \code{intensity}, and
+  \code{evidence_chunks}.
+}}
+
+\item{task}{Character (length = 1).
+Task hint for structured extraction: one of \code{"general"},
+\code{"emotion"}, or \code{"sentiment"}.
+When \code{"emotion"} or \code{"sentiment"}, the prompt constrains
+labels to a set (see \code{labels_set}).}
+
+\item{labels_set}{Character vector.
+Allowed labels for classification when \code{task != "general"}.
+If \code{NULL}, defaults to
+Emo8 labels for \code{task = "emotion"}
+  (\code{c("joy","trust","fear","surprise","sadness",
+  "disgust","anger","anticipation")}) for \code{task = "emotion"} and
+  \code{c("positive","neutral","negative")} for \code{task = "sentiment"}.}
+
+\item{max_labels}{Integer (length = 1).
+Maximum number of labels to return in structured outputs;
+used to guide the model instruction when
+\code{output != "text"}.}
+
+\item{global_analysis}{Boolean (length = 1).
+Whether to perform analysis across all documents globally
+(legacy behavior) or per-document (default).
+When \code{FALSE} (default), each document is analyzed
+individually then results are aggregated.
+When \code{TRUE}, all documents are processed together
+for a single global analysis.
+Defaults to \code{FALSE}.}
+
 \item{device}{Character.
 Whether to use CPU or GPU for inference.
 Defaults to \code{"auto"} which will use
 GPU over CPU (if CUDA-capable GPU is setup).
 Set to \code{"cpu"} to perform over CPU}
+
+\item{temperature}{Numeric or NULL.
+Overrides the LLM sampling temperature when using local HF models.
+Recommended: 0.0–0.2 for structured/classification; 0.3–0.7 for summaries.}
+
+\item{do_sample}{Logical or NULL.
+If \code{FALSE}, forces greedy decoding for maximum determinism.
+Defaults are conservative; set explicitly for reproducibility.}
+
+\item{max_new_tokens}{Integer or NULL.
+Maximum new tokens to generate. Suggested: 64–128 for label decisions; 256–512 for summaries.}
+
+\item{top_p}{Numeric or NULL.
+Nucleus sampling parameter. Typical: 0.7–0.95. Use with \code{do_sample=TRUE}.}
 
 \item{keep_in_env}{Boolean (length = 1).
 Whether the classifier should be kept in your global environment.
@@ -105,12 +187,19 @@ Whether progress should be displayed.
 Defaults to \code{TRUE}}
 }
 \value{
-Returns response from TinyLLAMA
+For \code{output = "text"}, returns an object of class
+\code{"rag"} with fields:
+\code{$response} (character), \code{$content} (data.frame),
+and \code{$document_embeddings} (matrix).
+For \code{output = "json"}, returns a JSON \code{character(1)}
+string matching the enforced schema.
+For \code{output = "table"}, returns a \code{data.frame}
+suitable for statistical analysis.
 }
 \description{
 Performs retrieval-augmented generation \{llama-index\}
 
-Currently limited to the TinyLLAMA model
+Supports multiple local LLM backends via HuggingFace and llama-index.
 }
 \section{Data Privacy}{
 
@@ -131,7 +220,12 @@ rag(
  query = "What themes are prevalent across the text?",
  response_mode = "tree_summarize",
  similarity_top_k = 5
-)}
+)
+
+# Structured outputs
+rag(text = text, query = "Extract emotions", output = "json")
+rag(text = text, query = "Extract emotions", output = "table")
+}
 
 }
 \author{

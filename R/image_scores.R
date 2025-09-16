@@ -18,22 +18,20 @@
 #'
 #' @param image The path to the image file or URL of the image.
 #' @param classes A character vector of classes to classify the image into.
-#' @param face_selection The method to select the face in the image. Can be "largest"
-#'   or "left" or "right". Default is "largest" and will select the largest face
+#' @param face_selection The method to select the face in the image. Can be "largest",
+#'   "left", "right", or "none". Default is "largest" and will select the largest face
 #'   in the image. "left" and "right" will select the face on the far left or the
-#'   far right side of the image. Face_selection method is irrelevant if there is
+#'   far right side of the image. "none" will use the whole image without cropping.
+#'   Face_selection method is irrelevant if there is
 #'   only one face in the image.
-#' @param model A string specifying the CLIP model to use. Options are:
+#' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
-#'     \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-#'     \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
-#'     \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
 #'     \item Any valid HuggingFace model ID
+#'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
-#'   Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
-#'   Large models may cause memory issues or crashes, especially on systems with limited resources.
-#'   The package has been optimized and tested with the recommended models listed above.
+#'   Use \code{\link{list_vision_models}} to see all available models.
+#'   Note: Using large or untested models may cause memory issues or crashes.
 #' @param local_model_path Optional. Path to a local directory containing a pre-downloaded 
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
@@ -56,13 +54,14 @@
 #' @export
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
   
   # Try to import required Python module
   module_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     image_module
   }, silent = TRUE)
@@ -71,7 +70,6 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 
@@ -95,45 +93,175 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   }
 
   # check if face_selection is valid
-  if (!face_selection %in% c("largest", "left", "right")) {
-    stop("Argument face_selection must be one of: largest, left, right")
+  if (!face_selection %in% c("largest", "left", "right", "none")) {
+  stop("Argument face_selection must be one of: largest, left, right, none")
   }
   
-  # Check if model is valid when using predefined shortcuts
-  valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
-  if (model %in% valid_models) {
-    # Using a predefined model
-    available_models <- c(
-      "oai-base" = "openai/clip-vit-base-patch32",
-      "oai-large" = "openai/clip-vit-large-patch14",
-      "eva-8B" = "BAAI/EVA-CLIP-8B-448",
-      "jina-v2" = "jinaai/jina-clip-v2"
-    )
-  } else if (!is.null(local_model_path)) {
-    # Using a local model path - validate it exists
-    if (!dir.exists(local_model_path)) {
-      stop("The specified local_model_path directory does not exist.")
+  # Validate model using registry system
+  # Resolve model name to actual model ID for Python
+  actual_model_id <- model
+  model_config <- NULL
+  model_architecture <- NULL
+  
+  tryCatch({
+    if (is_vision_model_registered(model)) {
+      # Model is registered - get the actual model ID
+      model_config <- get_vision_model_config(model)
+      actual_model_id <- model_config$model_id
+      message("Using registered model: ", model_config$description)
+      model_architecture <- model_config$architecture
+    } else if (!is.null(local_model_path)) {
+      # Using a local model path - validate it exists
+      if (!dir.exists(local_model_path)) {
+        stop("The specified local_model_path directory does not exist.")
+      }
+      message("Using local model from: ", local_model_path)
+    } else {
+      # Assume it's a direct HuggingFace model ID
+      message("Using model directly from HuggingFace Hub: ", model)
+      message("Note: For better support, consider registering custom models with register_vision_model()")
     }
-    message("Using local model from: ", local_model_path)
-  } else {
-    # Assume it's a direct HuggingFace model ID
-    message("Using model directly from HuggingFace Hub: ", model)
-  }
+  }, error = function(e) {
+    # If registry system fails, provide helpful error message
+    available_models <- tryCatch(list_vision_models(), error = function(e2) data.frame())
+    if (nrow(available_models) > 0) {
+      stop("Model '", model, "' not recognized. Available models: ",
+           paste(available_models$name, collapse = ", "),
+           "\nUse list_vision_models() to see details or register_vision_model() to add custom models.")
+    } else {
+      warning("Model registry system not available. Proceeding with model: ", model)
+    }
+  })
   
   # Check if local_model_path exists if provided
   if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
     stop("The specified local_model_path directory does not exist: ", local_model_path)
   }
 
-  result <- reticulate::py$classify_image(
-    image = image, 
-    labels = classes, 
-    face = face_selection, 
-    model_name = model,
-    local_model_path = local_model_path
-  )
+  result <- without_hf_token({
+    reticulate::py$classify_image(
+      image = image, 
+      labels = classes, 
+      face = face_selection, 
+      model_name = actual_model_id,  # Use resolved model ID
+      local_model_path = local_model_path,
+      model_architecture = model_architecture
+    )
+  })
+  if (is.null(result)) {
+    # No face found or classification failed; return NA row for each class
+    out <- as.list(rep(NA_real_, length(classes)))
+    names(out) <- classes
+    return(as.data.frame(out))
+  }
   result <- as.data.frame(result)
   return(result)
 }
 
-#
+#' Calculate image scores for all images in a directory (fast batch)
+#'
+#' This function scans a directory for image files and computes scores for each
+#' image using a Hugging Face CLIP model. It loads the model once and reuses
+#' text embeddings for speed, returning one row per image with the filename as
+#' image_id and probability columns for each class.
+#'
+#' @param dir Path to a directory containing images.
+#' @param classes Character vector of labels/classes (length >= 2).
+#' @param face_selection Face selection strategy: "largest", "left", "right", or "none".
+#' @param pattern Optional regex to filter images (default supports common formats).
+#' @param recursive Whether to search subdirectories (default FALSE).
+#' @param model CLIP model alias or HuggingFace model id (see image_scores()).
+#' @param local_model_path Optional local path to a pre-downloaded model.
+#' @return A data.frame with columns: image_id and one column per class.
+#' @export
+image_scores_dir <- function(dir,
+                             classes,
+                             face_selection = "largest",
+                             pattern = "\\.(jpg|jpeg|png|bmp)$",
+                             recursive = FALSE,
+                             model = "oai-base",
+                             local_model_path = NULL) {
+  # Ensure Python environment is ready
+  ensure_te_py_env()
+
+  # Suppress TensorFlow messages
+  Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
+
+  # Validate inputs
+  if (!dir.exists(dir)) stop("Directory does not exist: ", dir)
+  if (!is.character(classes)) stop("Classes must be a character vector.")
+  if (length(classes) < 2) stop("Classes must have at least 2 elements.")
+  if (!face_selection %in% c("largest", "left", "right", "none")) {
+  stop("Argument face_selection must be one of: largest, left, right, none")
+  }
+
+  # Resolve model name to actual model ID for Python (same as image_scores)
+  actual_model_id <- model
+  model_config <- NULL
+  model_architecture <- NULL
+  
+  tryCatch({
+    if (is_vision_model_registered(model)) {
+      model_config <- get_vision_model_config(model)
+      actual_model_id <- model_config$model_id
+      message("Using registered model: ", model_config$description)
+      model_architecture <- model_config$architecture
+    } else if (!is.null(local_model_path)) {
+      if (!dir.exists(local_model_path)) {
+        stop("The specified local_model_path directory does not exist.")
+      }
+      message("Using local model from: ", local_model_path)
+    } else {
+      message("Using model directly from HuggingFace Hub: ", model)
+      message("Note: For better support, consider registering custom models with register_vision_model()")
+    }
+  }, error = function(e) {
+    available_models <- tryCatch(list_vision_models(), error = function(e2) data.frame())
+    if (nrow(available_models) > 0) {
+      stop("Model '", model, "' not recognized. Available models: ",
+           paste(available_models$name, collapse = ", "),
+           "\nUse list_vision_models() to see details.")
+    } else {
+      warning("Model registry system not available. Proceeding with model: ", model)
+    }
+  })
+
+  # Discover images
+  files <- list.files(dir, pattern = pattern, full.names = TRUE, recursive = recursive, ignore.case = TRUE)
+  if (length(files) == 0) {
+    warning("No images found in directory: ", dir)
+    return(data.frame(image_id = character(0), check.names = FALSE))
+  }
+
+  # Import python module (use same environment as image_scores)
+  module_import <- try({
+    reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  }, silent = TRUE)
+  if (inherits(module_import, "try-error")) {
+    message("Required Python modules not found. Setting up modules...")
+    setup_modules()
+    reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  }
+
+  # Call batch classifier in Python (avoid sending tokens for non-gated models)
+  df <- without_hf_token({
+    reticulate::py$classify_images_batch(
+      images = files,
+      labels = classes,
+      face = face_selection,
+      model_name = actual_model_id,  # Use resolved model ID
+      local_model_path = local_model_path,
+      model_architecture = model_architecture
+    )
+  })
+
+  # Ensure data.frame and column order
+  df <- as.data.frame(df, stringsAsFactors = FALSE)
+  # If Python returns no rows, create an empty frame with expected columns
+  expected_cols <- c("image_id", classes)
+  for (col in expected_cols) {
+    if (!col %in% names(df)) df[[col]] <- NA_real_
+  }
+  df <- df[expected_cols]
+  return(df)
+}

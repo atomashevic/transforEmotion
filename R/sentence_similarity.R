@@ -81,6 +81,8 @@ sentence_similarity <- function(
     preprocess = FALSE, keep_in_env = TRUE, envir = 1
 )
 {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
 
   # Check that input of 'text' argument is in the
   # appropriate format for the analysis

@@ -28,7 +28,9 @@ video_scores(
 
 \item{nframes}{The number of frames to analyze in the video. Default is 100.}
 
-\item{face_selection}{The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".}
+\item{face_selection}{The method for selecting faces in the video. Options are
+"largest", "left", "right", or "none". Default is "largest". Use "none"
+to classify the whole frame without face cropping.}
 
 \item{start}{The start time of the video range to analyze. Default is 0.}
 
@@ -46,18 +48,14 @@ video_scores(
 
 \item{video_name}{The name of the analyzed video. Default is "temp".}
 
-\item{model}{A string specifying the CLIP model to use. Options are:
+\item{model}{A string specifying the vision model to use. Options include:
 \itemize{
-  \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
-  \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-  \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
-  \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+  \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
   \item Any valid HuggingFace model ID
+  \item Custom registered models (see \code{\link{register_vision_model}})
 }
-Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
-Large models may cause memory issues or crashes, especially on systems with limited resources.
-The package has been optimized and tested with the recommended models listed above.
-Video processing is particularly memory-intensive, so use caution with large custom models.}
+Use \code{\link{list_vision_models}} to see all available models.
+Note: Video processing is memory-intensive, so use caution with large models.}
 
 \item{local_model_path}{Optional. Path to a local directory containing a pre-downloaded
   HuggingFace model. If provided, the model will be loaded from this directory instead

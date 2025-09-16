@@ -1,8 +1,9 @@
 #' @noRd
 # Automatically detect appropriate device
 # Updated 06.02.2024
-auto_device <- function(device, transformer)
+auto_device <- function(device, transformer, verbose = TRUE)
 {
+  ensure_te_py_env()
 
   # Set transformer memory (MB)
   # Assume GPU and 16-bit unless otherwise noted
@@ -11,7 +12,17 @@ auto_device <- function(device, transformer)
     "tinyllama" = 2640, "llama-2" = 4200, # supported by 4-bit
     "mistral-7b" = 16800, "openchat-3.5" = 16800,
     "orca-2" = 33600, # supported by 32-bit
-    "phi-2" = 6480
+    "phi-2" = 6480,
+    # Gemma3, Ministral, Qwen3 (approximate memory, MB)
+    "gemma3-1b" = 815,
+    "gemma3-4b" = 3300,
+    "ministral-3b" = 7000,
+    "ministral-8b" = 18400,
+    "qwen3-1.7b" = 1800,
+    # New: PleIAs and JSON-tuned 1B (approximate)
+    "pleias-rag-350m" = 360,
+    "pleias-rag-1b" = 900,
+    "llama1b-json" = 900
   )
 
   # First, check for "auto"
@@ -76,7 +87,7 @@ auto_device <- function(device, transformer)
   }
 
   # Send device to user
-  message(paste0("Using device: ", device))
+  if (isTRUE(verbose)) message(paste0("Using device: ", device))
 
   # Return device
   return(device)

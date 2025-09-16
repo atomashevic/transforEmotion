@@ -5,7 +5,9 @@
 #' @param video The URL of the YouTube video to analyze.
 #' @param classes A character vector specifying the classes to analyze.
 #' @param nframes The number of frames to analyze in the video. Default is 100.
-#' @param face_selection The method for selecting faces in the video. Options are "largest", "left", or "right". Default is "largest".
+#' @param face_selection The method for selecting faces in the video. Options are
+#'   "largest", "left", "right", or "none". Default is "largest". Use "none"
+#'   to classify the whole frame without face cropping.
 #' @param start The start time of the video range to analyze. Default is 0.
 #' @param end The end time of the video range to analyze. Default is -1 and this means that video won't be cut. If end is a positive number greater than start, the video will be cut from start to end.
 #' @param uniform Logical indicating whether to uniformly sample frames from the video. Default is FALSE.
@@ -14,18 +16,14 @@
 #' @param save_frames Logical indicating whether to save the analyzed frames. Default is FALSE.
 #' @param save_dir The directory to save the analyzed frames. Default is "temp/".
 #' @param video_name The name of the analyzed video. Default is "temp".
-#' @param model A string specifying the CLIP model to use. Options are:
+#' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item \code{"oai-base"}: "openai/clip-vit-base-patch32" (default)
-#'     \item \code{"oai-large"}: "openai/clip-vit-large-patch14"
-#'     \item \code{"eva-8B"}: "BAAI/EVA-CLIP-8B-448" (quantized version for reduced memory usage)
-#'     \item \code{"jina-v2"}: "jinaai/jina-clip-v2"
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
 #'     \item Any valid HuggingFace model ID
+#'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
-#'   Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
-#'   Large models may cause memory issues or crashes, especially on systems with limited resources.
-#'   The package has been optimized and tested with the recommended models listed above.
-#'   Video processing is particularly memory-intensive, so use caution with large custom models.
+#'   Use \code{\link{list_vision_models}} to see all available models.
+#'   Note: Video processing is memory-intensive, so use caution with large models.
 #' @param local_model_path Optional. Path to a local directory containing a pre-downloaded
 #'   HuggingFace model. If provided, the model will be loaded from this directory instead
 #'   of being downloaded from HuggingFace. This is useful for offline usage or for using
@@ -56,13 +54,14 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
+  # Ensure reticulate uses the transforEmotion conda environment
+  ensure_te_py_env()
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
 
   # Try to import required Python modules
   modules_import <- try({
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
     list(image = image_module, video = video_module)
@@ -72,7 +71,6 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
     setup_modules()
-    reticulate::use_condaenv("transforEmotion", required = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }
@@ -88,30 +86,41 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
 
   # Check if face_selection is valid
-  if(!face_selection %in% c("largest", "left", "right")){
-    stop("Argument face_selection must be one of: largest, left, right")
+  if(!face_selection %in% c("largest", "left", "right", "none")){
+    stop("Argument face_selection must be one of: largest, left, right, none")
   }
 
-  # Check if model is valid when using predefined shortcuts
-  valid_models <- c("oai-base", "oai-large", "eva-18B", "eva-8B", "jina-v2")
-  if (model %in% valid_models) {
-    # Using a predefined model
-    available_models <- c(
-      "oai-base" = "openai/clip-vit-base-patch32",
-      "oai-large" = "openai/clip-vit-large-patch14",
-      "eva-8B" = "BAAI/EVA-CLIP-8B-448",
-      "jina-v2" = "jinaai/jina-clip-v2"
-    )
-  } else if (!is.null(local_model_path)) {
-    # Using a local model path - validate it exists
-    if (!dir.exists(local_model_path)) {
-      stop("The specified local_model_path directory does not exist.")
+  # Validate model using registry system
+  model_architecture <- NULL
+  actual_model_id <- model
+  tryCatch({
+    if (is_vision_model_registered(model)) {
+      model_config <- get_vision_model_config(model)
+      message("Using registered model: ", model_config$description)
+      actual_model_id <- model_config$model_id
+      model_architecture <- model_config$architecture
+      if (model_config$requires_special_handling) {
+        message("Note: This model requires special handling and may be memory-intensive for video processing")
+      }
+    } else if (!is.null(local_model_path)) {
+      if (!dir.exists(local_model_path)) {
+        stop("The specified local_model_path directory does not exist.")
+      }
+      message("Using local model from: ", local_model_path)
+    } else {
+      message("Using model directly from HuggingFace Hub: ", model)
+      message("Note: For better support, consider registering custom models with register_vision_model()")
     }
-    message("Using local model from: ", local_model_path)
-  } else {
-    # Assume it's a direct HuggingFace model ID
-    message("Using model directly from HuggingFace Hub: ", model)
-  }
+  }, error = function(e) {
+    available_models <- tryCatch(list_vision_models(), error = function(e2) data.frame())
+    if (nrow(available_models) > 0) {
+      stop("Model '", model, "' not recognized. Available models: ",
+           paste(available_models$name, collapse = ", "),
+           "\nUse list_vision_models() to see details or register_vision_model() to add custom models.")
+    } else {
+      warning("Model registry system not available. Proceeding with model: ", model)
+    }
+  })
 
   # create save_dir
   if(!dir.exists(save_dir)){
@@ -127,20 +136,23 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
   }
 
-  result <- reticulate::py$yt_analyze(
-    url = video,
-    nframes = nframes,
-    labels = classes,
-    side = face_selection,
-    start = start,
-    end = end,
-    uniform = uniform,
-    ff = ffreq,
-    frame_dir = save_dir,
-    video_name = video_name,
-    model_name = model,
-    local_model_path = local_model_path
-  )
+  result <- without_hf_token({
+    reticulate::py$yt_analyze(
+      url = video,
+      nframes = nframes,
+      labels = classes,
+      side = face_selection,
+      start = start,
+      end = end,
+      uniform = uniform,
+      ff = ffreq,
+      frame_dir = save_dir,
+      video_name = video_name,
+      model_name = actual_model_id,
+      model_architecture = model_architecture,
+      local_model_path = local_model_path
+    )
+  })
 
   if (!save_video && grepl("youtu", video)){
     file.remove(paste0(save_dir, video_name, ".mp4"))
