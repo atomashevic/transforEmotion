@@ -323,24 +323,22 @@ rag <- function(
     }
   }
 
-  # Check for service context
-  if(exists("service_context", envir = as.environment(envir))){
-
-    # Check for service context LLM
-    if(attr(service_context, which = "transformer") != transformer){
-      rm(service_context, envir = as.environment(envir)); gc(verbose = FALSE)
-    }
-
+  # Check if Settings need to be reconfigured for a different transformer
+  # Store transformer name in llama_index module cache
+  current_transformer <- NULL
+  if(exists("llama_index", envir = as.environment(envir))){
+    current_transformer <- try(attr(llama_index, which = "transformer"), silent = TRUE)
+    if(inherits(current_transformer, "try-error")) current_transformer <- NULL
   }
 
-  # Get service context
-  if(!exists("service_context", envir = as.environment(envir))){
+  # Reconfigure Settings if transformer changed or not yet set
+  if(is.null(current_transformer) || current_transformer != transformer){
 
     # Set device (only print when progress is requested)
     device <- auto_device(device, transformer, verbose = isTRUE(progress))
 
-    # Set up service context (restricted model set)
-    service_context <- switch(
+    # Configure Settings via setup functions (no return value needed)
+    switch(
       transformer,
       # Non-gated: avoid sending any HF token during downloads
       "tinyllama" = without_hf_token({
@@ -353,19 +351,19 @@ rag <- function(
       # Gemma 3 (HuggingFace Instruct variants) — try without token, then prompt-if-needed
       "gemma3-1b" = {
         repo <- "google/gemma-3-1b-it"
-        load_sc <- function() setup_hf_llm(
+        load_settings <- function() setup_hf_llm(
           llama_index, prompt, device,
           model_name = repo, tokenizer_name = repo,
           context_window = 32000L,
           temperature = temperature, do_sample = do_sample,
           max_new_tokens = max_new_tokens, top_p = top_p
         )
-        sc_try <- try(load_sc(), silent = TRUE)
-        if (inherits(sc_try, "try-error") && .is_hf_auth_error(sc_try)) {
+        settings_try <- try(load_settings(), silent = TRUE)
+        if (inherits(settings_try, "try-error") && .is_hf_auth_error(settings_try)) {
           if (interactive()) {
             tok <- .hf_prompt_token()
-            sc_try <- try(with_hf_token(tok, { load_sc() }), silent = TRUE)
-            if (inherits(sc_try, "try-error")) stop(sc_try)
+            settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
+            if (inherits(settings_try, "try-error")) stop(settings_try)
           } else {
             stop(
               paste0(
@@ -375,23 +373,22 @@ rag <- function(
             )
           }
         }
-        sc_try
       },
       "gemma3-4b" = {
         repo <- "google/gemma-3-4b-it"
-        load_sc <- function() setup_hf_llm(
+        load_settings <- function() setup_hf_llm(
           llama_index, prompt, device,
           model_name = repo, tokenizer_name = repo,
           context_window = 128000L,
           temperature = temperature, do_sample = do_sample,
           max_new_tokens = max_new_tokens, top_p = top_p
         )
-        sc_try <- try(load_sc(), silent = TRUE)
-        if (inherits(sc_try, "try-error") && .is_hf_auth_error(sc_try)) {
+        settings_try <- try(load_settings(), silent = TRUE)
+        if (inherits(settings_try, "try-error") && .is_hf_auth_error(settings_try)) {
           if (interactive()) {
             tok <- .hf_prompt_token()
-            sc_try <- try(with_hf_token(tok, { load_sc() }), silent = TRUE)
-            if (inherits(sc_try, "try-error")) stop(sc_try)
+            settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
+            if (inherits(settings_try, "try-error")) stop(settings_try)
           } else {
             stop(
               paste0(
@@ -401,7 +398,6 @@ rag <- function(
             )
           }
         }
-        sc_try
       },
       # Non-gated: avoid sending any HF token during downloads
       "qwen3-1.7b" = without_hf_token({
@@ -428,42 +424,38 @@ rag <- function(
       stop(paste0("'", transformer, "' not found"), call. = FALSE)
     )
 
+    # Mark which transformer is currently configured
+    attr(llama_index, which = "transformer") <- transformer
+
   }
 
-  # Add transformer attribute to `service_context`
-  attr(service_context, which = "transformer") <- transformer
-
-  # Load into environment
+  # Cache llama_index module in environment if requested
   if(isTRUE(keep_in_env)){
-
-    # Keep llama-index module in environment
     assign(
       x = "llama_index",
       value = llama_index,
       envir = as.environment(envir)
     )
-
-    # Keep service_context in the environment
-    assign(
-      x = "service_context",
-      value = service_context,
-      envir = as.environment(envir)
-    )
-
   }
 
   # Depending on where documents are, load them
   if(!is.null(path)){
 
+    # Get SimpleDirectoryReader from the correct location
+    SimpleDirectoryReader <- get_directory_reader(llama_index)
+
     # Set documents
-    documents <- llama_index$SimpleDirectoryReader(path)$load_data()
+    documents <- SimpleDirectoryReader(path)$load_data()
 
   }else if(!is.null(text)){
+
+    # Get Document class from the correct location
+    Document <- get_document_class(llama_index)
 
     # Set documents
     documents <- lapply(
       text, function(x){
-        llama_index$Document(text = x)
+        Document(text = x)
       }
     )
 
@@ -531,7 +523,6 @@ rag <- function(
       name = retriever,
       llama_index = llama_index,
       documents = documents,
-      service_context = service_context,
       similarity_top_k = similarity_top_k,
       response_mode = response_mode,
       params = list(show_progress = progress)
@@ -583,8 +574,7 @@ rag <- function(
         name = retriever,
         llama_index = llama_index,
         documents = list(documents[[i]]),
-        service_context = service_context,
-        similarity_top_k = min(similarity_top_k, 3), 
+        similarity_top_k = min(similarity_top_k, 3),
         response_mode = response_mode,
         params = retriever_params
       )
@@ -1235,6 +1225,254 @@ normalize_label <- function(label, task = c("emotion","sentiment"), labels_set =
 }
 
 #' @noRd
+# Import HuggingFaceLLM from the correct location for llama-index 0.10+
+get_huggingface_llm <- function(llama_index) {
+  # Try to import from llama_index.llms.huggingface (0.10+ with integration package)
+  hf_llm <- try({
+    reticulate::import("llama_index.llms.huggingface")$HuggingFaceLLM
+  }, silent = TRUE)
+
+  if (!inherits(hf_llm, "try-error")) {
+    return(hf_llm)
+  }
+
+  # Fallback: try legacy location
+  hf_llm <- try({
+    llama_index$llms$HuggingFaceLLM
+  }, silent = TRUE)
+
+  if (!inherits(hf_llm, "try-error")) {
+    return(hf_llm)
+  }
+
+  stop(
+    paste0(
+      "Could not import HuggingFaceLLM. ",
+      "For llama-index 0.10+, install: pip install llama-index-llms-huggingface"
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Import PromptTemplate from the correct location for llama-index 0.10+
+get_prompt_template <- function(llama_index) {
+  # Preferred: llama_index.core.prompts.PromptTemplate
+  pt <- try({
+    reticulate::import("llama_index.core.prompts", delay_load = TRUE)$PromptTemplate
+  }, silent = TRUE)
+  if (!inherits(pt, "try-error") && !is.null(pt)) return(pt)
+
+  # Additional fallbacks for older layouts
+  candidates <- list(
+    try(llama_index$core$prompts$PromptTemplate, silent = TRUE),
+    try(llama_index$prompts$PromptTemplate, silent = TRUE),
+    try(llama_index$PromptTemplate, silent = TRUE)
+  )
+
+  for (cand in candidates) {
+    if (!inherits(cand, "try-error") && !is.null(cand)) return(cand)
+  }
+
+  stop(
+    paste0(
+      "Could not import PromptTemplate. ",
+      "Ensure llama-index-core exports `PromptTemplate`."
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Import Document from the correct location for llama-index 0.10+
+get_document_class <- function(llama_index) {
+  # Preferred: llama_index.core.schema.Document (0.10+)
+  doc <- try({
+    reticulate::import("llama_index.core.schema", delay_load = TRUE)$Document
+  }, silent = TRUE)
+  if (!inherits(doc, "try-error") && !is.null(doc)) return(doc)
+
+  # Fallback: try llama_index.core.Document
+  doc <- try({
+    reticulate::import("llama_index.core", delay_load = TRUE)$Document
+  }, silent = TRUE)
+  if (!inherits(doc, "try-error") && !is.null(doc)) return(doc)
+
+  # Additional fallbacks for older layouts
+  candidates <- list(
+    try(llama_index$core$schema$Document, silent = TRUE),
+    try(llama_index$core$Document, silent = TRUE),
+    try(llama_index$schema$Document, silent = TRUE),
+    try(llama_index$Document, silent = TRUE)
+  )
+
+  for (cand in candidates) {
+    if (!inherits(cand, "try-error") && !is.null(cand)) return(cand)
+  }
+
+  stop(
+    paste0(
+      "Could not import Document class. ",
+      "Ensure llama-index-core is installed with `pip install llama-index-core`."
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Import SimpleDirectoryReader from the correct location for llama-index 0.10+
+get_directory_reader <- function(llama_index) {
+  # Preferred: llama_index.core.SimpleDirectoryReader (0.10+)
+  reader <- try({
+    reticulate::import("llama_index.core", delay_load = TRUE)$SimpleDirectoryReader
+  }, silent = TRUE)
+  if (!inherits(reader, "try-error") && !is.null(reader)) return(reader)
+
+  # Additional fallbacks for older layouts
+  candidates <- list(
+    try(llama_index$core$SimpleDirectoryReader, silent = TRUE),
+    try(llama_index$SimpleDirectoryReader, silent = TRUE)
+  )
+
+  for (cand in candidates) {
+    if (!inherits(cand, "try-error") && !is.null(cand)) return(cand)
+  }
+
+  stop(
+    paste0(
+      "Could not import SimpleDirectoryReader. ",
+      "Ensure llama-index-core is installed with `pip install llama-index-core`."
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Import VectorStoreIndex from the correct location for llama-index 0.10+
+get_vector_store_index <- function(llama_index) {
+  # Preferred: llama_index.core.VectorStoreIndex (0.10+)
+  idx <- try({
+    reticulate::import("llama_index.core", delay_load = TRUE)$VectorStoreIndex
+  }, silent = TRUE)
+  if (!inherits(idx, "try-error") && !is.null(idx)) return(idx)
+
+  # Additional fallbacks for older layouts
+  candidates <- list(
+    try(llama_index$core$VectorStoreIndex, silent = TRUE),
+    try(llama_index$VectorStoreIndex, silent = TRUE)
+  )
+
+  for (cand in candidates) {
+    if (!inherits(cand, "try-error") && !is.null(cand)) return(cand)
+  }
+
+  stop(
+    paste0(
+      "Could not import VectorStoreIndex. ",
+      "Ensure llama-index-core is installed with `pip install llama-index-core`."
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Import RetrieverQueryEngine from the correct location for llama-index 0.10+
+get_retriever_query_engine <- function(llama_index) {
+  # Preferred: llama_index.core.query_engine.RetrieverQueryEngine (0.10+)
+  engine <- try({
+    reticulate::import("llama_index.core.query_engine", delay_load = TRUE)$RetrieverQueryEngine
+  }, silent = TRUE)
+  if (!inherits(engine, "try-error") && !is.null(engine)) return(engine)
+
+  # Additional fallbacks for older layouts
+  candidates <- list(
+    try(llama_index$core$query_engine$RetrieverQueryEngine, silent = TRUE),
+    try(llama_index$query_engine$RetrieverQueryEngine, silent = TRUE),
+    try(llama_index$RetrieverQueryEngine, silent = TRUE)
+  )
+
+  for (cand in candidates) {
+    if (!inherits(cand, "try-error") && !is.null(cand)) return(cand)
+  }
+
+  stop(
+    paste0(
+      "Could not import RetrieverQueryEngine. ",
+      "Ensure llama-index-core is installed with `pip install llama-index-core`."
+    ),
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# Configure default HuggingFace embedding model for Settings
+set_default_embedding <- function(llama_index, device = NULL, model_name = "BAAI/bge-small-en-v1.5")
+{
+  hf_embed <- try(
+    reticulate::import("llama_index.embeddings.huggingface", delay_load = TRUE),
+    silent = TRUE
+  )
+
+  if (inherits(hf_embed, "try-error") || is.null(hf_embed)) {
+    stop(
+      paste0(
+        "Could not import llama_index.embeddings.huggingface. ",
+        "Install `llama-index-embeddings-huggingface`."
+      ),
+      call. = FALSE
+    )
+  }
+
+  transformers <- try(
+    reticulate::import("transformers", delay_load = TRUE),
+    silent = TRUE
+  )
+  if (inherits(transformers, "try-error") || is.null(transformers)) {
+    stop("Could not import transformers Python package.", call. = FALSE)
+  }
+
+  cache_dir <- NULL
+  utils_module <- try(hf_embed$utils, silent = TRUE)
+  if (!inherits(utils_module, "try-error") &&
+      reticulate::py_has_attr(utils_module, "get_cache_dir")) {
+    cache_dir <- utils_module$get_cache_dir()
+  }
+
+  auto_model <- transformers$AutoModel
+  auto_tokenizer <- transformers$AutoTokenizer
+
+  model_kwargs <- list(model_name, cache_dir = cache_dir, trust_remote_code = TRUE)
+  tokenizer_kwargs <- list(model_name, cache_dir = cache_dir)
+
+  model <- try(do.call(auto_model$from_pretrained, model_kwargs), silent = TRUE)
+  if (inherits(model, "try-error")) {
+    stop("Failed to load embedding model via transformers AutoModel.", call. = FALSE)
+  }
+
+  if (!is.null(device) && nzchar(device)) {
+    try(suppressWarnings(model$to(device)), silent = TRUE)
+  }
+
+  tokenizer <- try(do.call(auto_tokenizer$from_pretrained, tokenizer_kwargs), silent = TRUE)
+  if (inherits(tokenizer, "try-error")) {
+    stop("Failed to load embedding tokenizer via transformers AutoTokenizer.", call. = FALSE)
+  }
+
+  embed_args <- list(
+    model = model,
+    tokenizer = tokenizer,
+    model_name = model_name,
+    tokenizer_name = model_name,
+    normalize = TRUE
+  )
+  if (!is.null(device) && nzchar(device)) embed_args$device <- device
+
+  Settings <- llama_index$core$Settings
+  Settings$embed_model <- do.call(hf_embed$HuggingFaceEmbedding, embed_args)
+  invisible(Settings$embed_model)
+}
+
+#' @noRd
 # Setup Ollama-backed models (Gemma3, Ministral)
 # Tries to use llama_index llms.Ollama. Fails with a helpful message if unavailable.
 setup_ollama_model <- function(llama_index, prompt, device, model, context_window)
@@ -1257,18 +1495,19 @@ setup_ollama_model <- function(llama_index, prompt, device, model, context_windo
     )
   }
 
-  # Build ServiceContext with Ollama LLM
-  sc <- llama_index$ServiceContext$from_defaults(
-    llm = ollama_llm(
-      model = model,
-      request_timeout = as.double(120)
-      # Note: system prompt support varies by version; we keep wrapper prompt in RAG query
-    ),
-    context_window = as.integer(context_window),
-    embed_model = "local:BAAI/bge-small-en-v1.5"
-  )
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
 
-  return(sc)
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- ollama_llm(
+    model = model,
+    request_timeout = as.double(120)
+    # Note: system prompt support varies by version; we keep wrapper prompt in RAG query
+  )
+  Settings$context_window <- as.integer(context_window)
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 }
 
 #' @noRd
@@ -1283,7 +1522,7 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
     "PleIAs/Pleias-RAG-1B",
     "meta-llama/Llama-3.2-1B"
   )
-  
+
   # Configure tokenizer kwargs. Avoid explicit token_type_ids manipulation; prior attempts
   # triggered llama-index to inject an unused `token_type_ids` arg that raised
   # ValueError for decoder-only models (Gemma / PleIAs / Llama 3.2 1B).
@@ -1301,7 +1540,7 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
   } else {
     # Conservative sampling for other structured-ish outputs
     list(
-      temperature = as.double(0.1), 
+      temperature = as.double(0.1),
       do_sample = TRUE
     )
   }
@@ -1312,22 +1551,26 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
   if (!is.null(top_p))        generate_kwargs$top_p        <- as.double(top_p)
   if (!is.null(max_new_tokens)) generate_kwargs$max_new_tokens <- as.integer(max_new_tokens)
 
-  # Build ServiceContext with HuggingFace LLM
-  sc <- llama_index$ServiceContext$from_defaults(
-    llm = llama_index$llms$HuggingFaceLLM(
-      model_name = model_name,
-      tokenizer_name = tokenizer_name,
-      device_map = device,
-      generate_kwargs = generate_kwargs,
-      # Required for newer architectures like Gemma 3 (remote modeling code)
-      tokenizer_kwargs = tokenizer_kwargs,
-      model_kwargs = list(trust_remote_code = TRUE)
-    ),
-    context_window = as.integer(context_window),
-    embed_model = "local:BAAI/bge-small-en-v1.5"
-  )
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
 
-  return(sc)
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = model_name,
+    tokenizer_name = tokenizer_name,
+    device_map = device,
+    generate_kwargs = generate_kwargs,
+    # Required for newer architectures like Gemma 3 (remote modeling code)
+    tokenizer_kwargs = tokenizer_kwargs,
+    model_kwargs = list(trust_remote_code = TRUE)
+  )
+  Settings$context_window <- as.integer(context_window)
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 }
 
 #' @noRd
@@ -1335,6 +1578,13 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
 # Updated 06.02.2024
 setup_llama2 <- function(llama_index, prompt, device)
 {
+
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+  PromptTemplate <- get_prompt_template(llama_index)
 
   # Check for device
   if(grepl("cuda", device)){
@@ -1362,24 +1612,25 @@ setup_llama2 <- function(llama_index, prompt, device)
       model_name <- paste0("TheBloke/Llama-2-7B-Chat-", model)
 
       # Try to get and load model
-      load_model <- try(
-        llama_index$ServiceContext$from_defaults(
-          llm = llama_index$llms$HuggingFaceLLM(
-            model_name = model_name,
-            tokenizer_name = model_name,
-            query_wrapper_prompt = llama_index$PromptTemplate(
-              paste0(
-                "<|system|>\n", prompt,
-                "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-              )
-            ), device_map = device,
-            generate_kwargs = list(
-              temperature = as.double(0.1), do_sample = TRUE
+      load_model <- try({
+        Settings$llm <- HuggingFaceLLM(
+          model_name = model_name,
+          tokenizer_name = model_name,
+          query_wrapper_prompt = PromptTemplate(
+            paste0(
+              "<|system|>\n", prompt,
+              "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
             )
-          ), context_window = 8192L,
-          embed_model = "local:BAAI/bge-small-en-v1.5"
-        ), silent = TRUE
-      )
+          ),
+          device_map = device,
+          generate_kwargs = list(
+            temperature = as.double(0.1), do_sample = TRUE
+          )
+        )
+        Settings$context_window <- 8192L
+        set_default_embedding(llama_index, device = device)
+        TRUE
+      }, silent = TRUE)
 
       # Check if load model failed
       if(is(load_model, "try-error")){
@@ -1399,26 +1650,25 @@ setup_llama2 <- function(llama_index, prompt, device)
 
   # Use CPU model
   if(device == "cpu"){
-    load_model <- llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "TheBloke/Llama-2-7B-Chat-fp16",
-        tokenizer_name = "TheBloke/Llama-2-7B-Chat-fp16",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = device,
-        generate_kwargs = list(
-          temperature = as.double(0.1), do_sample = TRUE
+    Settings$llm <- HuggingFaceLLM(
+      model_name = "TheBloke/Llama-2-7B-Chat-fp16",
+      tokenizer_name = "TheBloke/Llama-2-7B-Chat-fp16",
+      query_wrapper_prompt = PromptTemplate(
+        paste0(
+          "<|system|>\n", prompt,
+          "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
         )
-      ), context_window = 8192L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
+      ),
+      device_map = device,
+      generate_kwargs = list(
+        temperature = as.double(0.1), do_sample = TRUE
+      )
     )
+    Settings$context_window <- 8192L
+    set_default_embedding(llama_index, device = device)
   }
 
-  # Return model
-  return(load_model)
+  invisible(NULL)
 
 }
 
@@ -1428,21 +1678,27 @@ setup_llama2 <- function(llama_index, prompt, device)
 setup_mistral <- function(llama_index, prompt, device)
 {
 
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "mistralai/Mistral-7B-v0.1",
-        tokenizer_name = "mistralai/Mistral-7B-v0.1",
-        device_map = device,
-        generate_kwargs = list(
-          temperature = as.double(0.1), do_sample = TRUE,
-          pad_token_id = 2L, eos_token_id = 2L
-        )
-      ), context_window = 8192L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+  PromptTemplate <- get_prompt_template(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = "mistralai/Mistral-7B-v0.1",
+    tokenizer_name = "mistralai/Mistral-7B-v0.1",
+    device_map = device,
+    generate_kwargs = list(
+      temperature = as.double(0.1), do_sample = TRUE,
+      pad_token_id = 2L, eos_token_id = 2L
     )
   )
+  Settings$context_window <- 8192L
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 
 }
 
@@ -1452,20 +1708,25 @@ setup_mistral <- function(llama_index, prompt, device)
 setup_openchat <- function(llama_index, prompt, device)
 {
 
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "openchat/openchat_3.5",
-        tokenizer_name = "openchat/openchat_3.5",
-        device_map = device,
-        generate_kwargs = list(
-          temperature = as.double(0.1), do_sample = TRUE
-        )
-      ), context_window = 8192L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = "openchat/openchat_3.5",
+    tokenizer_name = "openchat/openchat_3.5",
+    device_map = device,
+    generate_kwargs = list(
+      temperature = as.double(0.1), do_sample = TRUE
     )
   )
+  Settings$context_window <- 8192L
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 
 }
 
@@ -1475,20 +1736,25 @@ setup_openchat <- function(llama_index, prompt, device)
 setup_orca2 <- function(llama_index, prompt, device)
 {
 
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "microsoft/Orca-2-7b",
-        tokenizer_name = "microsoft/Orca-2-7b",
-        device_map = device,
-        generate_kwargs = list(
-          temperature = as.double(0.1), do_sample = TRUE
-        )
-      ), context_window = 4096L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = "microsoft/Orca-2-7b",
+    tokenizer_name = "microsoft/Orca-2-7b",
+    device_map = device,
+    generate_kwargs = list(
+      temperature = as.double(0.1), do_sample = TRUE
     )
   )
+  Settings$context_window <- 4096L
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 
 }
 
@@ -1498,21 +1764,26 @@ setup_orca2 <- function(llama_index, prompt, device)
 setup_phi2 <- function(llama_index, prompt, device)
 {
 
-  # Return model
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "microsoft/phi-2",
-        tokenizer_name = "microsoft/phi-2",
-        device_map = device,
-        generate_kwargs = list(
-          temperature = as.double(0.1), do_sample = TRUE,
-          pad_token_id = 2L, eos_token_id = 2L
-        )
-      ), context_window = 2048L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = "microsoft/phi-2",
+    tokenizer_name = "microsoft/phi-2",
+    device_map = device,
+    generate_kwargs = list(
+      temperature = as.double(0.1), do_sample = TRUE,
+      pad_token_id = 2L, eos_token_id = 2L
     )
   )
+  Settings$context_window <- 2048L
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 
 }
 
@@ -1580,7 +1851,6 @@ setup_tinyllama <- function(llama_index, prompt, device,
                              max_new_tokens = NULL, top_p = NULL)
 {
 
-  # Return model
   # Build generate kwargs from overrides
   gen <- list()
   if (!is.null(temperature))    gen$temperature    <- as.double(temperature)
@@ -1588,21 +1858,29 @@ setup_tinyllama <- function(llama_index, prompt, device,
   if (!is.null(top_p))           gen$top_p          <- as.double(top_p)
   if (!is.null(max_new_tokens))  gen$max_new_tokens <- as.integer(max_new_tokens)
 
-  return(
-    llama_index$ServiceContext$from_defaults(
-      llm = llama_index$llms$HuggingFaceLLM(
-        model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        query_wrapper_prompt = llama_index$PromptTemplate(
-          paste0(
-            "<|system|>\n", prompt,
-            "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
-          )
-        ), device_map = device,
-        generate_kwargs = gen
-      ), context_window = 2048L,
-      embed_model = "local:BAAI/bge-small-en-v1.5"
-    )
+  # Import Settings from llama_index.core
+  Settings <- llama_index$core$Settings
+
+  # Get HuggingFaceLLM class from correct location
+  HuggingFaceLLM <- get_huggingface_llm(llama_index)
+  PromptTemplate <- get_prompt_template(llama_index)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- HuggingFaceLLM(
+    model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    query_wrapper_prompt = PromptTemplate(
+      paste0(
+        "<|system|>\n", prompt,
+        "</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+      )
+    ),
+    device_map = device,
+    generate_kwargs = gen
   )
+  Settings$context_window <- 2048L
+  set_default_embedding(llama_index, device = device)
+
+  invisible(NULL)
 
 }

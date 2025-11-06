@@ -10,11 +10,12 @@ register_retriever(name, handler)
 \item{name}{Character scalar; retriever name (e.g., "my_retriever").}
 
 \item{handler}{Function with signature:
-function(llama_index, documents, service_context, similarity_top_k,
+function(llama_index, documents, similarity_top_k,
          response_mode, params) -> engine_or_list
 where the return value is either a Python query engine with `$query()`
 or a list with element `query_fn` taking a single `query` argument
-and returning a list with `response` and `source_nodes`.}
+and returning a list with `response` and `source_nodes`.
+Note: Settings are configured globally via llama_index.core.Settings.}
 }
 \description{
 Registers a retriever under a name. The handler should construct and return

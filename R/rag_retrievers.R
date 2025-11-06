@@ -17,11 +17,12 @@ NULL
 #'
 #' @param name Character scalar; retriever name (e.g., "my_retriever").
 #' @param handler Function with signature:
-#'   function(llama_index, documents, service_context, similarity_top_k,
+#'   function(llama_index, documents, similarity_top_k,
 #'            response_mode, params) -> engine_or_list
 #'   where the return value is either a Python query engine with `$query()`
 #'   or a list with element `query_fn` taking a single `query` argument
 #'   and returning a list with `response` and `source_nodes`.
+#'   Note: Settings are configured globally via llama_index.core.Settings.
 #'
 #' @export
 register_retriever <- function(name, handler)
@@ -54,11 +55,15 @@ run_query <- function(engine_or_list, query)
 }
 
 #' @noRd
-vector_retriever_handler <- function(llama_index, documents, service_context,
+vector_retriever_handler <- function(llama_index, documents,
                                      similarity_top_k, response_mode, params)
 {
-  index <- llama_index$VectorStoreIndex(
-    documents, service_context = service_context,
+  # Get VectorStoreIndex from the correct location
+  VectorStoreIndex <- get_vector_store_index(llama_index)
+
+  # Settings are configured globally, so no service_context needed
+  index <- VectorStoreIndex(
+    documents,
     show_progress = isTRUE(params$show_progress)
   )
   index$as_query_engine(
@@ -68,7 +73,7 @@ vector_retriever_handler <- function(llama_index, documents, service_context,
 }
 
 #' @noRd
-bm25_retriever_handler <- function(llama_index, documents, service_context,
+bm25_retriever_handler <- function(llama_index, documents,
                                    similarity_top_k, response_mode, params)
 {
   # Try native BM25 retriever in llama-index
@@ -88,10 +93,12 @@ bm25_retriever_handler <- function(llama_index, documents, service_context,
         documents = documents,
         similarity_top_k = as.integer(similarity_top_k)
       )
+      # Get RetrieverQueryEngine from the correct location
+      RetrieverQueryEngine <- get_retriever_query_engine(llama_index)
+      # Settings are configured globally, no service_context needed
       return(
-        llama_index$RetrieverQueryEngine$from_args(
+        RetrieverQueryEngine$from_args(
           retriever = bm25,
-          service_context = service_context,
           response_mode = response_mode
         )
       )
@@ -101,11 +108,11 @@ bm25_retriever_handler <- function(llama_index, documents, service_context,
 
   if (!inherits(engine, "try-error") && !is.null(engine)) return(engine)
 
-  # Fallback: rank_bm25 with manual synthesis using the service LLM
+  # Fallback: rank_bm25 with manual synthesis using the Settings LLM
   rank_bm25 <- try(reticulate::import("rank_bm25", delay_load = TRUE), silent = TRUE)
   if (inherits(rank_bm25, "try-error")) {
     warning("rank_bm25 is not available; falling back to vector retriever", call. = FALSE)
-    return(vector_retriever_handler(llama_index, documents, service_context,
+    return(vector_retriever_handler(llama_index, documents,
                                     similarity_top_k, response_mode, params))
   }
 
@@ -157,7 +164,8 @@ bm25_retriever_handler <- function(llama_index, documents, service_context,
     )
 
     # Call the LLM directly with a simple context wrapper
-    llm <- try(service_context$llm, silent = TRUE)
+    # Access LLM from global Settings
+    llm <- try(llama_index$core$Settings$llm, silent = TRUE)
     answer <- NULL
     if (!inherits(llm, "try-error") && !is.null(llm)) {
       prompt <- paste0(
@@ -192,7 +200,7 @@ bm25_retriever_handler <- function(llama_index, documents, service_context,
 }
 
 #' @noRd
-resolve_retriever_engine <- function(name, llama_index, documents, service_context,
+resolve_retriever_engine <- function(name, llama_index, documents,
                                      similarity_top_k, response_mode, params = list())
 {
   # Registered override takes precedence
@@ -205,5 +213,5 @@ resolve_retriever_engine <- function(name, llama_index, documents, service_conte
       stop("Unknown retriever: ", name, call. = FALSE)
     )
   }
-  handler(llama_index, documents, service_context, similarity_top_k, response_mode, params)
+  handler(llama_index, documents, similarity_top_k, response_mode, params)
 }

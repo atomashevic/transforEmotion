@@ -15,5 +15,5 @@ Encoding: UTF-8
 Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, remotes, reticulate, textdata, jsonlite, ggplot2, reshape2, httr
 Suggests: knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0)
 VignetteBuilder: knitr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Config/testthat/edition: 3

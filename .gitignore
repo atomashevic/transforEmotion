@@ -97,3 +97,6 @@ misc/
 changes.md
 
 .qwen/
+
+rag-chunk*
+2025-* 

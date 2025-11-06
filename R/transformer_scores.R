@@ -301,17 +301,44 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
     )){
 
       # Load pipeline (ensure no HF token is sent for public models)
-      classifier <- without_hf_token({
-        transformers$pipeline(
-          "zero-shot-classification", device = device,
-          model = switch(
-            transformer,
-            "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
-            "cross-encoder-distilroberta" = "cross-encoder/nli-distilroberta-base",
-            "facebook-bart" = "facebook/bart-large-mnli"
+      pipeline_try <- try({
+        without_hf_token({
+          transformers$pipeline(
+            "zero-shot-classification", device = device,
+            model = switch(
+              transformer,
+              "cross-encoder-roberta" = "cross-encoder/nli-roberta-base",
+              "cross-encoder-distilroberta" = "cross-encoder/nli-distilroberta-base",
+              "facebook-bart" = "facebook/bart-large-mnli"
+            )
           )
-        )
-      })
+        })
+      }, silent = TRUE)
+
+      if (is(pipeline_try, "try-error")) {
+        # Workaround: Some sentence-transformers cross-encoder repos occasionally trigger
+        # a Rust/serde error ("untagged enum ModelWrapper") in tokenizers/safetensors
+        # on certain stacks. Fall back to a stable MNLI model.
+        if (isTRUE(grepl("ModelWrapper|untagged enum ModelWrapper", pipeline_try))) {
+          message("Falling back to 'facebook/bart-large-mnli' due to tokenizer/model compatibility error...")
+          fallback_try <- try({
+            without_hf_token({
+              transformers$pipeline(
+                "zero-shot-classification",
+                model = "facebook/bart-large-mnli",
+                device = if (identical(device, "cuda")) device else "cpu"
+              )
+            })
+          }, silent = TRUE)
+          if (is(fallback_try, "try-error")) stop(fallback_try, call. = FALSE)
+          classifier <- fallback_try
+          transformer <- "facebook-bart"
+        } else {
+          stop(pipeline_try, call. = FALSE)
+        }
+      } else {
+        classifier <- pipeline_try
+      }
 
     }else{
 
