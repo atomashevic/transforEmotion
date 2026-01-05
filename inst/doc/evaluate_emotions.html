@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="transforEmotion Team" />
+
+<meta name="date" content="2026-01-05" />
+
+<title>Evaluating Emotion Classification with evaluate_emotions()</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Evaluating Emotion Classification with
+evaluate_emotions()</h1>
+<h4 class="author">transforEmotion Team</h4>
+<h4 class="date">2026-01-05</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The <code>evaluate_emotions()</code> function provides comprehensive
+evaluation capabilities for discrete emotion classification tasks. This
+vignette demonstrates how to use the function to assess model
+performance using standard metrics and visualizations.</p>
+</div>
+<div id="installation-and-setup" class="section level2">
+<h2>Installation and Setup</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install transforEmotion if not already installed</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># devtools::install_github(&quot;your-repo/transforEmotion&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(transforEmotion)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(transforEmotion)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1;m[4;m</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; transforEmotion (version 0.1.7)</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [0m[0m </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Important: If you are using RStudio, please make sure you have the latest version installed. </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; For help getting started, type browseVignettes(&quot;transforEmotion&quot;)</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; For bugs and errors, submit an issue to &lt;https://github.com/atomashevic/transforEmotion/issues&gt; </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; Python dependencies are installed automatically via uv on first use. Optionally run setup_modules() to pre-warm the environment. </span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; Data Privacy: All processing is done locally with the downloaded model, and your data is never sent to any remote server or third-party. </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Available vision models: Use list_vision_models() to see all models or register_vision_model() to add custom models.</span></span></code></pre></div>
+</div>
+<div id="basic-usage" class="section level2">
+<h2>Basic Usage</h2>
+<div id="creating-sample-data" class="section level3">
+<h3>Creating Sample Data</h3>
+<p>First, let’s create some sample evaluation data to demonstrate the
+function:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Create synthetic evaluation data</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>n_samples <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># Generate ground truth labels</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>emotions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;anger&quot;</span>, <span class="st">&quot;joy&quot;</span>, <span class="st">&quot;sadness&quot;</span>, <span class="st">&quot;fear&quot;</span>, <span class="st">&quot;surprise&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>eval_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span>n_samples,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">truth =</span> <span class="fu">sample</span>(emotions, n_samples, <span class="at">replace =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>                <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.2</span>, <span class="fl">0.15</span>, <span class="fl">0.15</span>)),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co"># Generate realistic predictions (correlated with truth but with some errors)</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>eval_data<span class="sc">$</span>pred <span class="ot">&lt;-</span> eval_data<span class="sc">$</span>truth</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co"># Introduce some classification errors</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>error_indices <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n_samples, <span class="at">size =</span> <span class="fl">0.25</span> <span class="sc">*</span> n_samples)</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>eval_data<span class="sc">$</span>pred[error_indices] <span class="ot">&lt;-</span> <span class="fu">sample</span>(emotions, <span class="fu">length</span>(error_indices), <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co"># Generate probability scores</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="cf">for</span> (emotion <span class="cf">in</span> emotions) {</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="co"># Higher probability for correct class, lower for others</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  eval_data[[<span class="fu">paste0</span>(<span class="st">&quot;prob_&quot;</span>, emotion)]] <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>    eval_data<span class="sc">$</span>truth <span class="sc">==</span> emotion,</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    <span class="fu">runif</span>(n_samples, <span class="fl">0.6</span>, <span class="fl">0.95</span>),  <span class="co"># Higher prob for correct class</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>    <span class="fu">runif</span>(n_samples, <span class="fl">0.01</span>, <span class="fl">0.4</span>)   <span class="co"># Lower prob for incorrect classes</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>  )</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>}</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co"># Normalize probabilities to sum to 1</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>prob_cols <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;prob_&quot;</span>, emotions)</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>prob_sums <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(eval_data[, prob_cols])</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>eval_data[, prob_cols] <span class="ot">&lt;-</span> eval_data[, prob_cols] <span class="sc">/</span> prob_sums</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co"># Display sample data</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="fu">head</span>(eval_data)</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt;   id    truth     pred prob_anger   prob_joy prob_sadness  prob_fear</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; 1  1     fear surprise 0.10212549 0.02829695   0.16916418 0.63349125</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; 2  2     fear surprise 0.22000913 0.08829725   0.04855244 0.44341087</span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; 3  3      joy      joy 0.05642642 0.40583491   0.17749856 0.18908123</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; 4  4 surprise surprise 0.19460955 0.09289653   0.03606787 0.06384095</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt; 5  5    anger    anger 0.47644873 0.21565003   0.08878616 0.17295498</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; 6  6    anger    anger 0.50608394 0.09512487   0.17226538 0.21580694</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt;   prob_surprise</span></span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt; 1    0.06692213</span></span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt; 2    0.19973031</span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; 3    0.17115887</span></span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt; 4    0.61258509</span></span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt; 5    0.04616011</span></span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt; 6    0.01071888</span></span></code></pre></div>
+</div>
+<div id="basic-evaluation" class="section level3">
+<h3>Basic Evaluation</h3>
+<p>Now let’s evaluate the model performance with basic metrics:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Basic evaluation with default metrics</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">data =</span> eval_data,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">truth_col =</span> <span class="st">&quot;truth&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">pred_col =</span> <span class="st">&quot;pred&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co"># Print results</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">print</span>(results)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; Emotion Classification Evaluation Results</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; ========================================</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; Summary:</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   Total instances: 200</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;   Classes: 5 (anger, fear, joy, sadness, surprise)</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt;   Overall accuracy: 0.805</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt;   Macro F1: 0.799</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; Metrics:</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt;               metric     value</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; 1           accuracy 0.8050000</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; 2    precision_macro 0.7986522</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; 3       recall_macro 0.8004904</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; 4           f1_macro 0.7993882</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; 5           f1_micro 0.8050000</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; 6 krippendorff_alpha 0.7531802</span></span></code></pre></div>
+</div>
+<div id="evaluation-with-probabilities" class="section level3">
+<h3>Evaluation with Probabilities</h3>
+<p>For more comprehensive evaluation including calibration metrics:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Full evaluation with probability scores</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>results_full <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">data =</span> eval_data,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">truth_col =</span> <span class="st">&quot;truth&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">pred_col =</span> <span class="st">&quot;pred&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">probs_cols =</span> prob_cols,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">classes =</span> emotions,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">return_plot =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co"># Display summary</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="fu">summary</span>(results_full)</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; Emotion Classification Evaluation Summary</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; =======================================</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; Dataset Information:</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt;   - Total instances: 200</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;   - Number of classes: 5</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt;   - Classes: anger, fear, joy, sadness, surprise</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; Overall Performance:</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt;   - Accuracy: 0.805</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;   - Macro F1: 0.799</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;   - Micro F1: 0.805</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt;   - Macro AUROC: 1.000</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt;   - Expected Calibration Error: 0.313</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt;   - Krippendorff&#39;s alpha: 0.753</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; Per-Class Metrics:</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;     class precision    recall        f1</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt;     anger 0.8048780 0.8250000 0.8148148</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt;       joy 0.8518519 0.8214286 0.8363636</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt;   sadness 0.8125000 0.7878788 0.8000000</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt;      fear 0.7333333 0.7586207 0.7457627</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt;  surprise 0.7906977 0.8095238 0.8000000</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; Confusion Matrix:</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt;           Actual</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; Predicted  anger joy sadness fear surprise Sum</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt;   anger       33   2       0    2        4  41</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt;   joy          1  46       3    2        2  54</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt;   sadness      3   1      26    1        1  32</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt;   fear         2   3       2   22        1  30</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt;   surprise     1   4       2    2       34  43</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt;   Sum         40  56      33   29       42 200</span></span></code></pre></div>
+</div>
+</div>
+<div id="understanding-the-metrics" class="section level2">
+<h2>Understanding the Metrics</h2>
+<div id="classification-metrics" class="section level3">
+<h3>Classification Metrics</h3>
+<p>The function computes several standard classification metrics:</p>
+<ul>
+<li><strong>Accuracy</strong>: Overall classification accuracy</li>
+<li><strong>Precision</strong>: Per-class and macro/micro averages</li>
+<li><strong>Recall</strong>: Per-class and macro/micro averages<br />
+</li>
+<li><strong>F1-Score</strong>: Harmonic mean of precision and
+recall</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Access per-class metrics</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>results_full<span class="sc">$</span>per_class_metrics</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;      class precision    recall        f1</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; 1    anger 0.8048780 0.8250000 0.8148148</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 2      joy 0.8518519 0.8214286 0.8363636</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 3  sadness 0.8125000 0.7878788 0.8000000</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 4     fear 0.7333333 0.7586207 0.7457627</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 5 surprise 0.7906977 0.8095238 0.8000000</span></span></code></pre></div>
+</div>
+<div id="probabilistic-metrics" class="section level3">
+<h3>Probabilistic Metrics</h3>
+<p>When probability scores are provided:</p>
+<ul>
+<li><strong>AUROC</strong>: Area under the ROC curve for each class</li>
+<li><strong>ECE</strong>: Expected Calibration Error measuring
+probability calibration</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># AUROC results</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>results_full<span class="sc">$</span>auroc</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; $per_class</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;      class auroc</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; 1    anger     1</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 2      joy     1</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 3  sadness     1</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 4     fear     1</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 5 surprise     1</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; $macro</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co"># Calibration error</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Expected Calibration Error:&quot;</span>, <span class="fu">round</span>(results_full<span class="sc">$</span>ece, <span class="dv">3</span>))</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; Expected Calibration Error: 0.313</span></span></code></pre></div>
+</div>
+<div id="inter-rater-reliability" class="section level3">
+<h3>Inter-rater Reliability</h3>
+<p>Krippendorff’s α measures agreement between human annotators and
+model predictions:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Krippendorff&#39;s α:&quot;</span>, <span class="fu">round</span>(results_full<span class="sc">$</span>krippendorff_alpha, <span class="dv">3</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; Krippendorff&#39;s α: 0.753</span></span></code></pre></div>
+</div>
+</div>
+<div id="visualization" class="section level2">
+<h2>Visualization</h2>
+<p>The function provides built-in plotting capabilities:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Plot confusion matrix and metrics (requires ggplot2)</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">requireNamespace</span>(<span class="st">&quot;ggplot2&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  plots <span class="ot">&lt;-</span> <span class="fu">plot</span>(results_full)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  </span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="co"># Display confusion matrix</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="fu">print</span>(plots<span class="sc">$</span>confusion_matrix)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  </span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="co"># Display per-class metrics</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="fu">print</span>(plots<span class="sc">$</span>metrics)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="integration-with-transforemotion-workflow" class="section level2">
+<h2>Integration with transforEmotion Workflow</h2>
+<div id="complete-pipeline-example" class="section level3">
+<h3>Complete Pipeline Example</h3>
+<p>Here’s how to integrate <code>evaluate_emotions()</code> into a
+complete emotion analysis workflow:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Step 1: Get emotion predictions using transforEmotion</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>text_data <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="st">&quot;I am so happy today!&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="st">&quot;This makes me really angry.&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="st">&quot;I feel very sad about this news.&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co"># Get transformer-based predictions</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">transformer_scores</span>(</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">x =</span> text_data,</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="at">classes =</span> <span class="fu">c</span>(<span class="st">&quot;anger&quot;</span>, <span class="st">&quot;joy&quot;</span>, <span class="st">&quot;sadness&quot;</span>),</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="at">return_prob =</span> <span class="cn">TRUE</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>)</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Step 2: Prepare evaluation data (assuming you have ground truth)</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>ground_truth <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;joy&quot;</span>, <span class="st">&quot;anger&quot;</span>, <span class="st">&quot;sadness&quot;</span>)  <span class="co"># Your ground truth labels</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>eval_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(text_data),</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  <span class="at">truth =</span> ground_truth,</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  <span class="at">pred =</span> predictions<span class="sc">$</span>predicted_class,</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="at">prob_anger =</span> predictions<span class="sc">$</span>prob_anger,</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  <span class="at">prob_joy =</span> predictions<span class="sc">$</span>prob_joy,</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  <span class="at">prob_sadness =</span> predictions<span class="sc">$</span>prob_sadness,</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>)</span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co"># Step 3: Evaluate performance</span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>evaluation <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>  <span class="at">data =</span> eval_df,</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>  <span class="at">probs_cols =</span> <span class="fu">c</span>(<span class="st">&quot;prob_anger&quot;</span>, <span class="st">&quot;prob_joy&quot;</span>, <span class="st">&quot;prob_sadness&quot;</span>)</span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a>)</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="fu">print</span>(evaluation)</span></code></pre></div>
+</div>
+<div id="using-with-csv-data" class="section level3">
+<h3>Using with CSV Data</h3>
+<p>You can also evaluate models using data stored in CSV files:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Save evaluation data to CSV</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">write.csv</span>(eval_data, <span class="st">&quot;model_evaluation.csv&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co"># Load and evaluate from CSV</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>csv_results <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">data =</span> <span class="st">&quot;model_evaluation.csv&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">probs_cols =</span> prob_cols</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="advanced-usage" class="section level2">
+<h2>Advanced Usage</h2>
+<div id="custom-metrics-selection" class="section level3">
+<h3>Custom Metrics Selection</h3>
+<p>Select only specific metrics for faster computation:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Evaluate only accuracy and F1 scores</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>quick_eval <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">data =</span> eval_data,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">metrics =</span> <span class="fu">c</span>(<span class="st">&quot;accuracy&quot;</span>, <span class="st">&quot;f1_macro&quot;</span>, <span class="st">&quot;f1_micro&quot;</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">return_plot =</span> <span class="cn">FALSE</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">print</span>(quick_eval<span class="sc">$</span>metrics)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;     metric     value</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; 1 accuracy 0.8050000</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; 2 f1_macro 0.7993882</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; 3 f1_micro 0.8050000</span></span></code></pre></div>
+</div>
+<div id="handling-missing-data" class="section level3">
+<h3>Handling Missing Data</h3>
+<p>The function automatically handles missing values:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Create data with missing values</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>eval_data_missing <span class="ot">&lt;-</span> eval_data</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>eval_data_missing<span class="sc">$</span>truth[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>eval_data_missing<span class="sc">$</span>pred[<span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co"># Evaluate with automatic missing value removal</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>results_clean <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="at">data =</span> eval_data_missing,</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="at">na_rm =</span> <span class="cn">TRUE</span>  <span class="co"># Default behavior</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>)</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; Warning: Removed 10 rows with missing values</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Original samples:&quot;</span>, <span class="fu">nrow</span>(eval_data_missing), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; Original samples: 200</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Samples after cleaning:&quot;</span>, results_clean<span class="sc">$</span>summary<span class="sc">$</span>n_instances, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; Samples after cleaning: 190</span></span></code></pre></div>
+</div>
+<div id="custom-column-names" class="section level3">
+<h3>Custom Column Names</h3>
+<p>Use custom column names for your data:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Rename columns in your data</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>custom_data <span class="ot">&lt;-</span> eval_data</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">names</span>(custom_data)[<span class="fu">names</span>(custom_data) <span class="sc">==</span> <span class="st">&quot;truth&quot;</span>] <span class="ot">&lt;-</span> <span class="st">&quot;ground_truth&quot;</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="fu">names</span>(custom_data)[<span class="fu">names</span>(custom_data) <span class="sc">==</span> <span class="st">&quot;pred&quot;</span>] <span class="ot">&lt;-</span> <span class="st">&quot;model_prediction&quot;</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co"># Evaluate with custom column names</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>custom_results <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="at">data =</span> custom_data,</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="at">truth_col =</span> <span class="st">&quot;ground_truth&quot;</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">pred_col =</span> <span class="st">&quot;model_prediction&quot;</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="at">metrics =</span> <span class="fu">c</span>(<span class="st">&quot;accuracy&quot;</span>, <span class="st">&quot;f1_macro&quot;</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>)</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="fu">print</span>(custom_results)</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; Emotion Classification Evaluation Results</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt; ========================================</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; Summary:</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt;   Total instances: 200</span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt;   Classes: 5 (anger, fear, joy, sadness, surprise)</span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt;   Overall accuracy: 0.805</span></span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt;   Macro F1: 0.799</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt; Metrics:</span></span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt;     metric     value</span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; 1 accuracy 0.8050000</span></span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; 2 f1_macro 0.7993882</span></span></code></pre></div>
+</div>
+</div>
+<div id="best-practices" class="section level2">
+<h2>Best Practices</h2>
+<div id="always-include-probability-scores" class="section level3">
+<h3>1. Always Include Probability Scores</h3>
+<p>When possible, include probability scores for more comprehensive
+evaluation:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Good: Include probabilities for calibration analysis</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>results_with_probs <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">data =</span> eval_data,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">probs_cols =</span> prob_cols</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="use-appropriate-metrics" class="section level3">
+<h3>2. Use Appropriate Metrics</h3>
+<p>Choose metrics based on your use case:</p>
+<ul>
+<li><strong>Balanced datasets</strong>: Accuracy and macro F1</li>
+<li><strong>Imbalanced datasets</strong>: Micro F1 and per-class
+recall</li>
+<li><strong>Probabilistic models</strong>: AUROC and ECE</li>
+</ul>
+</div>
+<div id="validate-data-quality" class="section level3">
+<h3>3. Validate Data Quality</h3>
+<p>Always check your evaluation data before analysis:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Check class distribution</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">table</span>(eval_data<span class="sc">$</span>truth)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt;    anger     fear      joy  sadness surprise </span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt;       40       29       56       33       42</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="fu">table</span>(eval_data<span class="sc">$</span>pred)</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt;    anger     fear      joy  sadness surprise </span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt;       41       30       54       32       43</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co"># Check for missing values</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(eval_data<span class="sc">$</span>truth))</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">is.na</span>(eval_data<span class="sc">$</span>pred))</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div>
+</div>
+<div id="report-multiple-metrics" class="section level3">
+<h3>4. Report Multiple Metrics</h3>
+<p>Don’t rely on a single metric - report comprehensive results:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Get comprehensive evaluation</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>comprehensive_eval <span class="ot">&lt;-</span> <span class="fu">evaluate_emotions</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">data =</span> eval_data,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">probs_cols =</span> prob_cols,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">metrics =</span> <span class="fu">c</span>(<span class="st">&quot;accuracy&quot;</span>, <span class="st">&quot;precision&quot;</span>, <span class="st">&quot;recall&quot;</span>, <span class="st">&quot;f1_macro&quot;</span>, <span class="st">&quot;f1_micro&quot;</span>, </span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>             <span class="st">&quot;auroc&quot;</span>, <span class="st">&quot;ece&quot;</span>, <span class="st">&quot;krippendorff&quot;</span>, <span class="st">&quot;confusion_matrix&quot;</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># Report key metrics</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>key_metrics <span class="ot">&lt;-</span> comprehensive_eval<span class="sc">$</span>metrics[</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>  comprehensive_eval<span class="sc">$</span>metrics<span class="sc">$</span>metric <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;accuracy&quot;</span>, <span class="st">&quot;f1_macro&quot;</span>, <span class="st">&quot;f1_micro&quot;</span>),</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>]</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="fu">print</span>(key_metrics)</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co">#&gt;     metric     value</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="co">#&gt; 1 accuracy 0.8050000</span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="co">#&gt; 4 f1_macro 0.7993882</span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; 5 f1_micro 0.8050000</span></span></code></pre></div>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>The <code>evaluate_emotions()</code> function provides a
+comprehensive toolkit for evaluating emotion classification models. It
+integrates seamlessly with the transforEmotion package workflow and
+follows best practices from the machine learning evaluation
+literature.</p>
+<p>Key features: - Standard classification metrics (accuracy, precision,
+recall, F1) - Probabilistic evaluation (AUROC, calibration) -
+Inter-rater reliability (Krippendorff’s α) - Built-in visualization
+capabilities - Flexible input handling and data validation</p>
+<p>For more information, see the function documentation with
+<code>?evaluate_emotions</code>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

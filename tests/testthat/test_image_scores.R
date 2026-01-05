@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("image_scores works with all default models", {
   # skip_on_cran()
   # skip_on_ci()

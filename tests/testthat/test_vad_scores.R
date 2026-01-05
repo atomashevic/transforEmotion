@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("vad_scores validates input arguments", {
   
   # Test missing input

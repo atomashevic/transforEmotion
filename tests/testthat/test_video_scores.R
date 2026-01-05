@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("video_scores works with local_model_path", {
   skip_on_cran()
   skip_on_ci()

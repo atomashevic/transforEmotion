@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("without_hf_token temporarily unsets and restores tokens", {
   old_hf <- Sys.getenv("HF_TOKEN", unset = NA_character_)
   old_hub <- Sys.getenv("HUGGINGFACE_HUB_TOKEN", unset = NA_character_)

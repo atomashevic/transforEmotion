@@ -1,7 +1,10 @@
 Package: transforEmotion
 Title: Sentiment Analysis for Text, Image and Video using Transformer Models
 Version: 0.1.7
-Date: 2025-09-09
+Date: 2026-01-05
+Author: Alexander Christensen [aut] (<https://orcid.org/0000-0002-9798-7037>),
+    Hudson Golino [aut] (<https://orcid.org/0000-0002-1601-1447>),
+    Aleksandar Tomašević [aut, cre] (<https://orcid.org/0000-0003-4863-6051>)
 Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gmail.com",
               role = "aut", comment = c(ORCID = "0000-0002-9798-7037")),
 	           person("Hudson", "Golino", email = "hfg9s@virginia.edu", role = "aut",
@@ -10,6 +13,7 @@ Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gma
 	           comment = c(ORCID = "0000-0003-4863-6051")))
 Maintainer: Aleksandar Tomašević <atomashevic@gmail.com>
 Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>.
+Depends: R (>= 3.5.0)
 License: GPL (>= 3.0)
 Encoding: UTF-8
 Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, remotes, reticulate, textdata, jsonlite, ggplot2, reshape2, httr

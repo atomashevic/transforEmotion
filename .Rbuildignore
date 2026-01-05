@@ -1,1 +1,45 @@
-^.*\\.Rproj$\n^\\.Rproj\\.user$\n^\\.github$\ncitation.cff\nLICENSE\n^doc$\n^Meta$\n^\\.aider\n^\\.env$\n^MAFW/\n^playground/\n^CLAUDE\\.md$\n^tests/test_workflow\\.md$\ndiff_0.1.5_*\n\n# Ignore non-standard top-level files from build\n^AGENTS\\.md$\n^VAD\\.md$\n^model-registry\\.md$\n^debug_.*\\.R$\n^trump1\\.jpg$\n^\\.create_metrics_table$\n^\\.claude(/|$)\n^\\.ropeproject(/|$)\n^WARP\\.md$\n^QWEN\\.md$\nmisc/\nchanges.md
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^\.git$
+^\.gitignore$
+^\.gitattributes$
+citation.cff
+LICENSE
+^doc$
+^Meta$
+^\.aider
+^\.env$
+^MAFW/
+^playground/
+^CLAUDE\.md$
+^tests/test_workflow\.md$
+diff_0.1.5_*
+
+# Ignore non-standard top-level files from build
+^AGENTS\.md$
+^VAD\.md$
+^model-registry\.md$
+^debug_.*\.R$
+^trump1\.jpg$
+^\.create_metrics_table$
+^\.claude(/|$)
+^\.ropeproject(/|$)
+^WARP\.md$
+^QWEN\.md$
+misc/
+changes.md
+
+# CRAN check output files
+^cran_check.*\.txt$
+^final_check\.txt$
+^.*\.Rcheck$
+^\.\.Rcheck$
+^CRAN_CHECK_SUMMARY\.md$
+^transforEmotion_final_check\.txt$
+
+# Issues and project management files
+^issues-.*\.md$
+
+# R project file
+transforEmotion\.Rproj

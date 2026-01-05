@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("evaluate_emotions basic functionality works", {
   
   # Create synthetic test data

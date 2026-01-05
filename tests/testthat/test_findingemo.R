@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("download_findingemo_data input validation works", {
   
   # Test missing target_dir

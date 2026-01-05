@@ -1,0 +1,356 @@
+---
+title: "Evaluating Emotion Classification with evaluate_emotions()"
+author: "transforEmotion Team"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Evaluating Emotion Classification with evaluate_emotions()}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+The `evaluate_emotions()` function provides comprehensive evaluation capabilities for discrete emotion classification tasks. This vignette demonstrates how to use the function to assess model performance using standard metrics and visualizations.
+
+## Installation and Setup
+
+```{r, eval=FALSE}
+# Install transforEmotion if not already installed
+# devtools::install_github("your-repo/transforEmotion")
+library(transforEmotion)
+```
+
+```{r}
+library(transforEmotion)
+```
+
+## Basic Usage
+
+### Creating Sample Data
+
+First, let's create some sample evaluation data to demonstrate the function:
+
+```{r}
+# Create synthetic evaluation data
+set.seed(42)
+n_samples <- 200
+
+# Generate ground truth labels
+emotions <- c("anger", "joy", "sadness", "fear", "surprise")
+eval_data <- data.frame(
+  id = 1:n_samples,
+  truth = sample(emotions, n_samples, replace = TRUE, 
+                prob = c(0.2, 0.3, 0.2, 0.15, 0.15)),
+  stringsAsFactors = FALSE
+)
+
+# Generate realistic predictions (correlated with truth but with some errors)
+eval_data$pred <- eval_data$truth
+# Introduce some classification errors
+error_indices <- sample(1:n_samples, size = 0.25 * n_samples)
+eval_data$pred[error_indices] <- sample(emotions, length(error_indices), replace = TRUE)
+
+# Generate probability scores
+for (emotion in emotions) {
+  # Higher probability for correct class, lower for others
+  eval_data[[paste0("prob_", emotion)]] <- ifelse(
+    eval_data$truth == emotion,
+    runif(n_samples, 0.6, 0.95),  # Higher prob for correct class
+    runif(n_samples, 0.01, 0.4)   # Lower prob for incorrect classes
+  )
+}
+
+# Normalize probabilities to sum to 1
+prob_cols <- paste0("prob_", emotions)
+prob_sums <- rowSums(eval_data[, prob_cols])
+eval_data[, prob_cols] <- eval_data[, prob_cols] / prob_sums
+
+# Display sample data
+head(eval_data)
+```
+
+### Basic Evaluation
+
+Now let's evaluate the model performance with basic metrics:
+
+```{r}
+# Basic evaluation with default metrics
+results <- evaluate_emotions(
+  data = eval_data,
+  truth_col = "truth",
+  pred_col = "pred"
+)
+
+# Print results
+print(results)
+```
+
+### Evaluation with Probabilities
+
+For more comprehensive evaluation including calibration metrics:
+
+```{r}
+# Full evaluation with probability scores
+results_full <- evaluate_emotions(
+  data = eval_data,
+  truth_col = "truth",
+  pred_col = "pred",
+  probs_cols = prob_cols,
+  classes = emotions,
+  return_plot = TRUE
+)
+
+# Display summary
+summary(results_full)
+```
+
+## Understanding the Metrics
+
+### Classification Metrics
+
+The function computes several standard classification metrics:
+
+- **Accuracy**: Overall classification accuracy
+- **Precision**: Per-class and macro/micro averages
+- **Recall**: Per-class and macro/micro averages  
+- **F1-Score**: Harmonic mean of precision and recall
+
+```{r}
+# Access per-class metrics
+results_full$per_class_metrics
+```
+
+### Probabilistic Metrics
+
+When probability scores are provided:
+
+- **AUROC**: Area under the ROC curve for each class
+- **ECE**: Expected Calibration Error measuring probability calibration
+
+```{r}
+# AUROC results
+results_full$auroc
+
+# Calibration error
+cat("Expected Calibration Error:", round(results_full$ece, 3))
+```
+
+### Inter-rater Reliability
+
+Krippendorff's α measures agreement between human annotators and model predictions:
+
+```{r}
+cat("Krippendorff's α:", round(results_full$krippendorff_alpha, 3))
+```
+
+## Visualization
+
+The function provides built-in plotting capabilities:
+
+```{r, eval=FALSE}
+# Plot confusion matrix and metrics (requires ggplot2)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plots <- plot(results_full)
+  
+  # Display confusion matrix
+  print(plots$confusion_matrix)
+  
+  # Display per-class metrics
+  print(plots$metrics)
+}
+```
+
+## Integration with transforEmotion Workflow
+
+### Complete Pipeline Example
+
+Here's how to integrate `evaluate_emotions()` into a complete emotion analysis workflow:
+
+```{r, eval=FALSE}
+# Step 1: Get emotion predictions using transforEmotion
+text_data <- c(
+  "I am so happy today!",
+  "This makes me really angry.",
+  "I feel very sad about this news."
+)
+
+# Get transformer-based predictions
+predictions <- transformer_scores(
+  x = text_data,
+  classes = c("anger", "joy", "sadness"),
+  return_prob = TRUE
+)
+
+# Step 2: Prepare evaluation data (assuming you have ground truth)
+ground_truth <- c("joy", "anger", "sadness")  # Your ground truth labels
+
+eval_df <- data.frame(
+  id = 1:length(text_data),
+  truth = ground_truth,
+  pred = predictions$predicted_class,
+  prob_anger = predictions$prob_anger,
+  prob_joy = predictions$prob_joy,
+  prob_sadness = predictions$prob_sadness,
+  stringsAsFactors = FALSE
+)
+
+# Step 3: Evaluate performance
+evaluation <- evaluate_emotions(
+  data = eval_df,
+  probs_cols = c("prob_anger", "prob_joy", "prob_sadness")
+)
+
+print(evaluation)
+```
+
+### Using with CSV Data
+
+You can also evaluate models using data stored in CSV files:
+
+```{r, eval=FALSE}
+# Save evaluation data to CSV
+write.csv(eval_data, "model_evaluation.csv", row.names = FALSE)
+
+# Load and evaluate from CSV
+csv_results <- evaluate_emotions(
+  data = "model_evaluation.csv",
+  probs_cols = prob_cols
+)
+```
+
+## Advanced Usage
+
+### Custom Metrics Selection
+
+Select only specific metrics for faster computation:
+
+```{r}
+# Evaluate only accuracy and F1 scores
+quick_eval <- evaluate_emotions(
+  data = eval_data,
+  metrics = c("accuracy", "f1_macro", "f1_micro"),
+  return_plot = FALSE
+)
+
+print(quick_eval$metrics)
+```
+
+### Handling Missing Data
+
+The function automatically handles missing values:
+
+```{r}
+# Create data with missing values
+eval_data_missing <- eval_data
+eval_data_missing$truth[1:5] <- NA
+eval_data_missing$pred[6:10] <- NA
+
+# Evaluate with automatic missing value removal
+results_clean <- evaluate_emotions(
+  data = eval_data_missing,
+  na_rm = TRUE  # Default behavior
+)
+
+cat("Original samples:", nrow(eval_data_missing), "\n")
+cat("Samples after cleaning:", results_clean$summary$n_instances, "\n")
+```
+
+### Custom Column Names
+
+Use custom column names for your data:
+
+```{r}
+# Rename columns in your data
+custom_data <- eval_data
+names(custom_data)[names(custom_data) == "truth"] <- "ground_truth"
+names(custom_data)[names(custom_data) == "pred"] <- "model_prediction"
+
+# Evaluate with custom column names
+custom_results <- evaluate_emotions(
+  data = custom_data,
+  truth_col = "ground_truth",
+  pred_col = "model_prediction",
+  metrics = c("accuracy", "f1_macro")
+)
+
+print(custom_results)
+```
+
+## Best Practices
+
+### 1. Always Include Probability Scores
+
+When possible, include probability scores for more comprehensive evaluation:
+
+```{r, eval=FALSE}
+# Good: Include probabilities for calibration analysis
+results_with_probs <- evaluate_emotions(
+  data = eval_data,
+  probs_cols = prob_cols
+)
+```
+
+### 2. Use Appropriate Metrics
+
+Choose metrics based on your use case:
+
+- **Balanced datasets**: Accuracy and macro F1
+- **Imbalanced datasets**: Micro F1 and per-class recall
+- **Probabilistic models**: AUROC and ECE
+
+### 3. Validate Data Quality
+
+Always check your evaluation data before analysis:
+
+```{r}
+# Check class distribution
+table(eval_data$truth)
+table(eval_data$pred)
+
+# Check for missing values
+sum(is.na(eval_data$truth))
+sum(is.na(eval_data$pred))
+```
+
+### 4. Report Multiple Metrics
+
+Don't rely on a single metric - report comprehensive results:
+
+```{r}
+# Get comprehensive evaluation
+comprehensive_eval <- evaluate_emotions(
+  data = eval_data,
+  probs_cols = prob_cols,
+  metrics = c("accuracy", "precision", "recall", "f1_macro", "f1_micro", 
+             "auroc", "ece", "krippendorff", "confusion_matrix")
+)
+
+# Report key metrics
+key_metrics <- comprehensive_eval$metrics[
+  comprehensive_eval$metrics$metric %in% c("accuracy", "f1_macro", "f1_micro"),
+]
+print(key_metrics)
+```
+
+## Conclusion
+
+The `evaluate_emotions()` function provides a comprehensive toolkit for evaluating emotion classification models. It integrates seamlessly with the transforEmotion package workflow and follows best practices from the machine learning evaluation literature.
+
+Key features:
+- Standard classification metrics (accuracy, precision, recall, F1)
+- Probabilistic evaluation (AUROC, calibration)
+- Inter-rater reliability (Krippendorff's α)
+- Built-in visualization capabilities
+- Flexible input handling and data validation
+
+For more information, see the function documentation with `?evaluate_emotions`.

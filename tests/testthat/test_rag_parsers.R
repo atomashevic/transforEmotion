@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("validate_rag_json passes on valid structure", {
   skip_on_cran()
   skip_on_ci()

@@ -99,4 +99,15 @@ changes.md
 .qwen/
 
 rag-chunk*
-2025-* 
+2025-*
+
+# CRAN submission files
+cran_check*.txt
+final_check.txt
+CRAN_CHECK_SUMMARY.md
+FINAL_SUBMISSION_REPORT.md
+transforEmotion_*.tar.gz
+..Rcheck/
+
+# Issues and planning files
+issues-*.md 

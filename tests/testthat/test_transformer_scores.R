@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("transformer_scores works with default settings", {
   # skip_on_cran()
   skip("This is the basic functionality test")
