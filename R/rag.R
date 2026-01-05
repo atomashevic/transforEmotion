@@ -42,7 +42,7 @@
 #' @param response_mode Character (length = 1).
 #' Different responses generated from the model.
 #' See documentation
-#' \href{https://docs.llamaindex.ai/en/stable/module_guides/}{here}
+#' \href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}
 #'
 #' Defaults to \code{"tree_summarize"}
 #'
