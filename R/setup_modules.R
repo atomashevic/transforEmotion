@@ -74,6 +74,11 @@ setup_modules <- function() {
   # Configure Python encoding (best-effort)
   try(reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')"), silent = TRUE)
 
+  # Enforce modern llama-index stack and remove deprecated legacy bridge package.
+  # This avoids mixed environments where `llama_index.legacy` is present but
+  # `llama_index.core.Settings` is expected by transforEmotion.
+  te_ensure_modern_llama_index(verbose = TRUE, stop_on_error = TRUE)
+
   # Optional: GPU add-ons when GPU present (automatic; override with TE_FORCE_CPU=1)
   use_gpu <- te_should_use_gpu()
   initialized <- FALSE

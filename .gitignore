@@ -110,4 +110,8 @@ transforEmotion_*.tar.gz
 ..Rcheck/
 
 # Issues and planning files
-issues-*.md 
+issues-*.md
+
+# Test misc
+
+test.R

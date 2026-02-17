@@ -53,6 +53,8 @@ After loading the package for the first time, the Python environment is provisio
 setup_modules()
 ```
 
+`setup_modules()` enforces the modern LlamaIndex stack (`llama_index.core.Settings`) and automatically removes `llama-index-legacy` if it is detected in the active Python environment.
+
 If `uv` is not found, you’ll be prompted to install it. If that fails or you prefer manual install:
 - macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
 - Windows: `winget install --id=astral-sh.uv -e`

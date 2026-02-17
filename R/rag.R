@@ -294,32 +294,42 @@ rag <- function(
   # Run setup for modules
   # setup_modules()
 
+  import_and_validate <- function() {
+    li <- try(reticulate::import("llama_index"), silent = TRUE)
+    if (inherits(li, "try-error")) return(li)
+    valid <- try(te_validate_modern_llama_index(llama_index = li, stop_on_error = TRUE), silent = TRUE)
+    if (inherits(valid, "try-error")) return(valid)
+    li
+  }
+
   # Check for llama_index in environment
   if(!exists("llama_index", envir = as.environment(envir))){
-    
-    # Try to import llama-index
-    llama_index <- try(
-        if("llama-index-legacy" %in% reticulate::py_list_packages()$package) {
-            # {llama-index} >= 0.10.5
-            reticulate::import("llama_index.legacy")
-        } else {
-            # {llama-index} < 0.10.5
-            reticulate::import("llama_index")
-        }, silent = TRUE
-    )
-    
-    # If import fails, try setting up modules
+    llama_index <- import_and_validate()
+
+    # If import or validation fails, try setting up modules and retry once
     if(inherits(llama_index, "try-error")) {
-        message("Required Python modules not found. Setting up modules...")
-        setup_modules()
-        
-        # Try import again
-        llama_index <- if("llama-index-legacy" %in% 
-                        reticulate::py_list_packages()$package) {
-            reticulate::import("llama_index.legacy")
-        } else {
-            reticulate::import("llama_index")
-        }
+      message("Required modern Python modules not found or incompatible. Setting up modules...")
+      setup_modules()
+      llama_index <- import_and_validate()
+    }
+
+    if (inherits(llama_index, "try-error")) {
+      cond <- attr(llama_index, "condition")
+      msg <- if (inherits(cond, "condition")) conditionMessage(cond) else as.character(llama_index)
+      stop(msg, call. = FALSE)
+    }
+  } else {
+    llama_index <- get("llama_index", envir = as.environment(envir))
+    cached_valid <- try(te_validate_modern_llama_index(llama_index = llama_index, stop_on_error = TRUE), silent = TRUE)
+    if (inherits(cached_valid, "try-error")) {
+      message("Cached llama_index module is incompatible. Repairing Python modules...")
+      setup_modules()
+      llama_index <- import_and_validate()
+      if (inherits(llama_index, "try-error")) {
+        cond <- attr(llama_index, "condition")
+        msg <- if (inherits(cond, "condition")) conditionMessage(cond) else as.character(llama_index)
+        stop(msg, call. = FALSE)
+      }
     }
   }
 

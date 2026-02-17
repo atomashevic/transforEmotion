@@ -23,6 +23,167 @@ te_should_use_gpu <- function() {
 }
 
 #' @noRd
+.te_py_list_packages <- function() {
+  pkgs <- try(reticulate::py_list_packages(), silent = TRUE)
+  if (inherits(pkgs, "try-error") || !is.data.frame(pkgs) || !nrow(pkgs)) {
+    return(data.frame())
+  }
+  if (!("package" %in% names(pkgs))) return(data.frame())
+  pkgs
+}
+
+#' @noRd
+.te_llama_pkg_versions <- function() {
+  pkgs <- .te_py_list_packages()
+  if (!nrow(pkgs)) return("unavailable")
+  idx <- grepl("^llama-index", pkgs$package)
+  if (!any(idx)) return("none detected")
+  version_col <- if ("version" %in% names(pkgs)) pkgs$version else rep("unknown", nrow(pkgs))
+  entries <- paste0(pkgs$package[idx], "==", version_col[idx])
+  paste(entries, collapse = ", ")
+}
+
+#' @noRd
+te_validate_modern_llama_index <- function(llama_index = NULL, stop_on_error = TRUE) {
+  failures <- character()
+
+  if (is.null(llama_index)) {
+    llama_index <- try(reticulate::import("llama_index"), silent = TRUE)
+  }
+
+  if (inherits(llama_index, "try-error") || is.null(llama_index)) {
+    failures <- c(failures, "Could not import 'llama_index'.")
+  }
+
+  core <- try(reticulate::import("llama_index.core"), silent = TRUE)
+  if (inherits(core, "try-error") || is.null(core)) {
+    failures <- c(failures, "Could not import 'llama_index.core'.")
+  } else {
+    settings_ok <- FALSE
+    try({
+      settings_ok <- reticulate::py_has_attr(core, "Settings")
+    }, silent = TRUE)
+    if (!isTRUE(settings_ok)) {
+      failures <- c(failures, "'llama_index.core.Settings' is not available.")
+    }
+  }
+
+  hf_llm <- try(reticulate::import("llama_index.llms.huggingface"), silent = TRUE)
+  if (inherits(hf_llm, "try-error") || is.null(hf_llm)) {
+    failures <- c(failures, "Could not import 'llama_index.llms.huggingface'.")
+  }
+
+  hf_embed <- try(reticulate::import("llama_index.embeddings.huggingface"), silent = TRUE)
+  if (inherits(hf_embed, "try-error") || is.null(hf_embed)) {
+    failures <- c(failures, "Could not import 'llama_index.embeddings.huggingface'.")
+  }
+
+  if (!length(failures)) return(invisible(TRUE))
+
+  msg <- paste0(
+    "Incompatible llama-index Python environment for transforEmotion.\n",
+    paste(failures, collapse = " "),
+    "\nDetected llama-index packages: ", .te_llama_pkg_versions(), "\n",
+    "Run setup_modules() to repair the Python environment."
+  )
+
+  if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
+  invisible(FALSE)
+}
+
+#' @noRd
+te_remove_legacy_llama_index <- function(verbose = TRUE, stop_on_error = TRUE) {
+  pkgs <- .te_py_list_packages()
+  has_legacy <- nrow(pkgs) && any(pkgs$package == "llama-index-legacy")
+  if (!has_legacy) return(invisible(FALSE))
+
+  if (isTRUE(verbose)) {
+    message("Detected llama-index-legacy; removing it to enforce modern llama_index.core APIs.")
+  }
+
+  py_bin <- try(reticulate::py_config()$python, silent = TRUE)
+  if (inherits(py_bin, "try-error") || !nzchar(py_bin)) {
+    msg <- "Unable to locate Python executable for removing llama-index-legacy."
+    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
+    warning(msg, call. = FALSE)
+    return(invisible(FALSE))
+  }
+
+  out <- try(
+    system2(
+      py_bin,
+      c("-m", "pip", "uninstall", "-y", "llama-index-legacy"),
+      stdout = TRUE,
+      stderr = TRUE
+    ),
+    silent = TRUE
+  )
+  status <- if (inherits(out, "try-error")) 1L else attr(out, "status")
+  if (is.null(status)) status <- 0L
+
+  refreshed <- .te_py_list_packages()
+  still_present <- nrow(refreshed) && any(refreshed$package == "llama-index-legacy")
+  if (status != 0L || still_present) {
+    msg <- paste0(
+      "Failed to remove llama-index-legacy automatically. ",
+      "Please run: `python -m pip uninstall -y llama-index-legacy`.\n",
+      "Detected llama-index packages: ", .te_llama_pkg_versions()
+    )
+    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
+    warning(msg, call. = FALSE)
+    return(invisible(FALSE))
+  }
+
+  invisible(TRUE)
+}
+
+#' @noRd
+te_ensure_modern_llama_index <- function(verbose = TRUE, stop_on_error = TRUE) {
+  try(reticulate::py_available(initialize = TRUE), silent = TRUE)
+
+  if (isTRUE(stop_on_error)) {
+    te_remove_legacy_llama_index(verbose = verbose, stop_on_error = TRUE)
+  } else {
+    try(te_remove_legacy_llama_index(verbose = verbose, stop_on_error = FALSE), silent = TRUE)
+  }
+
+  modern_modules <- c(
+    "llama-index==0.10.30",
+    "llama-index-llms-huggingface",
+    "llama-index-embeddings-huggingface"
+  )
+
+  install_ok <- TRUE
+  install_try <- try(
+    reticulate::py_install(modern_modules, pip = TRUE, method = "auto"),
+    silent = TRUE
+  )
+  if (inherits(install_try, "try-error")) install_ok <- FALSE
+
+  if (!install_ok) {
+    msg <- paste0(
+      "Failed to install required modern llama-index packages. ",
+      "Detected llama-index packages: ", .te_llama_pkg_versions()
+    )
+    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
+    warning(msg, call. = FALSE)
+    return(invisible(FALSE))
+  }
+
+  if (isTRUE(stop_on_error)) {
+    te_validate_modern_llama_index(stop_on_error = TRUE)
+  } else {
+    valid <- try(te_validate_modern_llama_index(stop_on_error = FALSE), silent = TRUE)
+    if (inherits(valid, "try-error")) {
+      warning(as.character(valid), call. = FALSE)
+      return(invisible(FALSE))
+    }
+  }
+
+  invisible(TRUE)
+}
+
+#' @noRd
 .configure_uv_env <- function(use_gpu = FALSE) {
   # Define baseline packages and versions (aligned with previous setup)
   base_modules <- c(
