@@ -1,18 +1,17 @@
-citHeader("To cite transforEmotion in publications use:")
-
 bibentry(
   bibtype = "Article",
-  key = "tomasevic2024decodi",
-  title = "Decoding emotion dynamics in videos using dynamic Exploratory Graph Analysis and zero-shot image classification: A simulation and tutorial using the transforEmotion R package",
+  key = "tomasevic2026transforemotion",
+  header = "To cite transforEmotion in publications use:",
+  title = "{transforEmotion}: An Open-Source {R} Package for Emotion Analysis Using Transformer-Based Generative {AI} Models",
   author = c(
-    person("Aleksandar", "Tomasevic"),
+    person("Aleksandar", "Tomašević"),
     person("Hudson", "Golino"),
-    person("Alexander P", "Christensen")
+    person(c("Alexander", "P."), "Christensen")
   ),
-  journal = "PsyArXiv",
-  year = 2024,
-  url = "https://osf.io/preprints/psyarxiv/hf3g7",
-  keywords = "at",
-  doi = "10.31234/osf.io/hf3g7",
-  language = "en"
+  journal = "Computational Communication Research",
+  year = "2026",
+  volume = "8",
+  number = "2",
+  doi = "10.5117/CCR2026.2.2.TOMA",
+  url = "https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA"
 )

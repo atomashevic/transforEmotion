@@ -13,10 +13,18 @@ is \href{https://huggingface.co/openai/clip-vit-base-patch32}{Open AI's CLIP}. A
 their model name from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{https://huggingface.co/models?pipeline_tag=zero-shot-classification}.
 }
 \references{
+Tomašević, A., Golino, H., & Christensen, A. P. (2026).
+transforEmotion: An open-source R package for emotion analysis using transformer-based generative AI models.
+\emph{Computational Communication Research}, \emph{8}(2).
+\doi{10.5117/CCR2026.2.2.TOMA}
+
 Yin, W., Hay, J., & Roth, D. (2019).
 Benchmarking zero-shot text classification: Datasets, evaluation and entailment approach.
 arXiv preprint arXiv:1909.00161.
 }
+\seealso{
+\code{citation("transforEmotion")}
+}
 \author{
-Alexander P. Christensen <alexpaulchristensen@gmail.com>, Hudson Golino <hfg9s@virginia.edu> and Aleksandar Tomasevic <atomashevic@ff.uns.ac.rs>
+Alexander P. Christensen <alexpaulchristensen@gmail.com>, Hudson Golino <hfg9s@virginia.edu> and Aleksandar Tomasevic <atomashevic@gmail.com>
 }

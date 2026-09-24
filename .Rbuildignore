@@ -4,7 +4,7 @@
 ^\.git$
 ^\.gitignore$
 ^\.gitattributes$
-citation.cff
+^CITATION\.cff$
 LICENSE
 ^doc$
 ^Meta$

@@ -103,6 +103,11 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   model_config <- NULL
   model_architecture <- NULL
   
+  # Checked outside tryCatch() so the error is not replaced by "not recognized"
+  if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
+    stop("The specified local_model_path directory does not exist: ", local_model_path)
+  }
+
   tryCatch({
     if (is_vision_model_registered(model)) {
       # Model is registered - get the actual model ID
@@ -111,10 +116,6 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
       message("Using registered model: ", model_config$description)
       model_architecture <- model_config$architecture
     } else if (!is.null(local_model_path)) {
-      # Using a local model path - validate it exists
-      if (!dir.exists(local_model_path)) {
-        stop("The specified local_model_path directory does not exist.")
-      }
       message("Using local model from: ", local_model_path)
     } else {
       # Assume it's a direct HuggingFace model ID
@@ -133,11 +134,6 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
     }
   })
   
-  # Check if local_model_path exists if provided
-  if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
-    stop("The specified local_model_path directory does not exist: ", local_model_path)
-  }
-
   result <- without_hf_token({
     reticulate::py$classify_image(
       image = image, 
@@ -200,6 +196,11 @@ image_scores_dir <- function(dir,
   model_config <- NULL
   model_architecture <- NULL
   
+  # Checked outside tryCatch() so the error is not replaced by "not recognized"
+  if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
+    stop("The specified local_model_path directory does not exist: ", local_model_path)
+  }
+
   tryCatch({
     if (is_vision_model_registered(model)) {
       model_config <- get_vision_model_config(model)
@@ -207,9 +208,6 @@ image_scores_dir <- function(dir,
       message("Using registered model: ", model_config$description)
       model_architecture <- model_config$architecture
     } else if (!is.null(local_model_path)) {
-      if (!dir.exists(local_model_path)) {
-        stop("The specified local_model_path directory does not exist.")
-      }
       message("Using local model from: ", local_model_path)
     } else {
       message("Using model directly from HuggingFace Hub: ", model)

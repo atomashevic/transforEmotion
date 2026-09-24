@@ -1,6 +1,6 @@
 ### CRAN 0.1.7 | GitHub 0.1.7
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa)](https://github.com/sponsors/atomashevic)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://img.shields.io/badge/DOI-10.5117%2FCCR2026.2.2.TOMA-blue)](https://doi.org/10.5117/CCR2026.2.2.TOMA) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa)](https://github.com/sponsors/atomashevic)
 
 <!--[![Downloads per month](http://cranlogs.r-pkg.org/badges/transforEmotion)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://zenodo.org/badge/464199787.svg)](https://zenodo.org/doi/10.5281/zenodo.10471354) -->
 
@@ -330,6 +330,27 @@ The example images included in this package (`inst/extdata/`) have different lic
 - `trump1.jpg`, `trump2.jpg`: Official U.S. government portraits from Wikipedia. These works are copyright-free and therefore in the public domain under the terms of Title 17, Chapter 1, Section 105 of the U.S Code. Users may freely use, modify, and distribute these images for any purpose without attribution requirements.
 
 - `boris-1.png`, `boris-2.png`: Screenshots from YouTube video (https://www.youtube.com/watch?v=hdYNcv-chgY). These images are licensed under Creative Commons Attribution license (reuse allowed). Users may use, modify, and distribute these images, but must provide appropriate attribution to the original source.
+
+## Citation
+
+If you use `transforEmotion` in your research, please cite:
+
+Tomašević, A., Golino, H., & Christensen, A. P. (2026). transforEmotion: An open-source R package for emotion analysis using transformer-based generative AI models. *Computational Communication Research*, *8*(2). <https://doi.org/10.5117/CCR2026.2.2.TOMA>
+
+```bibtex
+@article{tomasevic2026transforemotion,
+  title   = {{transforEmotion}: An Open-Source {R} Package for Emotion Analysis Using Transformer-Based Generative {AI} Models},
+  author  = {Toma{\v{s}}evi{\'c}, Aleksandar and Golino, Hudson and Christensen, Alexander P.},
+  journal = {Computational Communication Research},
+  year    = {2026},
+  volume  = {8},
+  number  = {2},
+  doi     = {10.5117/CCR2026.2.2.TOMA},
+  url     = {https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA}
+}
+```
+
+The same entry is available from R with `citation("transforEmotion")`.
 
 ## References
 

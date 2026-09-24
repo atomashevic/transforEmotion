@@ -93,6 +93,11 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   # Validate model using registry system
   model_architecture <- NULL
   actual_model_id <- model
+  # Checked outside tryCatch() so the error is not replaced by "not recognized"
+  if (!is.null(local_model_path) && !dir.exists(local_model_path)) {
+    stop("The specified local_model_path directory does not exist: ", local_model_path)
+  }
+
   tryCatch({
     if (is_vision_model_registered(model)) {
       model_config <- get_vision_model_config(model)
@@ -103,9 +108,6 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
         message("Note: This model requires special handling and may be memory-intensive for video processing")
       }
     } else if (!is.null(local_model_path)) {
-      if (!dir.exists(local_model_path)) {
-        stop("The specified local_model_path directory does not exist.")
-      }
       message("Using local model from: ", local_model_path)
     } else {
       message("Using model directly from HuggingFace Hub: ", model)

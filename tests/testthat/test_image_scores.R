@@ -82,6 +82,7 @@ test_that("image_scores works with local_model_path", {
   image_path <- system.file("extdata", "boris-1.png", package = "transforEmotion")
   labels <- c("anger", "disgust", "fear", "happiness", "sadness", "surprise", "neutral")
   local_model_path <- "/home/aleksandar/.cache/huggingface/hub/models--openai--clip-vit-base-patch32/snapshots/3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268/" # Replace with actual path when testing
+  skip_if_not(dir.exists(local_model_path), "Local model directory not found")
 
   result <- image_scores(
     image = image_path,

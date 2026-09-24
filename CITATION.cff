@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use transforEmotion, please cite the article below."
+title: "transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer Models"
+type: software
+version: 0.1.7
+date-released: 2026-01-05
+url: "https://github.com/atomashevic/transforEmotion"
+repository-code: "https://github.com/atomashevic/transforEmotion"
+license: GPL-3.0-or-later
+authors:
+- family-names: "Christensen"
+  given-names: "Alexander P."
+  orcid: "https://orcid.org/0000-0002-9798-7037"
+- family-names: "Golino"
+  given-names: "Hudson"
+  orcid: "https://orcid.org/0000-0002-1601-1447"
+- family-names: "Tomašević"
+  given-names: "Aleksandar"
+  orcid: "https://orcid.org/0000-0003-4863-6051"
+preferred-citation:
+  type: article
+  title: "transforEmotion: An Open-Source R Package for Emotion Analysis Using Transformer-Based Generative AI Models"
+  authors:
+  - family-names: "Tomašević"
+    given-names: "Aleksandar"
+    orcid: "https://orcid.org/0000-0003-4863-6051"
+    affiliation: "Institute of Physics Belgrade, University of Belgrade"
+  - family-names: "Golino"
+    given-names: "Hudson"
+    orcid: "https://orcid.org/0000-0002-1601-1447"
+    affiliation: "Department of Psychology, University of Virginia"
+  - family-names: "Christensen"
+    given-names: "Alexander P."
+    orcid: "https://orcid.org/0000-0002-9798-7037"
+    affiliation: "Department of Psychology and Human Development, Peabody College, Vanderbilt University"
+  journal: "Computational Communication Research"
+  volume: 8
+  issue: 2
+  year: 2026
+  doi: "10.5117/CCR2026.2.2.TOMA"
+  url: "https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA"
+  issn: "2665-9085"
+  publisher:
+    name: "Amsterdam University Press"

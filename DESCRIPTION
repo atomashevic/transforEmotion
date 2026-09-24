@@ -12,12 +12,12 @@ Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gma
 	           person("Aleksandar", "Tomašević", email = "atomashevic@gmail.com", role = c("aut", "cre"),
 	           comment = c(ORCID = "0000-0003-4863-6051")))
 Maintainer: Aleksandar Tomašević <atomashevic@gmail.com>
-Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>.
+Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>. For details see Tomašević, Golino, and Christensen (2026) <doi:10.5117/CCR2026.2.2.TOMA>.
 Depends: R (>= 3.5.0)
 License: GPL (>= 3.0)
 Encoding: UTF-8
 Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, remotes, reticulate, textdata, jsonlite, ggplot2, reshape2, httr
-Suggests: knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0)
+Suggests: knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0), withr
 VignetteBuilder: knitr
-RoxygenNote: 7.3.3
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

@@ -1,3 +1,8 @@
+# Changes in version 0.1.7
+
+o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`
+
+
 # Changes in version 0.1.6
 
 o ADD: `sentence_similarity` to apply {sentence-transformers} to get similarity between texts
