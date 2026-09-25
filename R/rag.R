@@ -246,6 +246,9 @@ rag <- function(
     transformer <- "tinyllama"
   }else{transformer <- tolower(match.arg(transformer))}
 
+  # Set output mode (before the check below, which compares a single value)
+  output <- match.arg(output)
+
   # If a non-Gemma small model is requested with structured output, fallback to text with warning
   if (!transformer %in% c("gemma3-1b", "gemma3-4b") && 
       !identical(output, "text")) {
@@ -262,9 +265,6 @@ rag <- function(
   if(missing(response_mode)){
     response_mode <- "tree_summarize"
   }else{response_mode <- match.arg(response_mode)}
-
-  # Set output mode
-  output <- match.arg(output)
 
   # Set task mode
   task <- match.arg(task)

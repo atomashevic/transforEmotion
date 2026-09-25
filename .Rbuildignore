@@ -47,3 +47,6 @@ transforEmotion\.Rproj
 # Docker image for offline use
 ^docker$
 ^\.dockerignore$
+
+# Colab notebook
+^notebooks$

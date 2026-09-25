@@ -14,57 +14,73 @@
 
 With `transforEmotion` you can use cutting-edge transformer models for zero-shot emotion classification of text, image, and video in R — without the need for a GPU, subscriptions, or paid services, and without any manual Python setup. All data is processed locally on your machine, and nothing is sent to any external server or third-party service. This ensures full privacy for your data.
 
-- [How to install the package?](#how-to-install)
+- [Installation and first run](#installation-and-first-run)
+- [Google Colab](#google-colab)
 - [How to run sentiment analysis on text?](#text-example)
 - [How to run facial expression recognition on images?](#image-example)
 - [How to run facial expression recognition on videos?](#video-example)
 
 <!-- Implements sentiment analysis using [huggingface](https://huggingface.co/) transformer zero-shot classification model pipelines. The default pipeline for text is [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) trained on the [Stanford Natural Language Inference](https://huggingface.co/datasets/snli) (SNLI) and [Multi-Genre Natural Language Inference](https://huggingface.co/datasets/nyu-mll/multi_nli) (MultiNLI) datasets. Using similar models, zero-shot classification transformers have demonstrated superior performance relative to other natural language processing models (Yin, Hay, & Roth, [2019](https://arxiv.org/abs/1909.00161)). All other zero-shot classification model pipelines can be implemented using their model name from https://huggingface.co/models?pipeline_tag=zero-shot-classification. -->
 
-## How to Install
+## Installation and First Run
 
-You can find the latest stable version on [CRAN](https://cran.r-project.org/package=transforEmotion). Install it in R with:
+Install the release from CRAN, or the development version from GitHub:
 
 ```R
 install.packages("transforEmotion")
+
+# Development version
+install.packages("remotes")
+remotes::install_github("atomashevic/transforEmotion")
 ```
 
-If you want to use the latest development version, you can install it from GitHub using the `devtools` package.
+You do not need to install Python. The first function that uses Python sets it up:
+
+1. `reticulate` downloads [uv](https://docs.astral.sh/uv/), a fast Python package manager, if it is not installed.
+2. uv installs Python 3.12 and the Python packages: about 500 MB, or about 3 GB on a machine with an NVIDIA GPU (the CUDA build of PyTorch).
+3. The function downloads its model from Hugging Face, usually 100–600 MB.
+
+This takes 1–3 minutes and happens once. Later R sessions reuse the cached environment and models: Python starts in a few seconds and nothing is downloaded again. Each new model you use is downloaded the first time you use it.
+
+To do the setup before your first analysis, and download the default text, image and sentence-similarity models (about 1 GB):
 
 ```R
-if(!"devtools" %in% row.names(installed.packages())){
-  install.packages("devtools")
-}
-
-devtools::install_github("atomashevic/transforEmotion")
-```
-
-After installing the package, you can load it in R.
-
-```R
-# Load package
 library(transforEmotion)
-```
-
-No Python installation is needed. On first use, `reticulate` builds a Python environment with [uv](https://docs.astral.sh/uv/), downloading uv itself if it is not installed. The first build downloads about 500 MB of Python packages; later sessions reuse the cached environment and start in under a second.
-
-To do the setup ahead of time, and download the default text, image and sentence-similarity models (about 1 GB), run:
-
-```R
 setup_modules()
 ```
 
-Packages for optional features are added when a function first needs them: `rag()` adds LlamaIndex, `video_scores()` adds `pytubefix` for YouTube URLs, and the FindingEmo functions add `findingemo-light`. To install them ahead of time, pass them to `setup_modules()`:
+Optional features add their Python packages the first time they are used: `rag()` adds LlamaIndex and downloads a language model (TinyLLAMA, about 2 GB), `video_scores()` adds `pytubefix` for YouTube URLs, and the FindingEmo functions add `findingemo-light`. To prepare them in advance, run `setup_modules(extras = c("rag", "youtube", "findingemo"))`.
+
+Then run an analysis:
 
 ```R
-setup_modules(extras = c("rag", "youtube", "findingemo"))
+library(transforEmotion)
+transformer_scores(
+  text = "I am so happy to see you today!",
+  classes = c("joy", "anger", "fear")
+)
+#> $`I am so happy to see you today!`
+#>         joy       anger        fear
+#> 0.992855728 0.003367609 0.003776714
 ```
+
+The scores are the model's probabilities that the text belongs to each class.
+
+The Python environment and the models are stored in cache folders in your home directory (uv's cache and `~/.cache/huggingface`). To keep them elsewhere, for example on a cluster with a small home quota, or to work without internet access, see [Offline Use](#offline-use-hpc-clusters-and-containers).
+
+If the setup fails, the error shows uv's output. Fix the cause (usually the network connection) and try again in a new R session: Python cannot be set up again once it has started in a session.
 
 > [!WARNING]
 > If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
 
-> [!INFO]
+> [!NOTE]
 > If you are using RStudio, please make sure that you are using the latest version of both R and RStudio.
+
+## Google Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/atomashevic/transforEmotion/blob/main/notebooks/transforEmotion_colab.ipynb)
+
+The notebook installs the package in a Colab R runtime and runs the text, image, video and RAG examples. It works on the free CPU runtime; on a GPU runtime (Runtime > Change runtime type > T4 GPU) the package installs the CUDA build of PyTorch and uses the GPU automatically. Colab deletes the Python environment and models when the runtime is deleted, so a new runtime repeats the first-run setup.
 
 ## Text Example
 
@@ -181,6 +197,7 @@ Supported local LLMs include TinyLLAMA, Gemma3‑1B/4B, Qwen3‑1.7B, and Minist
 > [!TIP] Hugging Face token handling
 > - No long-term storage: The package never writes tokens to disk.
 > - Gemma only: It first tries to download without a token; on 401/forbidden, it prompts you to paste a token and uses it once for that download, then discards it.
+> - Scripts and notebooks (including Google Colab) cannot show the prompt: set the token first with `Sys.setenv(HF_TOKEN = "hf_...")`.
 > - Public models: Downloads always ignore tokens to avoid unnecessary 401s from stale credentials.
 > - Create a token at https://huggingface.co/settings/tokens. For Gemma 3, accept the model license on the model page first.
 

@@ -26,6 +26,10 @@ o FIX: installation failed on Apple Silicon Macs because `tensorflow-cpu` has no
 
 o FIX: on NVIDIA GPUs, `rag()` returned empty results because Triton, which PyTorch uses for some GPU kernels, could not compile its helper ("Python.h: No such file or directory"); the package now points C compilers at the Python headers when Python starts
 
+o FIX: `rag()` warned that structured outputs need Gemma on every call with the default `output`, because the check ran before `output` was resolved
+
+o ADD: Google Colab notebook (`notebooks/transforEmotion_colab.ipynb`) with text, image, video and RAG demos, linked from the README
+
 o FIX: `video_scores()` deleted every .jpg file in `save_dir` when `save_frames = FALSE`, and built wrong paths (so frames were left behind, with a warning per frame) when `save_dir` had no trailing slash; it now deletes only the frames it wrote
 
 o FIX: the startup message printed raw ANSI escape codes in Jupyter and Google Colab notebooks; text is now styled only in RStudio and terminals
