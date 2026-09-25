@@ -85,3 +85,17 @@ test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = file.path(tempdir(), "no-such-python"))
   expect_error(transforEmotion:::.te_require("core"), "does not exist")
 })
+
+test_that("C compilers can find Python.h once Python starts (Triton on CUDA)", {
+  skip_on_cran()
+  skip_if(!nzchar(Sys.which("gcc")), "gcc not available")
+  skip_if_not(reticulate::py_module_available("torch"))
+  reticulate::py_run_string(local = FALSE, paste(
+    "import os, subprocess, tempfile",
+    "_te_src = os.path.join(tempfile.mkdtemp(), 't.c')",
+    "open(_te_src, 'w').write('#include <Python.h>\\nint f(void){return 0;}\\n')",
+    "_te_rc = subprocess.run(['gcc', '-c', '-fPIC', _te_src, '-o', _te_src + '.o'], capture_output=True).returncode",
+    sep = "\n"
+  ))
+  expect_equal(reticulate::py$`_te_rc`, 0L)
+})

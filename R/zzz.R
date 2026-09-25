@@ -13,6 +13,12 @@
     if (!reticulate::py_available(initialize = FALSE)) {
         try(.te_require("core"), silent = TRUE)
     }
+
+    # Let C compilers find Python's headers once Python starts
+    setHook("reticulate.onPyInit", .te_expose_python_headers)
+    if (reticulate::py_available(initialize = FALSE)) {
+        .te_expose_python_headers()
+    }
 }
 
 .onAttach <- function(libname, pkgname)

@@ -251,6 +251,33 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# On CUDA, Triton (installed with PyTorch) compiles a small C helper with gcc
+# the first time it runs, and needs Python.h. Embedded by reticulate in a uv
+# environment, Python reports the environment's include folder, which has no
+# headers, so every Triton kernel fails with "Python.h: No such file or
+# directory". This adds the interpreter's real include folder to CPATH, which
+# gcc reads. It only changes the Python process's environment, and does
+# nothing when the headers are already where Python says.
+.te_expose_python_headers <- function() {
+  tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import os, sys, sysconfig",
+      "if not os.path.exists(os.path.join(sysconfig.get_paths()['include'], 'Python.h')):",
+      "    base = os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))",
+      "    inc = os.path.join(base, 'include', 'python%d.%d' % sys.version_info[:2])",
+      "    paths = [p for p in os.environ.get('CPATH', '').split(os.pathsep) if p]",
+      "    if os.path.exists(os.path.join(inc, 'Python.h')) and inc not in paths:",
+      "        os.environ['CPATH'] = os.pathsep.join([inc] + paths)",
+      sep = "\n"
+    )),
+    # Best effort: without it only Triton's compile step can fail, with its
+    # own error
+    error = function(e) invisible(NULL)
+  )
+  invisible(TRUE)
+}
+
+#' @noRd
 # llama-index downloads NLTK data into each Python environment on first
 # import. A single folder in the package cache lets data downloaded once (for
 # example by setup_modules(extras = "rag")) serve every environment and
