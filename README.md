@@ -46,19 +46,19 @@ After installing the package, you can load it in R.
 library(transforEmotion)
 ```
 
-After loading the package for the first time, the Python environment is provisioned automatically on first use via `uv`. You can optionally pre‑warm dependencies to speed up the first call:
+No Python installation is needed. On first use, `reticulate` builds a Python environment with [uv](https://docs.astral.sh/uv/), downloading uv itself if it is not installed. The first build downloads about 500 MB of Python packages; later sessions reuse the cached environment and start in under a second.
+
+To do the setup ahead of time, and download the default text, image and sentence-similarity models (about 1 GB), run:
 
 ```R
-# Optional one-time environment warmup (uv-managed)
 setup_modules()
 ```
 
-`setup_modules()` enforces the modern LlamaIndex stack (`llama_index.core.Settings`) and automatically removes `llama-index-legacy` if it is detected in the active Python environment.
+Packages for optional features are added when a function first needs them: `rag()` adds LlamaIndex, `video_scores()` adds `pytubefix` for YouTube URLs, and the FindingEmo functions add `findingemo-light`. To install them ahead of time, pass them to `setup_modules()`:
 
-If `uv` is not found, you’ll be prompted to install it. If that fails or you prefer manual install:
-- macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS)
-- Windows: `winget install --id=astral-sh.uv -e`
-After installing, restart R so your PATH is updated. If you cannot install `uv`, you can continue; `reticulate` will create a default virtual environment on first use (setup may be slower).
+```R
+setup_modules(extras = c("rag", "youtube", "findingemo"))
+```
 
 > [!WARNING]
 > If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
@@ -301,14 +301,52 @@ register_vision_model(
 
 ## GPU Support
 
-The package uses uv-managed Python environments and auto-detects GPU on supported systems. For successful GPU use, ensure:
+When an NVIDIA GPU is detected on Linux or Windows, the CUDA 12.6 build of PyTorch is installed; otherwise the CPU-only build is used (on macOS, PyTorch supports Apple Silicon GPUs directly). GPU use needs only an NVIDIA driver recent enough for CUDA 12 (R525 or newer); the CUDA libraries come with PyTorch, so no CUDA Toolkit or compiler is required.
 
-1. An NVIDIA GPU (GTX 1060 or newer)
-2. CUDA Toolkit 11.7+ installed
-3. Updated NVIDIA drivers
-4. GCC/G++ version 9 or newer (Linux only)
+To override the detection, set an environment variable in a new R session before loading the package (or add it to `.Renviron`):
 
-If your system does not meet these requirements or you prefer not to use GPU, everything works in CPU mode (just slower). You can optionally run `setup_modules()` once to pre-warm dependencies; otherwise, the environment is provisioned automatically on first use.
+```R
+Sys.setenv(TE_FORCE_CPU = "1")             # always use the CPU build
+Sys.setenv(TRANSFOREMOTION_USE_GPU = "1")  # always use the CUDA build
+library(transforEmotion)
+```
+
+Everything works in CPU mode, only slower.
+
+## Offline Use: HPC Clusters and Containers
+
+### HPC clusters
+
+Compute nodes often have no internet access, and home folders often have small quotas. Keep the Python environment, Python itself and the models in one folder on shared project storage, prepare it once on a login node, and use it offline in jobs:
+
+```R
+# Once, on a login node (with internet access)
+library(transforEmotion)
+setup_cache("/project/mylab/transforEmotion-cache", gpu = TRUE)
+setup_modules(extras = "rag", models = "facebook/bart-large-mnli")
+
+# In each job script (no internet access needed)
+library(transforEmotion)
+setup_cache("/project/mylab/transforEmotion-cache", offline = TRUE, gpu = TRUE)
+scores <- transformer_scores(text, classes)
+```
+
+Login nodes usually have no GPU, so set `gpu` explicitly, to the same value in both places: `TRUE` if the compute nodes have NVIDIA GPUs, `FALSE` otherwise. Offline jobs can use the default models plus any passed to `setup_modules(models = )`. The cache folder must stay writable.
+
+### Docker and Apptainer
+
+`docker/Dockerfile` builds an image with the package, a fixed Python environment and the default models, which runs offline by default:
+
+```bash
+docker build -f docker/Dockerfile -t transforemotion .                        # CPU
+docker build -f docker/Dockerfile --build-arg EXTRAS=rag -t transforemotion:rag .
+docker build -f docker/Dockerfile --build-arg GPU=1 -t transforemotion:cuda .  # NVIDIA
+docker run --rm -it -v "$PWD":/work transforemotion
+```
+
+On clusters that run Apptainer (Singularity) instead of Docker, convert the image with `apptainer build transforemotion.sif docker-daemon://transforemotion:latest`. Apptainer images are read-only, which is why the image uses a fixed environment rather than uv's cache.
+
+To build your own fixed environment, for example in a read-only software folder, install the output of `python_requirements()` into a Python 3.12 virtual environment and set `TRANSFOREMOTION_PYTHON` to its Python executable; transforEmotion then uses it without installing anything.
 
 ## Datasets: FindingEmo-Light
 

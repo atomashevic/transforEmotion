@@ -54,8 +54,12 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements; pytubefix is only needed for YouTube URLs
   ensure_te_py_env()
+  if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
+    .te_require("youtube")
+  }
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -70,7 +74,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   # If import fails, try setting up modules
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }

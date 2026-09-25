@@ -178,7 +178,7 @@ transformer_scores <- function(
 )
 {
 
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements
   ensure_te_py_env()
 
   # Check that input of 'text' argument is in the
@@ -283,7 +283,7 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
     # If import fails, try setting up modules
     if(inherits(modules_import, "try-error")) {
       message("Required Python modules not found. Setting up modules...")
-      setup_modules()
+      setup_modules(download_models = FALSE)
 
       # Try import again with encoding configuration
       reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")

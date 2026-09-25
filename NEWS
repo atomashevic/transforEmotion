@@ -1,6 +1,37 @@
-# Changes in version 0.1.7
+# Changes in version 0.1.8 (in development)
+
+o CHANGE: faster, smaller Python setup. The first environment build downloads about 500 MB instead of about 3.4 GB on Linux, and later sessions reuse the cached environment in under a second
+
+o CHANGE: PyTorch is installed as a CPU-only build unless an NVIDIA GPU is detected (CUDA 12.6 build on Linux and Windows); override with `TE_FORCE_CPU=1` or `TRANSFOREMOTION_USE_GPU=1`
+
+o CHANGE: Python 3.12 instead of 3.10; transformers 4.46, sentence-transformers 5.x and opencv-python-headless replace the older pins; TensorFlow, which was never used, is no longer installed
+
+o CHANGE: packages for optional features are added on first use: LlamaIndex in `rag()`, `pytubefix` in `video_scores()` for YouTube URLs, `findingemo-light` in the FindingEmo functions and `bitsandbytes` for EVA-CLIP-8B on a GPU
+
+o CHANGE: `rag()` installs `llama-index-core` instead of the `llama-index` meta-package, so `llama-index-legacy` and the OpenAI integrations are no longer installed
+
+o CHANGE: `setup_modules()` gains `extras` and `download_models` arguments and now downloads the default models; `setup_gpu_modules()` now installs only `bitsandbytes` (AutoAWQ, Auto-GPTQ, Optimum and llama-cpp-python were never used)
+
+o CHANGE: uv is no longer installed by the package or prompted for when it is attached; reticulate downloads uv itself when needed. Requires reticulate >= 1.45.0
+
+o ADD: `setup_cache()` keeps the Python environment, Python itself and the models in one folder and can run offline, for HPC clusters whose compute nodes have no internet access
+
+o ADD: `python_requirements()` returns the Python requirements, and `TRANSFOREMOTION_PYTHON` makes transforEmotion use a fixed Python environment, for read-only environments such as Apptainer images
+
+o ADD: `docker/Dockerfile` builds an offline image with the package, a fixed Python environment and the default models (CPU or CUDA); a GitHub Actions workflow publishes it to GHCR
+
+o ADD: `setup_modules()` gains a `models` argument for additional Hugging Face models, and with `extras = "rag"` also downloads the rag() models and the NLTK data LlamaIndex needs
+
+o FIX: installation failed on Apple Silicon Macs because `tensorflow-cpu` has no macOS arm64 wheels, and the failure was hidden
+
+o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` report a missing `local_model_path` directory instead of "Model not recognized"
 
 o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`
+
+
+# Changes in version 0.1.7
+
+o No NEWS entry was recorded for this release
 
 
 # Changes in version 0.1.6

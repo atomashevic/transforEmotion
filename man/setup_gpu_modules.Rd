@@ -7,19 +7,15 @@
 setup_gpu_modules()
 }
 \description{
-Installs GPU-specific Python modules using uv-managed environments.
+Adds \code{bitsandbytes}, used for 4-bit quantization of the EVA-CLIP-8B
+vision model, to the Python environment. Equivalent to
+\code{setup_modules(extras = "gpu", download_models = FALSE)}.
 }
 \details{
-This function installs additional GPU-specific modules including:
-\itemize{
-  \item AutoAWQ for weight quantization
-  \item Auto-GPTQ for GPU quantization
-  \item Optimum for transformer optimization
-  \item llama-cpp-python (Linux only) for CPU/GPU inference
-}
-
-The function is typically called by \code{setup_modules()} when GPU installation
-is selected, but can also be run independently to add GPU-related packages.
+The CUDA build of PyTorch does not need this function: it is selected
+automatically when an NVIDIA GPU is detected (see \code{\link{setup_modules}}).
+\code{image_scores()} and \code{video_scores()} add \code{bitsandbytes}
+themselves when EVA-CLIP-8B is used on a GPU.
 }
 \note{
 This function requires NVIDIA GPU and drivers to be properly installed.

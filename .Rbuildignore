@@ -43,3 +43,7 @@ changes.md
 
 # R project file
 transforEmotion\.Rproj
+
+# Docker image for offline use
+^docker$
+^\.dockerignore$

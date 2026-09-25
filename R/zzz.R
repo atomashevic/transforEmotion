@@ -2,6 +2,14 @@
 {
     # Initialize vision model registry with built-in models
     .init_builtin_models()
+
+    # Declare the core Python requirements, as reticulate recommends for
+    # packages. This only records them; nothing is installed until Python
+    # starts. If Python is already running, the first transforEmotion
+    # function call adds them instead, so loading never installs packages.
+    if (!reticulate::py_available(initialize = FALSE)) {
+        .te_require("core")
+    }
 }
 
 .onAttach <- function(libname, pkgname)
@@ -9,11 +17,6 @@
     # Prevent reticulate from auto-creating a default venv; we manage envs via uv
     if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
         Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
-    }
-
-    # Only suggest installing uv in truly interactive sessions to avoid CI prompts
-    if (interactive()) {
-        try(te_ensure_uv_available(prompt = TRUE), silent = TRUE)
     }
 
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")

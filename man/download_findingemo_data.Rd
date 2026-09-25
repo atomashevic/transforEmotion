@@ -50,9 +50,9 @@ arousal, and discrete emotion labels, focusing on complex naturalistic scenes
 with multiple people in social settings.
 }
 \details{
-This function requires the \code{findingemo-light} Python package to be 
-installed. Use \code{setup_modules()} to install required dependencies
-before calling this function.
+This function uses the \code{findingemo-light} Python package, which is
+installed automatically on first use (or ahead of time with
+\code{setup_modules(extras = "findingemo")}).
 
 The FindingEmo dataset is described in:
 Mertens, L. et al. (2024). "FindingEmo: An Image Dataset for Emotion 
@@ -67,7 +67,7 @@ only. Images are downloaded on-demand from their original sources.
 \examples{
 \dontrun{
 # First install required modules
-setup_modules()
+setup_modules(extras = "findingemo")
 
 # Download dataset to local directory
 result <- download_findingemo_data("./findingemo_data")

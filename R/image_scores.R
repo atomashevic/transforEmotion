@@ -54,8 +54,9 @@
 #' @export
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements
   ensure_te_py_env()
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -69,7 +70,7 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   # If import fails, try setting up modules
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 
@@ -177,8 +178,9 @@ image_scores_dir <- function(dir,
                              recursive = FALSE,
                              model = "oai-base",
                              local_model_path = NULL) {
-  # Ensure Python environment is ready
+  # Declare Python requirements
   ensure_te_py_env()
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -237,7 +239,7 @@ image_scores_dir <- function(dir,
   }, silent = TRUE)
   if (inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 

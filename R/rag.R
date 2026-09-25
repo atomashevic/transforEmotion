@@ -226,8 +226,9 @@ rag <- function(
 )
 {
 
-  # Ensure reticulate uses the transforEmotion conda environment
-  ensure_te_py_env()
+  # Declare the core and RAG Python requirements
+  .te_require("rag")
+  .te_use_nltk_cache()
 
   # Check that input of 'text' argument is in the appropriate format 
   # for the analysis
@@ -309,7 +310,7 @@ rag <- function(
     # If import or validation fails, try setting up modules and retry once
     if(inherits(llama_index, "try-error")) {
       message("Required modern Python modules not found or incompatible. Setting up modules...")
-      setup_modules()
+      setup_modules(extras = "rag", download_models = FALSE)
       llama_index <- import_and_validate()
     }
 
@@ -323,7 +324,7 @@ rag <- function(
     cached_valid <- try(te_validate_modern_llama_index(llama_index = llama_index, stop_on_error = TRUE), silent = TRUE)
     if (inherits(cached_valid, "try-error")) {
       message("Cached llama_index module is incompatible. Repairing Python modules...")
-      setup_modules()
+      setup_modules(extras = "rag", download_models = FALSE)
       llama_index <- import_and_validate()
       if (inherits(llama_index, "try-error")) {
         cond <- attr(llama_index, "condition")
@@ -1433,47 +1434,11 @@ set_default_embedding <- function(llama_index, device = NULL, model_name = "BAAI
     )
   }
 
-  transformers <- try(
-    reticulate::import("transformers", delay_load = TRUE),
-    silent = TRUE
-  )
-  if (inherits(transformers, "try-error") || is.null(transformers)) {
-    stop("Could not import transformers Python package.", call. = FALSE)
-  }
-
-  cache_dir <- NULL
-  utils_module <- try(hf_embed$utils, silent = TRUE)
-  if (!inherits(utils_module, "try-error") &&
-      reticulate::py_has_attr(utils_module, "get_cache_dir")) {
-    cache_dir <- utils_module$get_cache_dir()
-  }
-
-  auto_model <- transformers$AutoModel
-  auto_tokenizer <- transformers$AutoTokenizer
-
-  model_kwargs <- list(model_name, cache_dir = cache_dir, trust_remote_code = TRUE)
-  tokenizer_kwargs <- list(model_name, cache_dir = cache_dir)
-
-  model <- try(do.call(auto_model$from_pretrained, model_kwargs), silent = TRUE)
-  if (inherits(model, "try-error")) {
-    stop("Failed to load embedding model via transformers AutoModel.", call. = FALSE)
-  }
-
-  if (!is.null(device) && nzchar(device)) {
-    try(suppressWarnings(model$to(device)), silent = TRUE)
-  }
-
-  tokenizer <- try(do.call(auto_tokenizer$from_pretrained, tokenizer_kwargs), silent = TRUE)
-  if (inherits(tokenizer, "try-error")) {
-    stop("Failed to load embedding tokenizer via transformers AutoTokenizer.", call. = FALSE)
-  }
-
+  # HuggingFaceEmbedding loads the model itself through sentence-transformers
   embed_args <- list(
-    model = model,
-    tokenizer = tokenizer,
     model_name = model_name,
-    tokenizer_name = model_name,
-    normalize = TRUE
+    normalize = TRUE,
+    trust_remote_code = TRUE
   )
   if (!is.null(device) && nzchar(device)) embed_args$device <- device
 
