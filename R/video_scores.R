@@ -160,11 +160,15 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     )
   })
 
+  # file.path() works whether or not save_dir ends in "/", and the pattern
+  # matches only the frames written for this video, not other images there
   if (!save_video && grepl("youtu", video)){
-    file.remove(paste0(save_dir, video_name, ".mp4"))
+    file.remove(file.path(save_dir, paste0(video_name, ".mp4")))
   }
   if(!save_frames){
-     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")))
+    frames <- list.files(save_dir, pattern = "-frame-[0-9]+\\.jpg$")
+    frames <- frames[startsWith(frames, paste0(video_name, "-frame-"))]
+    file.remove(file.path(save_dir, frames))
   }
   return(result)
 }

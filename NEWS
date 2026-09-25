@@ -24,6 +24,10 @@ o ADD: `setup_modules()` gains a `models` argument for additional Hugging Face m
 
 o FIX: installation failed on Apple Silicon Macs because `tensorflow-cpu` has no macOS arm64 wheels, and the failure was hidden
 
+o FIX: `video_scores()` deleted every .jpg file in `save_dir` when `save_frames = FALSE`, and built wrong paths (so frames were left behind, with a warning per frame) when `save_dir` had no trailing slash; it now deletes only the frames it wrote
+
+o FIX: the startup message printed raw ANSI escape codes in Jupyter and Google Colab notebooks; text is now styled only in RStudio and terminals
+
 o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` report a missing `local_model_path` directory instead of "Model not recognized"
 
 o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`
