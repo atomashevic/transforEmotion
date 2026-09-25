@@ -80,3 +80,8 @@ test_that("setup_cache() points every cache at one folder", {
 
   expect_error(setup_cache(c("a", "b")), "single folder")
 })
+
+test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = file.path(tempdir(), "no-such-python"))
+  expect_error(transforEmotion:::.te_require("core"), "does not exist")
+})

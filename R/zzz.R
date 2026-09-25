@@ -7,8 +7,11 @@
     # packages. This only records them; nothing is installed until Python
     # starts. If Python is already running, the first transforEmotion
     # function call adds them instead, so loading never installs packages.
+    # A failure here (for example TRANSFOREMOTION_PYTHON pointing to a
+    # missing file) must not stop the package from loading; the first
+    # function that uses Python repeats the call and reports it.
     if (!reticulate::py_available(initialize = FALSE)) {
-        .te_require("core")
+        try(.te_require("core"), silent = TRUE)
     }
 }
 

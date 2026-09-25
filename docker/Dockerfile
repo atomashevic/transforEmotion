@@ -22,8 +22,7 @@ ARG GPU=0
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 
 ENV TE_HOME=/opt/transforEmotion
-ENV TRANSFOREMOTION_PYTHON=${TE_HOME}/venv/bin/python \
-    HF_HOME=${TE_HOME}/huggingface \
+ENV HF_HOME=${TE_HOME}/huggingface \
     NLTK_DATA=${TE_HOME}/nltk_data \
     UV_PYTHON_INSTALL_DIR=${TE_HOME}/python \
     UV_PYTHON_PREFERENCE=only-managed
@@ -46,6 +45,9 @@ RUN Rscript -e ' \
  && uv venv --python 3.12 ${TE_HOME}/venv \
  && UV_LINK_MODE=copy uv pip install --no-cache --python ${TE_HOME}/venv/bin/python -r /tmp/requirements.txt \
  && rm /tmp/requirements.txt
+
+# Point transforEmotion at the environment once it exists
+ENV TRANSFOREMOTION_PYTHON=${TE_HOME}/venv/bin/python
 
 # Default models, the models for the chosen extras and any MODELS
 RUN Rscript -e ' \

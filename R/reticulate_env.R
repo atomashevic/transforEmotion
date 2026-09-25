@@ -196,6 +196,11 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   python <- Sys.getenv("TRANSFOREMOTION_PYTHON", unset = "")
   if (nzchar(python)) {
     if (!isTRUE(.te_py_state$fixed_python)) {
+      if (!file.exists(python)) {
+        stop("TRANSFOREMOTION_PYTHON is set to '", python, "', which does not ",
+             "exist. Point it at a Python executable, or unset it to let ",
+             "transforEmotion manage Python.", call. = FALSE)
+      }
       reticulate::use_python(python, required = TRUE)
       .te_py_state$fixed_python <- TRUE
     }
