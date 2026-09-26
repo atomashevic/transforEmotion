@@ -95,3 +95,21 @@ test_that("image_scores works with local_model_path", {
   expect_equal(ncol(result), length(labels))
   expect_equal(names(result), labels)
 })
+
+test_that("clip-custom models get their own adapters", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_if_not_installed("reticulate")
+  skip_if_not(reticulate::py_module_available("transformers"))
+
+  # Adapters load weights lazily, so this needs no model download
+  reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  adapter_class <- function(model_id, architecture) {
+    adapter <- reticulate::py$get_vision_adapter(model_id, NULL, architecture)
+    reticulate::py_to_r(adapter$`__class__`$`__name__`)
+  }
+
+  expect_equal(adapter_class("jinaai/jina-clip-v2", "clip-custom"), "JinaCLIPAdapter")
+  expect_equal(adapter_class("BAAI/EVA-CLIP-8B-448", "clip-custom"), "EVACLIPAdapter")
+  expect_equal(adapter_class("openai/clip-vit-base-patch32", "clip"), "CLIPAdapter")
+})
