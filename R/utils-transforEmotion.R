@@ -467,9 +467,9 @@ system.check <- function (...)
 
   RSTUDIO <- ifelse(Sys.getenv("RSTUDIO") == "1", TRUE, FALSE)
 
-  TEXT <- TRUE
-
-  if(!RSTUDIO){if(OS != "linux"){TEXT <- FALSE}}
+  # Styled text uses ANSI escape codes: RStudio renders them, and so does a
+  # Linux terminal, but notebooks (Jupyter, Google Colab) print them verbatim
+  TEXT <- RSTUDIO || (OS == "linux" && isatty(stderr()) && Sys.getenv("TERM") != "dumb")
 
   res <- list()
 

@@ -1,0 +1,10 @@
+.git
+.github
+.claude
+.Rproj.user
+playground
+MAFW
+misc
+*.Rcheck
+*.tar.gz
+cran_check*.txt

@@ -18,8 +18,12 @@
 #' @param video_name The name of the analyzed video. Default is "temp".
 #' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
-#'     \item Any valid HuggingFace model ID
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2",
+#'       "oai-base-fer" and "oai-large-fer" (OpenAI CLIP with the vision encoder
+#'       fine-tuned on the FER2013 facial-expression dataset)
+#'     \item Any valid HuggingFace model ID, including checkpoints that hold only
+#'       a fine-tuned CLIP vision encoder; their text encoder and processor come
+#'       from the base CLIP model named in the checkpoint's config
 #'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
 #'   Use \code{\link{list_vision_models}} to see all available models.
@@ -54,8 +58,12 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements; pytubefix is only needed for YouTube URLs
   ensure_te_py_env()
+  if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
+    .te_require("youtube")
+  }
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -70,7 +78,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   # If import fails, try setting up modules
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }
@@ -156,11 +164,15 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     )
   })
 
+  # file.path() works whether or not save_dir ends in "/", and the pattern
+  # matches only the frames written for this video, not other images there
   if (!save_video && grepl("youtu", video)){
-    file.remove(paste0(save_dir, video_name, ".mp4"))
+    file.remove(file.path(save_dir, paste0(video_name, ".mp4")))
   }
   if(!save_frames){
-     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")))
+    frames <- list.files(save_dir, pattern = "-frame-[0-9]+\\.jpg$")
+    frames <- frames[startsWith(frames, paste0(video_name, "-frame-"))]
+    file.remove(file.path(save_dir, frames))
   }
   return(result)
 }

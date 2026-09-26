@@ -1,3 +1,24 @@
+# Python environment
+#
+# transforEmotion declares its Python requirements with reticulate::py_require().
+# reticulate resolves them with uv into a cached environment keyed by the
+# requirement set: the first call downloads packages, later sessions reuse the
+# environment in well under a second. reticulate downloads its own uv when none
+# is on the PATH.
+#
+# Requirements are split into feature sets. "core" is declared before Python
+# starts; the others are added when a function first needs them.
+
+# The PyTorch wheel URLs in .te_torch_requirements() are built for CPython 3.12.
+.te_python_version <- ">=3.12,<3.13"
+
+.te_torch_version <- "2.14.0"
+.te_torchvision_version <- "0.29.0"
+
+# Feature sets declared with py_require() in this session
+.te_py_state <- new.env(parent = emptyenv())
+.te_py_state$features <- character()
+
 #' @noRd
 te_should_use_gpu <- function() {
   # Allow explicit override via env var
@@ -20,6 +41,304 @@ te_should_use_gpu <- function() {
   res <- FALSE
   try({ res <- check_nvidia_gpu() }, silent = TRUE)
   isTRUE(res)
+}
+
+#' @noRd
+.te_torch_requirements <- function(use_gpu = FALSE,
+                                   sysname = Sys.info()[["sysname"]],
+                                   machine = Sys.info()[["machine"]]) {
+  x86_64 <- machine %in% c("x86_64", "x86-64", "AMD64")
+
+  # PyTorch stopped publishing Intel macOS wheels after 2.2
+  if (identical(sysname, "Darwin") && x86_64) {
+    return(c("torch==2.2.2", "torchvision==0.17.2"))
+  }
+
+  # PyPI's Linux x86_64 torch bundles about 2.5 GB of CUDA libraries, and its
+  # Windows torch is CPU-only. The other builds exist only on the PyTorch
+  # index; direct wheel URLs avoid adding that index, which would shadow PyPI
+  # for every other package. CUDA 12.6 builds run on older NVIDIA drivers than
+  # the CUDA 13 builds on PyPI.
+  flavor <- if (identical(sysname, "Linux") && x86_64) {
+    if (isTRUE(use_gpu)) "cu126" else "cpu"
+  } else if (identical(sysname, "Windows") && x86_64 && isTRUE(use_gpu)) {
+    "cu126"
+  }
+
+  if (is.null(flavor)) {
+    return(c(
+      paste0("torch==", .te_torch_version),
+      paste0("torchvision==", .te_torchvision_version)
+    ))
+  }
+
+  platform <- if (identical(sysname, "Linux")) "manylinux_2_28_x86_64" else "win_amd64"
+  wheel <- function(pkg, version) {
+    sprintf(
+      "%s @ https://download.pytorch.org/whl/%s/%s-%s%%2B%s-cp312-cp312-%s.whl",
+      pkg, flavor, pkg, version, flavor, platform
+    )
+  }
+  c(wheel("torch", .te_torch_version), wheel("torchvision", .te_torchvision_version))
+}
+
+#' @noRd
+.te_py_requirements <- function(feature, use_gpu = FALSE,
+                                sysname = Sys.info()[["sysname"]],
+                                machine = Sys.info()[["machine"]]) {
+  switch(feature,
+    core = c(
+      .te_torch_requirements(use_gpu = use_gpu, sysname = sysname, machine = machine),
+      # The transformers, huggingface-hub and numpy caps keep the core
+      # compatible with the RAG stack below (llama-index 0.10 needs
+      # huggingface-hub<0.24 and numpy<2), so rag() can add it to a running
+      # session without changing loaded packages. reticulate does not let
+      # packages set exclude_newer, so the remaining caps stop new major
+      # releases from being picked up.
+      "transformers>=4.40,<4.47",
+      "huggingface-hub<0.24",
+      "numpy<2",
+      "pandas<3",
+      "accelerate<2",
+      "safetensors<1",
+      "sentencepiece<1",
+      "sentence-transformers<6",
+      "timm<2",
+      "einops<1",
+      "opencv-python-headless<5"
+    ),
+    rag = c(
+      # llama-index-core rather than the llama-index meta-package, which also
+      # installs llama-index-legacy and the OpenAI integrations
+      "llama-index-core>=0.10.30,<0.11",
+      "llama-index-llms-huggingface",
+      "llama-index-embeddings-huggingface",
+      "pypdf",
+      "rank-bm25"
+    ),
+    youtube = "pytubefix",
+    findingemo = c("findingemo-light", "termcolor"),
+    # 4-bit quantization for EVA-CLIP-8B
+    gpu = "bitsandbytes",
+    stop("Unknown Python feature set: ", feature, call. = FALSE)
+  )
+}
+
+#' @noRd
+.te_check_extras <- function(extras) {
+  unknown <- setdiff(extras, c("rag", "youtube", "findingemo", "gpu"))
+  if (length(unknown)) {
+    stop("Unknown extras: ", paste(unknown, collapse = ", "),
+         ". Choose from: rag, youtube, findingemo, gpu.", call. = FALSE)
+  }
+  unique(extras)
+}
+
+#' Python Requirements for transforEmotion
+#'
+#' @description
+#' Returns the Python requirements that transforEmotion installs, in
+#' \code{requirements.txt} format. Use it to build a fixed Python environment,
+#' for example in a container image, and point transforEmotion at it with the
+#' \code{TRANSFOREMOTION_PYTHON} environment variable (see Details).
+#'
+#' @param extras Character vector of optional feature sets to include; see
+#' \code{\link{setup_modules}}.
+#' @param gpu Logical. Use the CUDA build of PyTorch (Linux and Windows)
+#' instead of the CPU build.
+#' @param sysname,machine Target operating system and architecture, as
+#' returned by \code{Sys.info()}. Default to the current machine.
+#'
+#' @details
+#' The PyTorch requirements are direct wheel URLs built for Python 3.12, so the
+#' environment must use Python 3.12.
+#'
+#' When \code{TRANSFOREMOTION_PYTHON} is set to a Python executable,
+#' transforEmotion uses that interpreter and does not install anything. This is
+#' the route for read-only environments such as Apptainer images, where uv
+#' cannot write to its cache.
+#'
+#' @return A character vector of requirement specifiers.
+#'
+#' @examples
+#' # Requirements for a CPU environment with the rag() packages
+#' python_requirements(extras = "rag")
+#'
+#' \dontrun{
+#' # Write a requirements file and build the environment with uv (shell):
+#' #   uv venv --python 3.12 /opt/te-venv
+#' #   uv pip install --python /opt/te-venv/bin/python -r requirements.txt
+#' writeLines(python_requirements(extras = "rag"), "requirements.txt")
+#' }
+#'
+#' @export
+python_requirements <- function(extras = character(), gpu = FALSE,
+                                sysname = Sys.info()[["sysname"]],
+                                machine = Sys.info()[["machine"]]) {
+  extras <- .te_check_extras(extras)
+  unique(unlist(lapply(
+    c("core", extras), .te_py_requirements,
+    use_gpu = isTRUE(gpu), sysname = sysname, machine = machine
+  )))
+}
+
+#' @noRd
+# Declare Python requirements for one or more feature sets. "core" is always
+# declared first. Before Python starts this only records requirements; after
+# it starts, reticulate installs the additions into the running session.
+.te_require <- function(features = "core") {
+  if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
+    Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
+  }
+
+  # A fixed environment (for example in a container image) already holds
+  # every package; use it instead of declaring requirements
+  python <- Sys.getenv("TRANSFOREMOTION_PYTHON", unset = "")
+  if (nzchar(python)) {
+    if (!isTRUE(.te_py_state$fixed_python)) {
+      if (!file.exists(python)) {
+        stop("TRANSFOREMOTION_PYTHON is set to '", python, "', which does not ",
+             "exist. Point it at a Python executable, or unset it to let ",
+             "transforEmotion manage Python.", call. = FALSE)
+      }
+      reticulate::use_python(python, required = TRUE)
+      .te_py_state$fixed_python <- TRUE
+    }
+    return(invisible(TRUE))
+  }
+
+  features <- unique(c("core", features))
+  todo <- setdiff(features, .te_py_state$features)
+  if (!length(todo)) return(invisible(TRUE))
+
+  # Only the core set depends on the GPU (it picks the PyTorch build)
+  if ("core" %in% todo) .te_py_state$use_gpu <- te_should_use_gpu()
+  for (feature in todo) {
+    reticulate::py_require(
+      packages = .te_py_requirements(feature, use_gpu = .te_py_state$use_gpu),
+      python_version = .te_python_version
+    )
+    .te_py_state$features <- c(.te_py_state$features, feature)
+  }
+  invisible(TRUE)
+}
+
+#' @noRd
+# Whether the declared PyTorch build is the CUDA one
+.te_uses_gpu <- function() {
+  if (!"core" %in% .te_py_state$features) return(te_should_use_gpu())
+  isTRUE(.te_py_state$use_gpu)
+}
+
+#' @noRd
+# Switch the declared PyTorch build between CPU and CUDA before Python starts
+.te_set_torch_flavor <- function(use_gpu) {
+  # A fixed environment already contains its PyTorch build
+  if (nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))) return(invisible(TRUE))
+  use_gpu <- isTRUE(use_gpu)
+  if (!"core" %in% .te_py_state$features) {
+    .te_require("core")
+  }
+  if (identical(.te_py_state$use_gpu, use_gpu)) return(invisible(TRUE))
+  if (reticulate::py_available(initialize = FALSE)) {
+    stop("Python has already started in this session. Restart R and set ",
+         "the PyTorch build before running any analysis.", call. = FALSE)
+  }
+  reticulate::py_require(.te_torch_requirements(.te_py_state$use_gpu), action = "remove")
+  reticulate::py_require(.te_torch_requirements(use_gpu))
+  .te_py_state$use_gpu <- use_gpu
+  invisible(TRUE)
+}
+
+#' @noRd
+# On CUDA, Triton (installed with PyTorch) compiles a small C helper with gcc
+# the first time it runs, and needs Python.h. Embedded by reticulate in a uv
+# environment, Python reports the environment's include folder, which has no
+# headers, so every Triton kernel fails with "Python.h: No such file or
+# directory". This adds the interpreter's real include folder to CPATH, which
+# gcc reads. It only changes the Python process's environment, and does
+# nothing when the headers are already where Python says.
+.te_expose_python_headers <- function() {
+  tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import os, sys, sysconfig",
+      "if not os.path.exists(os.path.join(sysconfig.get_paths()['include'], 'Python.h')):",
+      "    base = os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))",
+      "    inc = os.path.join(base, 'include', 'python%d.%d' % sys.version_info[:2])",
+      "    paths = [p for p in os.environ.get('CPATH', '').split(os.pathsep) if p]",
+      "    if os.path.exists(os.path.join(inc, 'Python.h')) and inc not in paths:",
+      "        os.environ['CPATH'] = os.pathsep.join([inc] + paths)",
+      sep = "\n"
+    )),
+    # Best effort: without it only Triton's compile step can fail, with its
+    # own error
+    error = function(e) invisible(NULL)
+  )
+  invisible(TRUE)
+}
+
+#' @noRd
+# On Linux, R has already loaded its BLAS (libblas.so or libRblas.so) into the
+# global symbol scope when Python starts. PyTorch's CPU build carries MKL
+# inside libtorch_cpu.so and exports sgemm_/dgemm_, so without this the dynamic
+# linker binds PyTorch's BLAS calls to R's library instead. With R's reference
+# BLAS that makes every matrix product tens of times slower (a 1500 x 1500
+# float matmul: 1.6 s instead of 0.03 s). Importing torch with RTLD_DEEPBIND
+# makes it use its own symbols first; the default flags are restored after the
+# import. Best effort: if torch is missing or the import fails here, the first
+# real import reports the problem.
+.te_import_torch_own_blas <- function() {
+  if (!identical(Sys.info()[["sysname"]], "Linux")) return(invisible(FALSE))
+  tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import os, sys",
+      "if 'torch' not in sys.modules and hasattr(os, 'RTLD_DEEPBIND'):",
+      "    _flags = sys.getdlopenflags()",
+      "    sys.setdlopenflags(_flags | os.RTLD_DEEPBIND)",
+      "    try:",
+      "        import torch",
+      "    finally:",
+      "        sys.setdlopenflags(_flags)",
+      sep = "\n"
+    )),
+    error = function(e) invisible(NULL)
+  )
+  invisible(TRUE)
+}
+
+#' @noRd
+# llama-index downloads NLTK data into each Python environment on first
+# import. A single folder in the package cache lets data downloaded once (for
+# example by setup_modules(extras = "rag")) serve every environment and
+# offline sessions. An NLTK_DATA set by the user takes precedence.
+.te_use_nltk_cache <- function() {
+  nltk_dir <- file.path(tools::R_user_dir("transforEmotion", "cache"), "nltk_data")
+  reticulate::py_run_string(sprintf(
+    "import os; os.environ.setdefault('NLTK_DATA', %s)",
+    encodeString(normalizePath(nltk_dir, winslash = "/", mustWork = FALSE), quote = "'")
+  ))
+  invisible(TRUE)
+}
+
+#' @noRd
+# Download the NLTK data llama-index looks for. llama-index 0.10 checks for
+# "punkt" but downloads "punkt_tab", so without "punkt" it tries to download
+# again on every import, which fails offline.
+.te_download_nltk_data <- function() {
+  .te_use_nltk_cache()
+  os <- reticulate::import("os")
+  nltk <- reticulate::import("nltk")
+  for (pkg in c("stopwords", "punkt", "punkt_tab")) {
+    nltk$download(pkg, download_dir = os$environ[["NLTK_DATA"]], quiet = TRUE)
+  }
+  invisible(TRUE)
+}
+
+#' @noRd
+# Declare the core Python requirements; called at the top of every function
+# that uses Python.
+ensure_te_py_env <- function() {
+  .te_require("core")
 }
 
 #' @noRd
@@ -84,387 +403,9 @@ te_validate_modern_llama_index <- function(llama_index = NULL, stop_on_error = T
     "Incompatible llama-index Python environment for transforEmotion.\n",
     paste(failures, collapse = " "),
     "\nDetected llama-index packages: ", .te_llama_pkg_versions(), "\n",
-    "Run setup_modules() to repair the Python environment."
+    "Restart R and run setup_modules(extras = \"rag\")."
   )
 
   if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
   invisible(FALSE)
-}
-
-#' @noRd
-te_remove_legacy_llama_index <- function(verbose = TRUE, stop_on_error = TRUE) {
-  pkgs <- .te_py_list_packages()
-  has_legacy <- nrow(pkgs) && any(pkgs$package == "llama-index-legacy")
-  if (!has_legacy) return(invisible(FALSE))
-
-  if (isTRUE(verbose)) {
-    message("Detected llama-index-legacy; removing it to enforce modern llama_index.core APIs.")
-  }
-
-  py_bin <- try(reticulate::py_config()$python, silent = TRUE)
-  if (inherits(py_bin, "try-error") || !nzchar(py_bin)) {
-    msg <- "Unable to locate Python executable for removing llama-index-legacy."
-    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
-    warning(msg, call. = FALSE)
-    return(invisible(FALSE))
-  }
-
-  out <- try(
-    system2(
-      py_bin,
-      c("-m", "pip", "uninstall", "-y", "llama-index-legacy"),
-      stdout = TRUE,
-      stderr = TRUE
-    ),
-    silent = TRUE
-  )
-  status <- if (inherits(out, "try-error")) 1L else attr(out, "status")
-  if (is.null(status)) status <- 0L
-
-  refreshed <- .te_py_list_packages()
-  still_present <- nrow(refreshed) && any(refreshed$package == "llama-index-legacy")
-  if (status != 0L || still_present) {
-    msg <- paste0(
-      "Failed to remove llama-index-legacy automatically. ",
-      "Please run: `python -m pip uninstall -y llama-index-legacy`.\n",
-      "Detected llama-index packages: ", .te_llama_pkg_versions()
-    )
-    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
-    warning(msg, call. = FALSE)
-    return(invisible(FALSE))
-  }
-
-  invisible(TRUE)
-}
-
-#' @noRd
-te_ensure_modern_llama_index <- function(verbose = TRUE, stop_on_error = TRUE) {
-  try(reticulate::py_available(initialize = TRUE), silent = TRUE)
-
-  if (isTRUE(stop_on_error)) {
-    te_remove_legacy_llama_index(verbose = verbose, stop_on_error = TRUE)
-  } else {
-    try(te_remove_legacy_llama_index(verbose = verbose, stop_on_error = FALSE), silent = TRUE)
-  }
-
-  modern_modules <- c(
-    "llama-index==0.10.30",
-    "llama-index-llms-huggingface",
-    "llama-index-embeddings-huggingface"
-  )
-
-  install_ok <- TRUE
-  install_try <- try(
-    reticulate::py_install(modern_modules, pip = TRUE, method = "auto"),
-    silent = TRUE
-  )
-  if (inherits(install_try, "try-error")) install_ok <- FALSE
-
-  if (!install_ok) {
-    msg <- paste0(
-      "Failed to install required modern llama-index packages. ",
-      "Detected llama-index packages: ", .te_llama_pkg_versions()
-    )
-    if (isTRUE(stop_on_error)) stop(msg, call. = FALSE)
-    warning(msg, call. = FALSE)
-    return(invisible(FALSE))
-  }
-
-  if (isTRUE(stop_on_error)) {
-    te_validate_modern_llama_index(stop_on_error = TRUE)
-  } else {
-    valid <- try(te_validate_modern_llama_index(stop_on_error = FALSE), silent = TRUE)
-    if (inherits(valid, "try-error")) {
-      warning(as.character(valid), call. = FALSE)
-      return(invisible(FALSE))
-    }
-  }
-
-  invisible(TRUE)
-}
-
-#' @noRd
-.configure_uv_env <- function(use_gpu = FALSE) {
-  # Define baseline packages and versions (aligned with previous setup)
-  base_modules <- c(
-    "numpy>=1.26,<2.0",
-    "scipy==1.10.1",
-    "accelerate==0.29.3",
-    "llama-index==0.10.30",
-    "llama-index-llms-huggingface",
-    "llama-index-embeddings-huggingface",
-    "huggingface-hub==0.23.4",
-    "nltk==3.8.1",
-    "timm",
-    "einops",
-    "safetensors==0.4.3",
-    "opencv-python==4.10.0.84",
-    "pytubefix",
-    "pandas==1.5.3",
-    "pypdf==4.0.1",
-    "pytz==2024.1",
-    "qdrant-client==1.8.2",
-    "sentencepiece==0.2.0",
-    "sentence-transformers==2.2.2",
-    "rank-bm25==0.2.2",
-    "tokenizers==0.19.1",
-    "findingemo-light",
-    "transformers==4.40.0"
-  )
-
-  # Platform-specific additions
-  OS <- tolower(Sys.info()["sysname"])  # linux, windows, darwin
-  if (OS %in% c("linux", "windows")) {
-    base_modules <- c(base_modules, "bitsandbytes==0.45.2")
-  }
-
-  # ML stack (CPU default)
-  ml_modules <- if (isTRUE(use_gpu)) {
-    # Note: Installing GPU wheels via uv may require configuring indices externally.
-    # torch>=2.1.2 required by llama-index-llms-huggingface
-    c("tensorflow==2.14.1", "torch>=2.1.2,<2.5", "torchvision>=0.16.1,<0.20")
-  } else {
-    c("tensorflow-cpu==2.14.1", "torch>=2.1.2,<2.5", "torchvision>=0.16.1,<0.20")
-  }
-
-  # Workaround for uv first-match with PyTorch index:
-  # qdrant-client==1.8.2 requires urllib3>=1.26.14,<3, but the PyTorch wheel index may expose 1.26.13 only.
-  # Force urllib3 via a vetted direct wheel URL with SHA256 (PEP 508), bypassing index order while preserving
-  # the PyTorch-first index for all other packages.
-  pinned_urllib3 <- "urllib3==1.26.18"
-
-  # llama-index-core (required by llama-index==0.10.30) needs requests>=2.31.0; pin within constraints.
-  pinned_requests <- "requests==2.31.0"
-
-  modules <- c(base_modules, ml_modules, pinned_requests, pinned_urllib3)
-
-  # For PyTorch wheels, set extra index for CPU/GPU flavors (best-effort)
-  extra_index <- Sys.getenv("TE_PY_EXTRA_INDEX_URL", unset = "")
-  if (nzchar(extra_index)) {
-    prev_pip_idx <- Sys.getenv("PIP_EXTRA_INDEX_URL", unset = "")
-    prev_uv_idx  <- Sys.getenv("UV_EXTRA_INDEX_URL", unset = "")
-    on.exit({
-      if (nzchar(prev_pip_idx)) Sys.setenv(PIP_EXTRA_INDEX_URL = prev_pip_idx) else Sys.unsetenv("PIP_EXTRA_INDEX_URL")
-      if (nzchar(prev_uv_idx))  Sys.setenv(UV_EXTRA_INDEX_URL  = prev_uv_idx)  else Sys.unsetenv("UV_EXTRA_INDEX_URL")
-    }, add = TRUE)
-    Sys.setenv(PIP_EXTRA_INDEX_URL = extra_index)
-    Sys.setenv(UV_EXTRA_INDEX_URL  = extra_index)
-  }
-
-  # Use Python 3.10 by default (allow latest micro): >=3.10,<3.11
-  reticulate::py_require(
-    packages = modules,
-    python_version = ">=3.10,<3.11",
-    action = "set"
-    # You may add exclude_newer = "YYYY-MM-DD" here for strict reproducibility
-  )
-
-  # Initialize Python to realize the environment without relying on internal APIs.
-  # reticulate will select the uv-managed environment declared via py_require().
-  try(reticulate::py_available(initialize = TRUE), silent = TRUE)
-
-  # Best-effort validation: show OpenCV version and haarcascades path
-  try({
-    reticulate::py_run_string(
-      "import cv2; p=getattr(getattr(cv2,'data',None),'haarcascades', None); print('[transforEmotion] OpenCV', cv2.__version__, 'haarcascades:', p)"
-    )
-  }, silent = TRUE)
-
-  invisible(TRUE)
-}
-
-#' @noRd
-# Ensure Python is initialized via uv with the required packages
-ensure_te_py_env <- function() {
-  if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
-    Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
-  }
-
-  if (!requireNamespace("reticulate", quietly = TRUE)) return(invisible(FALSE))
-
-  # If Python already initialized, nothing to do
-  initialized <- FALSE
-  try({ initialized <- reticulate::py_available(initialize = FALSE) }, silent = TRUE)
-  if (isTRUE(initialized)) return(invisible(TRUE))
-
-  # Recommend uv if not available
-  te_ensure_uv_available(prompt = TRUE)
-
-  # Not initialized yet — configure uv environment (CPU default)
-  use_gpu <- te_should_use_gpu()
-  try(.configure_uv_env(use_gpu = use_gpu), silent = TRUE)
-  invisible(TRUE)
-}
-
-#' @noRd
-uv_is_available <- function() {
-  nzchar(Sys.which("uv"))
-}
-
-#' @noRd
-install_uv_interactive <- function(quiet = FALSE) {
-  os <- tolower(Sys.info()[["sysname"]])  # linux, windows, darwin
-
-  # Helpers return TRUE only on success (exit status 0)
-  run_cmd <- function(cmd) {
-    rc <- try(suppressWarnings(system(cmd)), silent = TRUE)
-    !inherits(rc, "try-error") && is.numeric(rc) && identical(as.integer(rc), 0L)
-  }
-  run2 <- function(bin, args) {
-    rc <- try(suppressWarnings(system2(bin, args)), silent = TRUE)
-    !inherits(rc, "try-error") && is.numeric(rc) && identical(as.integer(rc), 0L)
-  }
-
-  if (os == "darwin") {
-    # Prefer Homebrew when available, per uv docs
-    if (nzchar(Sys.which("brew"))) {
-      if (!quiet) message("Installing uv via Homebrew ...")
-      return(invisible(run2("brew", c("install", "uv"))))
-    }
-    # Fallback to the official install script (user scope)
-    if (!quiet) message("Installing uv via official script (user) ...")
-    return(invisible(run_cmd("curl -LsSf https://astral.sh/uv/install.sh | sh")))
-  } else if (os == "linux") {
-    # Prefer user install location; honor available fetcher
-    cmd <- if (nzchar(Sys.which("curl"))) {
-      "curl -LsSf https://astral.sh/uv/install.sh | sh"
-    } else if (nzchar(Sys.which("wget"))) {
-      "wget -qO- https://astral.sh/uv/install.sh | sh"
-    } else {
-      if (!quiet) message("Neither curl nor wget is available. Please install one of them and rerun.")
-      return(invisible(FALSE))
-    }
-    if (!quiet) message("Installing uv via official script (user) ...")
-    return(invisible(run_cmd(cmd)))
-  } else if (os == "windows") {
-    # Avoid invoking winget in non-interactive environments (e.g., R CMD check/CI)
-    if (!interactive()) {
-      if (!quiet) message("Skipping winget in non-interactive session. Install uv manually: https://docs.astral.sh/uv/")
-      return(invisible(FALSE))
-    }
-    if (nzchar(Sys.which("winget"))) {
-      if (!quiet) message("Installing uv via winget ...")
-      # Use non-interactive flags to pre-accept agreements and suppress prompts
-      return(invisible(run2(
-        "winget",
-        c(
-          "install",
-          "--id=astral-sh.uv",
-          "-e",
-          "--disable-interactivity",
-          "--silent",
-          "--accept-package-agreements",
-          "--accept-source-agreements"
-        )
-      )))
-    } else {
-      if (!quiet) message("Please install uv from: https://docs.astral.sh/uv/getting-started/installation/")
-      return(invisible(FALSE))
-    }
-  } else {
-    if (!quiet) message("Unsupported OS for automatic uv install. See https://docs.astral.sh/uv/")
-    return(invisible(FALSE))
-  }
-}
-
-# Improved uv availability helper used by package lifecycle
-te_ensure_uv_available <- function(prompt = TRUE) {
-  if (uv_is_available()) return(invisible(TRUE))
-
-  # If uv exists in ~/.local/bin but not in PATH, add for this session
-  local_bin <- path.expand("~/.local/bin")
-  local_uv  <- file.path(local_bin, "uv")
-  current_path <- Sys.getenv("PATH")
-  if (file.exists(local_uv) && !grepl(local_bin, current_path, fixed = TRUE)) {
-    Sys.setenv(PATH = paste(local_bin, current_path, sep = ":"))
-    if (uv_is_available()) {
-      if (interactive()) message("Found uv in ~/.local/bin; added to PATH for this session.")
-      return(invisible(TRUE))
-    }
-  }
-
-  # Non-interactive: optionally auto-install if opted in
-  if (!interactive() || !isTRUE(prompt)) {
-    auto_install <- {
-      v <- tolower(as.character(Sys.getenv("TE_AUTO_INSTALL_UV", unset = "")))
-      opt <- isTRUE(getOption("transforEmotion.auto_install_uv", FALSE))
-      nzchar(v) && v %in% c("1", "true", "t", "yes", "y") || opt
-    }
-    if (isTRUE(auto_install)) {
-      ok <- isTRUE(install_uv_interactive(quiet = TRUE))
-      # Ensure PATH for the session if installed to ~/.local/bin
-      current_path <- Sys.getenv("PATH")
-      if (file.exists(local_uv) && !grepl(local_bin, current_path, fixed = TRUE)) {
-        Sys.setenv(PATH = paste(local_bin, current_path, sep = ":"))
-      }
-      if (ok && uv_is_available()) {
-        return(invisible(TRUE))
-      } else {
-        return(invisible(FALSE))
-      }
-    } else {
-      return(invisible(FALSE))
-    }
-  }
-
-  ans <- tryCatch(tolower(readline("uv not found. Install uv now? [Y/n]: ")), error = function(e) "")
-  if (ans %in% c("", "y", "yes")) {
-    ok <- isTRUE(install_uv_interactive())
-
-    # If installed into ~/.local/bin, ensure PATH for this session
-    current_path <- Sys.getenv("PATH")
-    if (file.exists(local_uv) && !grepl(local_bin, current_path, fixed = TRUE)) {
-      Sys.setenv(PATH = paste(local_bin, current_path, sep = ":"))
-    }
-
-    if (ok && uv_is_available()) {
-      uv_path <- Sys.which("uv")
-      if (nzchar(uv_path) && grepl(local_bin, uv_path, fixed = TRUE)) {
-        message("uv installed. Added ~/.local/bin for this session. To persist: export PATH=\"$HOME/.local/bin:$PATH\"")
-      } else {
-        message("uv installed.")
-      }
-      return(invisible(TRUE))
-    } else {
-      message("uv install failed or not on PATH. Tip: export PATH=\"$HOME/.local/bin:$PATH\"")
-      return(invisible(FALSE))
-    }
-  } else {
-    message("Continuing without uv. reticulate may use a default venv.")
-    return(invisible(FALSE))
-  }
-}
-
-#' @noRd
-ensure_uv_available <- function(prompt = TRUE) {
-  if (uv_is_available()) return(invisible(TRUE))
-  if (!interactive() || !isTRUE(prompt)) {
-    message(paste0(
-      "uv not found on PATH. reticulate will fall back to a default venv if needed.
-",
-      "To use uv (recommended), install it and restart R.
-",
-      "- Linux/macOS: curl -LsSf https://astral.sh/uv/install.sh | sh
-",
-      "- macOS (Homebrew): brew install uv
-",
-      "- Windows (winget): winget install --id=astral-sh.uv -e"))
-    return(invisible(FALSE))
-  }
-  ans <- tryCatch(tolower(readline("uv not found. Install uv now? [Y/n]: ")), error = function(e) "")
-  if (ans %in% c("", "y", "yes")) {
-    ok <- isTRUE(install_uv_interactive())
-    if (ok && uv_is_available()) {
-      message("uv installed. Please ensure ~/.local/bin is on PATH and restart R.")
-      return(invisible(TRUE))
-    } else {
-      message(paste0("uv installation did not complete or uv not on PATH.
-",
-                     "You may need to add ~/.local/bin to PATH and restart R."))
-      return(invisible(FALSE))
-    }
-  } else {
-    message("Continuing without uv. reticulate may prompt to create a default venv.")
-    return(invisible(FALSE))
-  }
 }

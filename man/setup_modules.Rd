@@ -4,18 +4,68 @@
 \alias{setup_modules}
 \title{Setup Required Python Modules}
 \usage{
-setup_modules()
+setup_modules(
+  extras = character(),
+  download_models = TRUE,
+  models = character()
+)
+}
+\arguments{
+\item{extras}{Character vector of optional feature sets to install
+together with the core packages:
+\describe{
+  \item{\code{"rag"}}{LlamaIndex packages used by \code{rag()}}
+  \item{\code{"youtube"}}{\code{pytubefix}, used by \code{video_scores()} for YouTube URLs}
+  \item{\code{"findingemo"}}{\code{findingemo-light}, used by the FindingEmo dataset functions}
+  \item{\code{"gpu"}}{\code{bitsandbytes}, used for 4-bit quantization of EVA-CLIP-8B}
+}}
+
+\item{download_models}{Logical. Download the default text, image and
+sentence-similarity models into the Hugging Face cache (about 1 GB), and,
+when \code{extras} includes \code{"rag"}, the default embedding model and
+TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
+Skipped when \code{HF_HUB_OFFLINE} is set.}
+
+\item{models}{Character vector of additional Hugging Face model IDs to
+download, such as \code{"facebook/bart-large-mnli"}. Use it to prepare
+models for offline use (see \code{\link{setup_cache}}).}
 }
 \value{
-Invisibly returns NULL.
+Invisibly returns \code{NULL}.
 }
 \description{
-Installs and configures required Python modules for transforEmotion,
-optionally enabling GPU-accelerated variants when a compatible NVIDIA GPU
-is detected. Uses reticulate's uv-backed ephemeral environment.
+Builds the Python environment for transforEmotion ahead of first use and
+downloads the default models, so the first analysis call does not wait on
+either. Calling it is optional: every function sets up what it needs on
+first use.
 }
 \details{
-This function ensures required modules are available and can add
-additional GPU-specific packages when requested. See also
-\code{setup_gpu_modules()} for GPU add-ons.
+Python requirements are declared with \code{\link[reticulate]{py_require}}.
+reticulate resolves them with uv into a cached environment, so after the
+first run later sessions start in under a second. No conda installation or
+manual uv installation is needed; reticulate downloads uv when it is not
+on the PATH.
+
+PyTorch is installed as a CPU-only build unless an NVIDIA GPU is detected.
+Set \code{TE_FORCE_CPU=1} to always use the CPU build, or
+\code{TRANSFOREMOTION_USE_GPU=1} to always use the CUDA build. The choice is
+made when the package is loaded, so set either variable in
+\code{.Renviron} or before \code{library(transforEmotion)}, in a new R
+session.
+}
+\examples{
+\dontrun{
+# Core packages and default models
+setup_modules()
+
+# Also install the packages rag() needs
+setup_modules(extras = "rag")
+
+# Prepare an additional model for offline use
+setup_modules(models = "facebook/bart-large-mnli")
+}
+
+}
+\author{
+Alexander P. Christensen <alexpaulchristensen@gmail.com>
 }

@@ -2,6 +2,30 @@
 {
     # Initialize vision model registry with built-in models
     .init_builtin_models()
+
+    # Declare the core Python requirements, as reticulate recommends for
+    # packages. This only records them; nothing is installed until Python
+    # starts. If Python is already running, the first transforEmotion
+    # function call adds them instead, so loading never installs packages.
+    # A failure here (for example TRANSFOREMOTION_PYTHON pointing to a
+    # missing file) must not stop the package from loading; the first
+    # function that uses Python repeats the call and reports it.
+    if (!reticulate::py_available(initialize = FALSE)) {
+        try(.te_require("core"), silent = TRUE)
+    }
+
+    # Let C compilers find Python's headers once Python starts
+    setHook("reticulate.onPyInit", .te_expose_python_headers)
+    if (reticulate::py_available(initialize = FALSE)) {
+        .te_expose_python_headers()
+    }
+
+    # Import torch before anything else so it binds to its own BLAS, not R's.
+    # Too late if Python (and torch) started before the package was loaded.
+    setHook("reticulate.onPyInit", .te_import_torch_own_blas)
+    if (reticulate::py_available(initialize = FALSE)) {
+        .te_import_torch_own_blas()
+    }
 }
 
 .onAttach <- function(libname, pkgname)
@@ -9,11 +33,6 @@
     # Prevent reticulate from auto-creating a default venv; we manage envs via uv
     if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
         Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
-    }
-
-    # Only suggest installing uv in truly interactive sessions to avoid CI prompts
-    if (interactive()) {
-        try(te_ensure_uv_available(prompt = TRUE), silent = TRUE)
     }
 
     msg <- styletext(styletext(paste("\ntransforEmotion (version ", packageVersion("transforEmotion"), ")\n", sep = ""), defaults = "underline"), defaults = "bold")
