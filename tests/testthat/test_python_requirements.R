@@ -88,6 +88,9 @@ test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
 
 test_that("C compilers can find Python.h once Python starts (Triton on CUDA)", {
   skip_on_cran()
+  # Triton on CUDA is Linux only; on Windows gcc is MinGW, which cannot compile
+  # CPython's MSVC headers
+  skip_if_not(Sys.info()[["sysname"]] == "Linux", "Linux only")
   skip_if(!nzchar(Sys.which("gcc")), "gcc not available")
   skip_if_not(reticulate::py_module_available("torch"))
   reticulate::py_run_string(local = FALSE, paste(
