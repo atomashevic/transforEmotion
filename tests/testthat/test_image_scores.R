@@ -113,3 +113,18 @@ test_that("clip-custom models get their own adapters", {
   expect_equal(adapter_class("BAAI/EVA-CLIP-8B-448", "clip-custom"), "EVACLIPAdapter")
   expect_equal(adapter_class("openai/clip-vit-base-patch32", "clip"), "CLIPAdapter")
 })
+
+test_that("checkpoints holding only a fine-tuned CLIP vision encoder are detected", {
+  skip_on_cran()
+  skip_on_ci()
+  skip_if_not_installed("reticulate")
+  skip_if_not(reticulate::py_module_available("transformers"))
+
+  # Reads only config.json from the Hub
+  reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  base <- function(model_id) reticulate::py$vision_only_base(model_id)
+
+  expect_equal(base("tanganke/clip-vit-base-patch32_fer2013"), "openai/clip-vit-base-patch32")
+  expect_null(base("openai/clip-vit-base-patch32"))
+  expect_true(all(c("oai-base-fer", "oai-large-fer") %in% list_vision_models()$name))
+})

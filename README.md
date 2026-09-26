@@ -292,7 +292,32 @@ The `image_scores` and `video_scores` functions support different models. The av
 - `oai-base`: "openai/clip-vit-base-patch32" - A base model that is faster but less accurate. Requires ~2GB of RAM.
 - `oai-large`: "openai/clip-vit-large-patch14" - A larger model that is more accurate but slower. Requires ~4GB of RAM.
 - `eva-8B`: "BAAI/EVA-CLIP-8B-448" - A very large model that has been quantized to 4-bit precision for reduced memory usage (requires ~8GB of RAM instead of the original ~32GB).
-- `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources (~6GB of RAM).
+- `jina-v2`: "jinaai/jina-clip-v2" - Another large model with high accuracy but requires more resources (~6GB of RAM). Its text encoder is multilingual, so labels can be written in languages other than English.
+- `oai-base-fer`: "tanganke/clip-vit-base-patch32_fer2013" - `oai-base` with its vision encoder fine-tuned on the FER2013 facial-expression dataset. Same resources as `oai-base`.
+- `oai-large-fer`: "tanganke/clip-vit-large-patch14_fer2013" - `oai-large` with its vision encoder fine-tuned on FER2013. Same resources as `oai-large`.
+
+#### Fine-tuned vision encoders
+
+`oai-base-fer` and `oai-large-fer` are checkpoints that hold only a fine-tuned CLIP vision encoder. transforEmotion loads the text encoder and processor from the base CLIP model named in the checkpoint's `config.json` and replaces its vision encoder, so the labels still work zero-shot. Any Hugging Face checkpoint of this kind (model type `clip_vision_model`, saved with `save_pretrained()` from a CLIP model) can be used the same way, by its ID or through `register_vision_model(architecture = "clip")`.
+
+The fine-tuned models recognise facial expressions better than the originals, and label wording matters too. On a sample of the MAFW video dataset (100 clips per basic emotion, of which 682 had a detectable face; 10 frames per clip, `face_selection = "largest"`, clip prediction = highest mean score), accuracy for seven basic emotions was:
+
+| Model | `"angry"`, `"happy"`, ... | `"a photo of an angry face"`, ... |
+|---|---|---|
+| `oai-base` | 0.27 | 0.33 |
+| `oai-large` | 0.33 | 0.34 |
+| `oai-base-fer` | 0.41 | 0.40 |
+| `oai-large-fer` | 0.44 | 0.48 |
+
+Chance is 0.14. Validate the model and label wording on a labelled sample from your own data before a full analysis (see `evaluate_emotions()`).
+
+```R
+emotions <- c("a photo of an angry face", "a photo of a disgusted face", "a photo of a fearful face",
+              "a photo of a happy face", "a photo of a neutral face", "a photo of a sad face",
+              "a photo of a surprised face")
+image <- system.file("extdata", "boris-1.png", package = "transforEmotion")
+image_scores(image, classes = emotions, model = "oai-large-fer")
+```
 
 > **Note:** The memory requirements listed above are approximate and represent the minimum RAM needed. For optimal performance, we recommend having at least 16GB of system RAM when using any of these models. If you're processing videos or multiple images in batch, more RAM might be needed. When using GPU acceleration, similar VRAM requirements apply. We recommend using 'oai-base' or 'oai-large' for most applications as they provide a good balance between accuracy and resource usage.
 

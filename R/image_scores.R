@@ -26,8 +26,12 @@
 #'   only one face in the image.
 #' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
-#'     \item Any valid HuggingFace model ID
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2",
+#'       "oai-base-fer" and "oai-large-fer" (OpenAI CLIP with the vision encoder
+#'       fine-tuned on the FER2013 facial-expression dataset)
+#'     \item Any valid HuggingFace model ID, including checkpoints that hold only
+#'       a fine-tuned CLIP vision encoder; their text encoder and processor come
+#'       from the base CLIP model named in the checkpoint's config
 #'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
 #'   Use \code{\link{list_vision_models}} to see all available models.

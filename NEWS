@@ -36,6 +36,10 @@ o FIX: the startup message printed raw ANSI escape codes in Jupyter and Google C
 
 o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` report a missing `local_model_path` directory instead of "Model not recognized"
 
+o ADD: vision models "oai-base-fer" and "oai-large-fer", OpenAI CLIP B/32 and L/14 with the vision encoder fine-tuned on FER2013 (tanganke/clip-vit-*_fer2013). On MAFW video clips, accuracy for seven basic emotions rose from 0.33 to 0.48 with `oai-large-fer` (labels such as "a photo of an angry face"); see the README
+
+o ADD: `image_scores()`, `image_scores_dir()` and `video_scores()` accept Hugging Face checkpoints that hold only a fine-tuned CLIP vision encoder; the text encoder and processor come from the base CLIP model named in the checkpoint's config
+
 o FIX: `model = "jina-v2"` failed with "'tokenizers.models.Unigram' object has no attribute 'end_of_word_suffix'": models registered as "clip-custom" (Jina CLIP v2, EVA-CLIP-8B) were loaded with the standard CLIP adapter. They now get their own adapters, and the Jina adapter uses the model's own multilingual tokenizer and image preprocessing (`encode_text()`, `encode_image()`) instead of the English OpenAI CLIP tokenizer, so labels in other languages work
 
 o FIX: on Linux, PyTorch computed matrix products with R's BLAS instead of its own MKL, because R's BLAS is loaded first and both export `sgemm_`; with R's reference BLAS, CPU inference was tens of times slower (Jina CLIP v2: about 330 s instead of 11 s per image). torch is now imported with `RTLD_DEEPBIND` when Python starts

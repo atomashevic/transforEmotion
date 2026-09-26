@@ -3,7 +3,7 @@ import urllib.request
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer, AutoModel, BitsAndBytesConfig
-from transformers import CLIPTokenizerFast, CLIPImageProcessor
+from transformers import CLIPTokenizerFast, CLIPImageProcessor, CLIPVisionModel, PretrainedConfig
 import torch
 import requests
 import cv2
@@ -123,15 +123,58 @@ class VisionModelAdapter(ABC):
             return dict(zip(labels, probs.tolist()))
 
 
+def vision_only_base(source_path, local_files_only=False):
+    """Base CLIP model of a checkpoint that holds only a fine-tuned vision encoder.
+
+    Some fine-tuned CLIP checkpoints (for example tanganke/clip-vit-*_fer2013)
+    save only the vision encoder (model_type "clip_vision_model"); the text
+    encoder, projections and processor are those of the CLIP model they were
+    fine-tuned from, which save_pretrained() records as "_name_or_path".
+    Returns that base model's id or path, or None for a full CLIP checkpoint.
+    """
+    try:
+        config, _ = PretrainedConfig.get_config_dict(source_path, local_files_only=local_files_only)
+    except Exception:
+        return None
+    if config.get("model_type") != "clip_vision_model":
+        return None
+    base = config.get("_name_or_path")
+    if not base or os.path.abspath(str(base)) == os.path.abspath(str(source_path)):
+        raise ValueError(
+            f"'{source_path}' holds only a CLIP vision encoder, and its config.json does not "
+            "name the CLIP model it was fine-tuned from (\"_name_or_path\"), which provides "
+            "the text encoder."
+        )
+    return base
+
+
 class CLIPAdapter(VisionModelAdapter):
-    """Standard CLIP model adapter."""
-    
+    """Standard CLIP model adapter.
+
+    Also loads checkpoints that hold only a fine-tuned vision encoder: the
+    text encoder, projections and processor come from the base CLIP model
+    named in the checkpoint's config, and its vision encoder is replaced.
+    """
+
     def load_model(self):
         """Load standard CLIP model and processor."""
         source_path = self.local_model_path if self.local_model_path else self.model_id
         source_type = "local directory" if self.local_model_path else "HuggingFace"
         print(f"Loading CLIP model from {source_type}: {source_path}")
-        
+
+        base = vision_only_base(source_path, local_files_only=bool(self.local_model_path))
+        if base is not None:
+            print(f"Fine-tuned vision encoder: text encoder and processor from {base}")
+            self.processor = CLIPProcessor.from_pretrained(base)
+            self.model = CLIPModel.from_pretrained(base)
+            vision = CLIPVisionModel.from_pretrained(
+                source_path,
+                local_files_only=bool(self.local_model_path)
+            )
+            self.model.vision_model.load_state_dict(vision.vision_model.state_dict())
+            self.model = self.model.to(self.device)
+            return
+
         # Try the standard processor first
         try:
             self.processor = CLIPProcessor.from_pretrained(

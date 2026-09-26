@@ -334,8 +334,7 @@ remove_vision_model <- function(name, confirm = TRUE) {
   }
 
   # Prevent removal of built-in models
-  builtin_models <- c("oai-base", "oai-large", "eva-8B", "jina-v2")
-  if (name %in% builtin_models) {
+  if (name %in% .te_builtin_vision_models) {
     stop("Cannot remove built-in model '", name, "'. Only custom models can be removed.")
   }
 
