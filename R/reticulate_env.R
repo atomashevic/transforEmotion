@@ -278,6 +278,35 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# On Linux, R has already loaded its BLAS (libblas.so or libRblas.so) into the
+# global symbol scope when Python starts. PyTorch's CPU build carries MKL
+# inside libtorch_cpu.so and exports sgemm_/dgemm_, so without this the dynamic
+# linker binds PyTorch's BLAS calls to R's library instead. With R's reference
+# BLAS that makes every matrix product tens of times slower (a 1500 x 1500
+# float matmul: 1.6 s instead of 0.03 s). Importing torch with RTLD_DEEPBIND
+# makes it use its own symbols first; the default flags are restored after the
+# import. Best effort: if torch is missing or the import fails here, the first
+# real import reports the problem.
+.te_import_torch_own_blas <- function() {
+  if (!identical(Sys.info()[["sysname"]], "Linux")) return(invisible(FALSE))
+  tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import os, sys",
+      "if 'torch' not in sys.modules and hasattr(os, 'RTLD_DEEPBIND'):",
+      "    _flags = sys.getdlopenflags()",
+      "    sys.setdlopenflags(_flags | os.RTLD_DEEPBIND)",
+      "    try:",
+      "        import torch",
+      "    finally:",
+      "        sys.setdlopenflags(_flags)",
+      sep = "\n"
+    )),
+    error = function(e) invisible(NULL)
+  )
+  invisible(TRUE)
+}
+
+#' @noRd
 # llama-index downloads NLTK data into each Python environment on first
 # import. A single folder in the package cache lets data downloaded once (for
 # example by setup_modules(extras = "rag")) serve every environment and

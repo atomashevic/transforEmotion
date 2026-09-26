@@ -38,6 +38,8 @@ o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` report a miss
 
 o FIX: `model = "jina-v2"` failed with "'tokenizers.models.Unigram' object has no attribute 'end_of_word_suffix'": models registered as "clip-custom" (Jina CLIP v2, EVA-CLIP-8B) were loaded with the standard CLIP adapter. They now get their own adapters, and the Jina adapter uses the model's own multilingual tokenizer and image preprocessing (`encode_text()`, `encode_image()`) instead of the English OpenAI CLIP tokenizer, so labels in other languages work
 
+o FIX: on Linux, PyTorch computed matrix products with R's BLAS instead of its own MKL, because R's BLAS is loaded first and both export `sgemm_`; with R's reference BLAS, CPU inference was tens of times slower (Jina CLIP v2: about 330 s instead of 11 s per image). torch is now imported with `RTLD_DEEPBIND` when Python starts
+
 o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` reloaded the vision model on every call, because re-sourcing the Python module emptied the model cache
 
 o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`

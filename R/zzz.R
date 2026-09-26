@@ -19,6 +19,13 @@
     if (reticulate::py_available(initialize = FALSE)) {
         .te_expose_python_headers()
     }
+
+    # Import torch before anything else so it binds to its own BLAS, not R's.
+    # Too late if Python (and torch) started before the package was loaded.
+    setHook("reticulate.onPyInit", .te_import_torch_own_blas)
+    if (reticulate::py_available(initialize = FALSE)) {
+        .te_import_torch_own_blas()
+    }
 }
 
 .onAttach <- function(libname, pkgname)
