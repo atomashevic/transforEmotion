@@ -73,6 +73,8 @@ test_that("setup_cache() points every cache at one folder", {
   set <- setup_cache(dir, offline = TRUE)
   root <- normalizePath(dir, winslash = "/")
   expect_equal(Sys.getenv("UV_CACHE_DIR"), file.path(root, "uv"))
+  # reticulate only reuses a uv-installed interpreter under ".../uv/python/"
+  expect_equal(Sys.getenv("UV_PYTHON_INSTALL_DIR"), file.path(root, "uv", "python"))
   expect_equal(Sys.getenv("HF_HOME"), file.path(root, "huggingface"))
   expect_equal(Sys.getenv("R_USER_CACHE_DIR"), file.path(root, "R"))
   expect_equal(Sys.getenv("HF_HUB_OFFLINE"), "1")

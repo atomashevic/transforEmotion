@@ -66,7 +66,10 @@ setup_cache <- function(path, offline = FALSE, gpu = NULL) {
 
   vars <- c(
     UV_CACHE_DIR = file.path(path, "uv"),
-    UV_PYTHON_INSTALL_DIR = file.path(path, "python"),
+    # reticulate prefers interpreters whose path contains "/uv/python/" and
+    # otherwise picks a Python version uv can download, which fails offline
+    # and installs another interpreter in every online session
+    UV_PYTHON_INSTALL_DIR = file.path(path, "uv", "python"),
     UV_PYTHON_PREFERENCE = "only-managed",
     HF_HOME = file.path(path, "huggingface"),
     R_USER_CACHE_DIR = file.path(path, "R")
