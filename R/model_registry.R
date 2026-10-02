@@ -25,7 +25,11 @@
 #' @param model_id The HuggingFace model identifier or path to local model
 #' @param architecture The model architecture type. Currently supported:
 #'   \itemize{
-#'     \item \code{"clip"}: Standard CLIP dual-encoder models (default)
+#'     \item \code{"clip"}: Standard CLIP dual-encoder models (default). Also
+#'       accepts checkpoints that hold only a fine-tuned CLIP vision encoder
+#'       (\code{model_type} "clip_vision_model"); the text encoder, projections
+#'       and processor are then loaded from the base CLIP model named in the
+#'       checkpoint's \code{config.json} ("_name_or_path")
 #'     \item \code{"clip-custom"}: CLIP variants requiring special handling
 #'     \item \code{"blip"}: BLIP captioning/VQA models (supported via BLIP adapter)
 #'     \item \code{"align"}: ALIGN dual-encoder models (supported via ALIGN adapter)
@@ -105,8 +109,7 @@ register_vision_model <- function(name,
   .vision_model_registry[[name]] <- model_config
   
   # Only show message for custom models, not built-ins during package loading
-  builtin_models <- c("oai-base", "oai-large", "eva-8B", "jina-v2")
-  if (!name %in% builtin_models) {
+  if (!name %in% .te_builtin_vision_models) {
     message("Successfully registered vision model '", name, "' -> ", model_id)
   }
   invisible(TRUE)
@@ -299,9 +302,29 @@ is_vision_model_registered <- function(name) {
     description = "Jina CLIP v2 - Optimized CLIP variant",
     requires_special_handling = TRUE
   )
-  
+
+  # OpenAI CLIP with the vision encoder fine-tuned on FER2013 (Tang et al.,
+  # FusionBench); the text encoder is the base model's
+  register_vision_model(
+    name = "oai-base-fer",
+    model_id = "tanganke/clip-vit-base-patch32_fer2013",
+    architecture = "clip",
+    description = "OpenAI CLIP ViT-Base/32, vision encoder fine-tuned on FER2013 facial expressions"
+  )
+
+  register_vision_model(
+    name = "oai-large-fer",
+    model_id = "tanganke/clip-vit-large-patch14_fer2013",
+    architecture = "clip",
+    description = "OpenAI CLIP ViT-Large/14, vision encoder fine-tuned on FER2013 facial expressions"
+  )
+
   invisible(TRUE)
 }
+
+# Aliases registered by .init_builtin_models(); they cannot be removed
+.te_builtin_vision_models <- c("oai-base", "oai-large", "eva-8B", "jina-v2",
+                               "oai-base-fer", "oai-large-fer")
 
 # Utility function for NULL coalescing
 `%||%` <- function(x, y) {

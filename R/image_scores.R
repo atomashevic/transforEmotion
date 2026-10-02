@@ -26,8 +26,12 @@
 #'   only one face in the image.
 #' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
-#'     \item Any valid HuggingFace model ID
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2",
+#'       "oai-base-fer" and "oai-large-fer" (OpenAI CLIP with the vision encoder
+#'       fine-tuned on the FER2013 facial-expression dataset)
+#'     \item Any valid HuggingFace model ID, including checkpoints that hold only
+#'       a fine-tuned CLIP vision encoder; their text encoder and processor come
+#'       from the base CLIP model named in the checkpoint's config
 #'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
 #'   Use \code{\link{list_vision_models}} to see all available models.
@@ -54,8 +58,9 @@
 #' @export
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements
   ensure_te_py_env()
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -69,7 +74,7 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   # If import fails, try setting up modules
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 
@@ -177,8 +182,9 @@ image_scores_dir <- function(dir,
                              recursive = FALSE,
                              model = "oai-base",
                              local_model_path = NULL) {
-  # Ensure Python environment is ready
+  # Declare Python requirements
   ensure_te_py_env()
+  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -237,7 +243,7 @@ image_scores_dir <- function(dir,
   }, silent = TRUE)
   if (inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
 

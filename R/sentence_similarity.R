@@ -81,7 +81,7 @@ sentence_similarity <- function(
     preprocess = FALSE, keep_in_env = TRUE, envir = 1
 )
 {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements
   ensure_te_py_env()
 
   # Check that input of 'text' argument is in the
@@ -125,7 +125,7 @@ sentence_similarity <- function(
     # If import fails, try setting up modules
     if(inherits(sentence_transformers, "try-error")) {
       message("Required Python modules not found. Setting up modules...")
-      setup_modules()
+      setup_modules(download_models = FALSE)
       sentence_transformers <- reticulate::import("sentence_transformers")
     }
 

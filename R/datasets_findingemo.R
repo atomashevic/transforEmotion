@@ -33,9 +33,9 @@
 #' }
 #'
 #' @details
-#' This function requires the \code{findingemo-light} Python package to be 
-#' installed. Use \code{setup_modules()} to install required dependencies
-#' before calling this function.
+#' This function uses the \code{findingemo-light} Python package, which is
+#' installed automatically on first use (or ahead of time with
+#' \code{setup_modules(extras = "findingemo")}).
 #' 
 #' The FindingEmo dataset is described in:
 #' Mertens, L. et al. (2024). "FindingEmo: An Image Dataset for Emotion 
@@ -50,7 +50,7 @@
 #' @examples
 #' \dontrun{
 #' # First install required modules
-#' setup_modules()
+#' setup_modules(extras = "findingemo")
 #' 
 #' # Download dataset to local directory
 #' result <- download_findingemo_data("./findingemo_data")
@@ -89,8 +89,8 @@ download_findingemo_data <- function(target_dir,
                                    randomize = FALSE,
                                    skip_existing = TRUE,
                                    force = FALSE) {
-  # Ensure reticulate uses the transforEmotion conda environment
-  ensure_te_py_env()
+  # Declare the core and FindingEmo Python requirements
+  .te_require("findingemo")
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -152,7 +152,7 @@ download_findingemo_data <- function(target_dir,
   # If import fails, try setting up modules
   if(inherits(module_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(extras = "findingemo", download_models = FALSE)
     download_module <- reticulate::source_python(system.file("python", "download_findingemo.py", package = "transforEmotion"))
   }
 
@@ -361,8 +361,8 @@ download_findingemo_data <- function(target_dir,
 load_findingemo_annotations <- function(data_dir,
                                       output_format = c("dataframe", "list"),
                                       python_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
-  ensure_te_py_env()
+  # Declare the core and FindingEmo Python requirements
+  .te_require("findingemo")
   
   output_format <- match.arg(output_format)
   

@@ -178,7 +178,7 @@ transformer_scores <- function(
 )
 {
 
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements
   ensure_te_py_env()
 
   # Check that input of 'text' argument is in the
@@ -221,13 +221,12 @@ transformer_scores <- function(
     device <- tolower(match.arg(device))
   }
 
-  # Use check_nvidia_gpu to determine default device
+  # Ask PyTorch rather than check_nvidia_gpu(): the CPU build of PyTorch
+  # (TE_FORCE_CPU, setup_cache(gpu = FALSE)) or a hidden GPU
+  # (CUDA_VISIBLE_DEVICES="") cannot use an NVIDIA GPU that is present
   if(device == "auto"){
-    if(check_nvidia_gpu()){
-      device <- "cuda"  # GPU available, use auto
-    } else {
-      device <- "cpu"   # No GPU available, force CPU
-    }
+    torch <- reticulate::import("torch")
+    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
   }
 
   # Suppress Python logging and warnings
@@ -283,7 +282,7 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
     # If import fails, try setting up modules
     if(inherits(modules_import, "try-error")) {
       message("Required Python modules not found. Setting up modules...")
-      setup_modules()
+      setup_modules(download_models = FALSE)
 
       # Try import again with encoding configuration
       reticulate::py_run_string("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.stderr.reconfigure(encoding='utf-8')")
