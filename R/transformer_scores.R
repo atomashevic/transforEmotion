@@ -221,13 +221,12 @@ transformer_scores <- function(
     device <- tolower(match.arg(device))
   }
 
-  # Use check_nvidia_gpu to determine default device
+  # Ask PyTorch rather than check_nvidia_gpu(): the CPU build of PyTorch
+  # (TE_FORCE_CPU, setup_cache(gpu = FALSE)) or a hidden GPU
+  # (CUDA_VISIBLE_DEVICES="") cannot use an NVIDIA GPU that is present
   if(device == "auto"){
-    if(check_nvidia_gpu()){
-      device <- "cuda"  # GPU available, use auto
-    } else {
-      device <- "cpu"   # No GPU available, force CPU
-    }
+    torch <- reticulate::import("torch")
+    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
   }
 
   # Suppress Python logging and warnings
