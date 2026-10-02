@@ -1441,6 +1441,10 @@ set_default_embedding <- function(llama_index, device = NULL, model_name = "BAAI
     trust_remote_code = TRUE
   )
   if (!is.null(device) && nzchar(device)) embed_args$device <- device
+  # Use the Hugging Face cache, where setup_modules() downloads the model and
+  # setup_cache() points, not llama-index's own folder (/tmp/llama_index on
+  # Linux), which offline sessions and other machines do not have
+  embed_args$cache_folder <- reticulate::import("huggingface_hub.constants")$HF_HUB_CACHE
 
   Settings <- llama_index$core$Settings
   Settings$embed_model <- do.call(hf_embed$HuggingFaceEmbedding, embed_args)
