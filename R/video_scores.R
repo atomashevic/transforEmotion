@@ -146,6 +146,12 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
   }
 
+  # Remove the frames (and the downloaded video) this call creates, also when
+  # processing fails or is interrupted
+  cleanup <- .te_video_cleanup_plan(save_dir, video_name, nframes, save_frames,
+                                    save_video || !grepl("youtu", video))
+  on.exit(cleanup(), add = TRUE)
+
   result <- without_hf_token({
     reticulate::py$yt_analyze(
       url = video,
@@ -164,15 +170,25 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     )
   })
 
-  # file.path() works whether or not save_dir ends in "/", and the pattern
-  # matches only the frames written for this video, not other images there
-  if (!save_video && grepl("youtu", video)){
-    file.remove(file.path(save_dir, paste0(video_name, ".mp4")))
-  }
-  if(!save_frames){
-    frames <- list.files(save_dir, pattern = "-frame-[0-9]+\\.jpg$")
-    frames <- frames[startsWith(frames, paste0(video_name, "-frame-"))]
-    file.remove(file.path(save_dir, frames))
-  }
   return(result)
+}
+
+#' @noRd
+# Returns a function that removes the files yt_analyze() writes for this call
+# (<video_name>-frame-<i>.jpg and, for YouTube, <video_name>.mp4) unless they
+# are to be kept. Only files absent when the plan is made are removed, so
+# frames of other videos (including names that share a prefix) and files
+# already in save_dir are left alone.
+.te_video_cleanup_plan <- function(save_dir, video_name, nframes, keep_frames,
+                                   keep_video) {
+  n <- max(0L, as.integer(nframes))
+  frames <- file.path(save_dir, sprintf("%s-frame-%d.jpg", video_name, seq_len(n) - 1L))
+  video <- file.path(save_dir, paste0(video_name, ".mp4"))
+  targets <- c(character(), if (!keep_frames) frames, if (!keep_video) video)
+  targets <- targets[!file.exists(targets)]
+  function() {
+    created <- targets[file.exists(targets)]
+    if (length(created)) file.remove(created)
+    invisible(created)
+  }
 }
