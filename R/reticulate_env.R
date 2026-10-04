@@ -82,11 +82,14 @@ te_should_use_gpu <- function() {
   c(wheel("torch", .te_torch_version), wheel("torchvision", .te_torchvision_version))
 }
 
-# Modules that show a feature set is already installed in a running Python
+# Import names of every package in each feature set (.te_py_requirements()),
+# to tell whether a running Python already has the whole set
 .te_feature_modules <- list(
-  core = c("torch", "transformers", "cv2"),
+  core = c("torch", "torchvision", "transformers", "huggingface_hub", "numpy",
+           "pandas", "accelerate", "safetensors", "sentencepiece",
+           "sentence_transformers", "timm", "einops", "cv2"),
   rag = c("llama_index.core", "llama_index.llms.huggingface",
-          "llama_index.embeddings.huggingface"),
+          "llama_index.embeddings.huggingface", "pypdf", "rank_bm25"),
   youtube = "pytubefix",
   findingemo = c("findingemo_light", "termcolor"),
   gpu = "bitsandbytes"

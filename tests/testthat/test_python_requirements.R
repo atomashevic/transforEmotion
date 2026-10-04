@@ -116,6 +116,23 @@ test_that("a running Python that already has the packages is used as is", {
   )
   expect_no_warning(expect_no_error(transforEmotion:::.te_require("core")))
   expect_true("core" %in% state$features)
+
+  # One missing package (sentence-transformers) is enough to stop
+  state$features <- character()
+  local_mocked_bindings(
+    py_module_available = function(module) module != "sentence_transformers",
+    .package = "reticulate"
+  )
+  expect_error(transforEmotion:::.te_require("core"), "Python packages for 'core'")
+  expect_false("core" %in% state$features)
+})
+
+test_that("every package of a feature set is checked by its import name", {
+  modules <- transforEmotion:::.te_feature_modules
+  for (feature in c("core", "rag", "youtube", "findingemo", "gpu")) {
+    expect_length(modules[[feature]],
+                  length(transforEmotion:::.te_py_requirements(feature)))
+  }
 })
 
 test_that("the package cache folder matches tools::R_user_dir() on older R", {
