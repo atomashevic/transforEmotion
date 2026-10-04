@@ -83,6 +83,21 @@ test_that("setup_cache() points every cache at one folder", {
   expect_error(setup_cache(c("a", "b")), "single folder")
 })
 
+test_that("a failed install into a running Python is an error, not a warning", {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  state <- transforEmotion:::.te_py_state
+  old <- state$features
+  withr::defer(state$features <- old)
+  state$features <- "core"
+  local_mocked_bindings(
+    py_available = function(...) TRUE,
+    py_require = function(...) warning("Call `py_require()` to remove or replace conflicting requirements."),
+    .package = "reticulate"
+  )
+  expect_error(transforEmotion:::.te_require("youtube"), "Python packages for 'youtube'")
+  expect_false("youtube" %in% state$features)
+})
+
 test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = file.path(tempdir(), "no-such-python"))
   expect_error(transforEmotion:::.te_require("core"), "does not exist")

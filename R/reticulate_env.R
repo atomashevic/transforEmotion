@@ -213,10 +213,22 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 
   # Only the core set depends on the GPU (it picks the PyTorch build)
   if ("core" %in% todo) .te_py_state$use_gpu <- te_should_use_gpu()
+  # Once Python runs, reticulate installs additions at once and only warns
+  # when that fails (for example offline); stop instead, so the failure is
+  # reported here and the feature set is retried on the next call
+  started <- reticulate::py_available(initialize = FALSE)
   for (feature in todo) {
-    reticulate::py_require(
-      packages = .te_py_requirements(feature, use_gpu = .te_py_state$use_gpu),
-      python_version = .te_python_version
+    withCallingHandlers(
+      reticulate::py_require(
+        packages = .te_py_requirements(feature, use_gpu = .te_py_state$use_gpu),
+        python_version = .te_python_version
+      ),
+      warning = function(w) {
+        if (started) {
+          stop("Could not install the Python packages for '", feature, "': ",
+               conditionMessage(w), call. = FALSE)
+        }
+      }
     )
     .te_py_state$features <- c(.te_py_state$features, feature)
   }
