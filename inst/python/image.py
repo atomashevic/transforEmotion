@@ -821,8 +821,9 @@ def get_vision_adapter(model_name, local_model_path=None, architecture=None):
     Returns:
         VisionModelAdapter: Appropriate adapter instance
     """
-    # Create cache key
-    cache_key = f"{model_name}_{local_model_path or 'remote'}"
+    # Create cache key; the architecture hint picks the adapter, so a model
+    # re-registered with another architecture must not reuse the cached one
+    cache_key = (model_name, local_model_path or "remote", str(architecture).lower())
     
     # Return cached adapter if available
     if cache_key in _loaded_adapters:

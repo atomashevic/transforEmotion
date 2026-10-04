@@ -74,3 +74,18 @@ test_that("full checkpoints download only themselves", {
   suppressMessages(transforEmotion:::.te_download_model("openai/clip-vit-base-patch32"))
   expect_equal(got, "openai/clip-vit-base-patch32")
 })
+
+test_that("a cached vision adapter is not reused for another architecture", {
+  skip_on_cran()
+  skip_if_not(reticulate::py_module_available("transformers"))
+  image_py <- system.file("python", "image.py", package = "transforEmotion")
+  # As in image_scores(): source into __main__, again on every call, so the
+  # adapter cache survives. Adapters load their model lazily, so creating
+  # them downloads nothing.
+  reticulate::source_python(image_py, envir = NULL)
+  first <- reticulate::py$get_vision_adapter("someone/vision-model", NULL, "blip")
+  reticulate::source_python(image_py, envir = NULL)
+  second <- reticulate::py$get_vision_adapter("someone/vision-model", NULL, "clip")
+  expect_equal(first$`__class__`$`__name__`, "BLIPAdapter")
+  expect_equal(second$`__class__`$`__name__`, "CLIPAdapter")
+})
