@@ -4,7 +4,6 @@ import math
 import cv2
 import numpy as np
 import pandas as pd
-from pytubefix import YouTube #19 Fixed pytube issue
 from transformers import CLIPProcessor, CLIPModel
 from image import classify_image
 import torch.nn.functional as F
@@ -29,6 +28,7 @@ def yt_analyze(url, nframes, labels, side='largest', start=0, end=-1, uniform=Fa
       raise ValueError("Start and end times must be positive.")
     cut = True
   if "youtu" in url:
+    from pytubefix import YouTube  # optional dependency, added by video_scores()
     yt = YouTube(url)
     ######### YT processing
     while k < 3: # make three attempts to retrieve YouTube video stream

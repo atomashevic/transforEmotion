@@ -20,7 +20,11 @@ register_vision_model(
 
 \item{architecture}{The model architecture type. Currently supported:
 \itemize{
-  \item \code{"clip"}: Standard CLIP dual-encoder models (default)
+  \item \code{"clip"}: Standard CLIP dual-encoder models (default). Also
+    accepts checkpoints that hold only a fine-tuned CLIP vision encoder
+    (\code{model_type} "clip_vision_model"); the text encoder, projections
+    and processor are then loaded from the base CLIP model named in the
+    checkpoint's \code{config.json} ("_name_or_path")
   \item \code{"clip-custom"}: CLIP variants requiring special handling
   \item \code{"blip"}: BLIP captioning/VQA models (supported via BLIP adapter)
   \item \code{"align"}: ALIGN dual-encoder models (supported via ALIGN adapter)

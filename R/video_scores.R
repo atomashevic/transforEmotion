@@ -18,8 +18,12 @@
 #' @param video_name The name of the analyzed video. Default is "temp".
 #' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
-#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2"
-#'     \item Any valid HuggingFace model ID
+#'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2",
+#'       "oai-base-fer" and "oai-large-fer" (OpenAI CLIP with the vision encoder
+#'       fine-tuned on the FER2013 facial-expression dataset)
+#'     \item Any valid HuggingFace model ID, including checkpoints that hold only
+#'       a fine-tuned CLIP vision encoder; their text encoder and processor come
+#'       from the base CLIP model named in the checkpoint's config
 #'     \item Custom registered models (see \code{\link{register_vision_model}})
 #'   }
 #'   Use \code{\link{list_vision_models}} to see all available models.
@@ -54,8 +58,12 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL) {
-  # Ensure reticulate uses the transforEmotion conda environment
+  # Declare Python requirements; pytubefix is only needed for YouTube URLs
   ensure_te_py_env()
+  if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
+    .te_require("youtube")
+  }
+  if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -70,7 +78,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   # If import fails, try setting up modules
   if(inherits(modules_import, "try-error")) {
     message("Required Python modules not found. Setting up modules...")
-    setup_modules()
+    setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }
@@ -138,6 +146,12 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
   }
 
+  # Remove the frames (and the downloaded video) this call creates, also when
+  # processing fails or is interrupted
+  cleanup <- .te_video_cleanup_plan(save_dir, video_name, nframes, save_frames,
+                                    save_video || !grepl("youtu", video))
+  on.exit(cleanup(), add = TRUE)
+
   result <- without_hf_token({
     reticulate::py$yt_analyze(
       url = video,
@@ -156,11 +170,25 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     )
   })
 
-  if (!save_video && grepl("youtu", video)){
-    file.remove(paste0(save_dir, video_name, ".mp4"))
-  }
-  if(!save_frames){
-     file.remove(paste0(save_dir, list.files(save_dir, pattern = ".jpg")))
-  }
   return(result)
+}
+
+#' @noRd
+# Returns a function that removes the files yt_analyze() writes for this call
+# (<video_name>-frame-<i>.jpg and, for YouTube, <video_name>.mp4) unless they
+# are to be kept. Only files absent when the plan is made are removed, so
+# frames of other videos (including names that share a prefix) and files
+# already in save_dir are left alone.
+.te_video_cleanup_plan <- function(save_dir, video_name, nframes, keep_frames,
+                                   keep_video) {
+  n <- max(0L, as.integer(nframes))
+  frames <- file.path(save_dir, sprintf("%s-frame-%d.jpg", video_name, seq_len(n) - 1L))
+  video <- file.path(save_dir, paste0(video_name, ".mp4"))
+  targets <- c(character(), if (!keep_frames) frames, if (!keep_video) video)
+  targets <- targets[!file.exists(targets)]
+  function() {
+    created <- targets[file.exists(targets)]
+    if (length(created)) file.remove(created)
+    invisible(created)
+  }
 }
