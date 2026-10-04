@@ -1,51 +1,32 @@
 #' Remove reticulate's default virtualenv (r-reticulate)
 #'
 #' @description
-#' Removes the default `reticulate` virtual environment at
-#' `~/.virtualenvs/r-reticulate` to avoid conflicts with uv-managed
-#' environments used by transforEmotion. This is optional and only needed if
-#' you want to ensure uv's environment is preferred.
+#' Deprecated. Use \code{fix_python(remove = "r-reticulate")} instead.
+#' transforEmotion no longer needs this virtualenv removed: it always selects
+#' its own Python environment (see \code{\link{fix_python}}). Other R packages
+#' can use the virtualenv.
 #'
 #' @param confirm Logical. Ask for confirmation before removal. Default TRUE.
+#' A non-interactive session cannot answer, so nothing is removed there
+#' unless \code{confirm = FALSE}.
 #' @return Invisibly returns TRUE on success, FALSE otherwise.
 #' @examples
 #' \dontrun{
-#' te_cleanup_default_venv()
-#' te_cleanup_default_venv(confirm = FALSE)
+#' fix_python(remove = "r-reticulate")
 #' }
 #' @export
 te_cleanup_default_venv <- function(confirm = TRUE) {
-  venv_path <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
-  if (!dir.exists(venv_path)) {
-    message("No default reticulate venv detected at ", venv_path)
-    return(invisible(FALSE))
+  .Deprecated("fix_python")
+  if (isTRUE(confirm)) {
+    if (!interactive()) {
+      message("Not removed: non-interactive session. Use fix_python(remove = \"r-reticulate\").")
+      return(invisible(FALSE))
+    }
+    if (!.te_ask("Remove reticulate's default virtualenv r-reticulate? Other R packages can use it.")) {
+      message("Cancelled. The environment was not removed.")
+      return(invisible(FALSE))
+    }
   }
-
-  proceed <- TRUE
-  if (isTRUE(confirm) && interactive()) {
-    ans <- tryCatch(readline(
-      paste0("Remove default reticulate venv at ", venv_path, "? [y/N]: ")
-    ), error = function(e) "")
-    ans <- tolower(trimws(ans))
-    proceed <- ans %in% c("y", "yes")
-  }
-
-  if (!proceed) {
-    message("Cancelled. The environment was not removed.")
-    return(invisible(FALSE))
-  }
-
-  ok <- tryCatch({
-    reticulate::virtualenv_remove("r-reticulate", confirm = FALSE)
-    TRUE
-  }, error = function(e) {
-    message("Failed to remove environment: ", e$message)
-    FALSE
-  })
-
-  if (isTRUE(ok)) {
-    message("Removed ", venv_path, ". Restart R so changes take effect.")
-  }
-  invisible(ok)
+  report <- fix_python(remove = "r-reticulate", setup = FALSE)
+  invisible(any(report$leftovers$action[report$leftovers$id == "r-reticulate"] == "removed"))
 }
-

@@ -1,4 +1,4 @@
-### CRAN 0.1.7 | GitHub 0.1.7
+### CRAN 0.1.7 | GitHub 0.2.0
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://img.shields.io/badge/DOI-10.5117%2FCCR2026.2.2.TOMA-blue)](https://doi.org/10.5117/CCR2026.2.2.TOMA) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa)](https://github.com/sponsors/atomashevic)
 
@@ -69,6 +69,17 @@ The scores are the model's probabilities that the text belongs to each class.
 The Python environment and the models are stored in cache folders in your home directory (uv's cache and `~/.cache/huggingface`). To keep them elsewhere, for example on a cluster with a small home quota, or to work without internet access, see [Offline Use](#offline-use-hpc-clusters-and-containers).
 
 If the setup fails, the error shows uv's output. Fix the cause (usually the network connection) and try again in a new R session: Python cannot be set up again once it has started in a session.
+
+### Upgrading from an older version
+
+After an upgrade from version 0.1.7 or older, we recommend that you run `fix_python()` once in a new R session. It makes sure that the new Python environment is in place, so that all new features work:
+
+```R
+library(transforEmotion)
+fix_python()
+```
+
+Versions 0.1.7 and older set up Python differently and can leave a conda environment, reticulate's `r-reticulate` virtualenv or a `RETICULATE_PYTHON` setting behind. transforEmotion ignores them and always uses its own environment. `fix_python()` lists what older versions left, offers to remove the old conda environment, and builds the new environment. It deletes nothing without your consent. Rscript and Colab cannot answer a question, so there you name the items to delete, for example `fix_python(remove = "conda-env")`. Settings in `.Renviron` or `.Rprofile` are reported, never edited. To use your own Python instead, set `TRANSFOREMOTION_PYTHON` to its path.
 
 > [!WARNING]
 > If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
