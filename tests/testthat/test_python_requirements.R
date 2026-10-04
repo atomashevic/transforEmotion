@@ -42,7 +42,8 @@ test_that("feature sets are defined and core excludes heavy unused packages", {
 })
 
 test_that("setup code does not modify the Python environment with pip", {
-  for (f in c("setup_modules.R", "reticulate_env.R", "setup_gpu_modules.R")) {
+  for (f in c("setup_modules.R", "reticulate_env.R", "setup_gpu_modules.R",
+              "fix_python.R", "cleanup_utils.R")) {
     path <- normalizePath(testthat::test_path("..", "..", "R", f), mustWork = FALSE)
     skip_if_not(file.exists(path))
     src <- paste(readLines(path, warn = FALSE), collapse = "\n")
@@ -83,14 +84,16 @@ test_that("setup_cache() points every cache at one folder", {
   expect_error(setup_cache(c("a", "b")), "single folder")
 })
 
+managed_python <- list(python = "/uv/cache/archive-v0/x/bin/python", version = "3.12",
+                       forced = "py_require()", ephemeral = TRUE)
+
 test_that("a failed install into a running Python is an error, not a warning", {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
-  state <- transforEmotion:::.te_py_state
-  old <- state$features
-  withr::defer(state$features <- old)
+  state <- local_te_py_state()
   state$features <- "core"
   local_mocked_bindings(
     py_available = function(...) TRUE,
+    py_config = function() managed_python,
     py_module_available = function(module) FALSE,
     py_require = function(...) warning("Call `py_require()` to remove or replace conflicting requirements."),
     .package = "reticulate"
@@ -99,17 +102,16 @@ test_that("a failed install into a running Python is an error, not a warning", {
   expect_false("youtube" %in% state$features)
 })
 
-test_that("a running Python that already has the packages is used as is", {
-  # Python started before transforEmotion was loaded: reticulate refuses to
-  # change a declared constraint (numpy) but the environment is complete
+test_that("a running managed environment that already has the packages is used as is", {
+  # Another package declared a conflicting constraint (numpy) before Python
+  # started: reticulate refuses to change it but the environment is complete
   withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
-  state <- transforEmotion:::.te_py_state
-  old <- state$features
-  withr::defer(state$features <- old)
+  state <- local_te_py_state()
   state$features <- character()
   local_mocked_bindings(te_should_use_gpu = function() FALSE)
   local_mocked_bindings(
     py_available = function(...) TRUE,
+    py_config = function() managed_python,
     py_module_available = function(module) TRUE,
     py_require = function(...) warning("Call `py_require()` to remove or replace conflicting requirements."),
     .package = "reticulate"
@@ -145,6 +147,7 @@ test_that("the package cache folder matches tools::R_user_dir() on older R", {
 })
 
 test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
+  local_te_py_state()
   withr::local_envvar(TRANSFOREMOTION_PYTHON = file.path(tempdir(), "no-such-python"))
   expect_error(transforEmotion:::.te_require("core"), "does not exist")
 })

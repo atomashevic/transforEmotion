@@ -7,20 +7,21 @@
 te_cleanup_default_venv(confirm = TRUE)
 }
 \arguments{
-\item{confirm}{Logical. Ask for confirmation before removal. Default TRUE.}
+\item{confirm}{Logical. Ask for confirmation before removal. Default TRUE.
+A non-interactive session cannot answer, so nothing is removed there
+unless \code{confirm = FALSE}.}
 }
 \value{
 Invisibly returns TRUE on success, FALSE otherwise.
 }
 \description{
-Removes the default `reticulate` virtual environment at
-`~/.virtualenvs/r-reticulate` to avoid conflicts with uv-managed
-environments used by transforEmotion. This is optional and only needed if
-you want to ensure uv's environment is preferred.
+Deprecated. Use \code{fix_python(remove = "r-reticulate")} instead.
+transforEmotion no longer needs this virtualenv removed: it always selects
+its own Python environment (see \code{\link{fix_python}}). Other R packages
+can use the virtualenv.
 }
 \examples{
 \dontrun{
-te_cleanup_default_venv()
-te_cleanup_default_venv(confirm = FALSE)
+fix_python(remove = "r-reticulate")
 }
 }

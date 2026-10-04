@@ -40,19 +40,31 @@
     msg <- paste(msg, '\nFor help getting started, type browseVignettes("transforEmotion")\n')
     msg <- paste(msg, "\nFor bugs and errors, submit an issue to <https://github.com/atomashevic/transforEmotion/issues>")
     msg <- paste(msg, "\nPython dependencies are installed automatically via uv on first use. Optionally run setup_modules() to pre-warm the environment.")
+    msg <- paste(msg, "\nUpgraded from version 0.1.7 or older? Run fix_python() once. It checks for old Python setups and prepares the new environment, so that all new features work.")
     msg <- paste(msg, "\nData Privacy: All processing is done locally with the downloaded model, and your data is never sent to any remote server or third-party.")
     msg <- paste(msg, "\n\nAvailable vision models: Use list_vision_models() to see all models or register_vision_model() to add custom models.")
     packageStartupMessage(msg)
-    Sys.unsetenv("RETICULATE_PYTHON")
     requireNamespace("reticulate")
 
-    # If the default reticulate venv exists, suggest the cleanup helper (no prompts on attach)
-    default_venv <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
-    if (dir.exists(default_venv)) {
+    replaced <- .te_py_state$replaced_python
+    if (!is.null(replaced)) {
         packageStartupMessage(
-          "Detected ~/.virtualenvs/r-reticulate; run transforEmotion::te_cleanup_default_venv() to remove it and prefer uv."
+          "transforEmotion uses its own Python and ignores RETICULATE_PYTHON=", replaced,
+          " in this session. To use that Python, set TRANSFOREMOTION_PYTHON instead.",
+          " Run transforEmotion::fix_python() to see where it is set."
         )
     }
+    if (dir.exists(file.path(reticulate::miniconda_path(), "envs", "transforEmotion"))) {
+        packageStartupMessage(
+          "An older transforEmotion left a conda environment (several GB).",
+          " Run transforEmotion::fix_python() to review and remove it."
+        )
+    }
+}
+
+.onUnload <- function(libpath)
+{
+    .te_release_python()
 }
 
 # Internal: provide a mockable binding for testthat to override

@@ -46,6 +46,14 @@ o FIX: on Linux, PyTorch computed matrix products with R's BLAS instead of its o
 
 o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` reloaded the vision model on every call, because re-sourcing the Python module emptied the model cache
 
+o ADD: `fix_python()` repairs a Python setup left by transforEmotion 0.1.7 or older. It reports the old conda environment, reticulate's default `r-reticulate` virtualenv and Python settings in `.Renviron` or `.Rprofile`, removes only the items you consent to, and builds the new environment. In a non-interactive session it removes nothing unless `remove` names the items. Running it once after an upgrade is recommended, and the startup message says so
+
+o FIX: an old Python could be used instead of the package's environment, which gave "No module named 'torch'" or ran silently on old libraries: a leftover `~/.virtualenvs/r-reticulate`, `RETICULATE_PYTHON` set in `.Renviron`, or `reticulate::use_virtualenv()` before the package was loaded. Loading the package now sets `RETICULATE_PYTHON` to its managed environment, or to `TRANSFOREMOTION_PYTHON` when that is set, for the R session
+
+o CHANGE: when a Python that lacks the required modules is already running, functions stop with an error that names the interpreter and says to restart R; a running Python with the modules but another Python version gives one warning
+
+o CHANGE: `te_cleanup_default_venv()` is deprecated in favour of `fix_python(remove = "r-reticulate")`, and no longer removes the virtualenv without asking in a non-interactive session; `setup_miniconda()` now points to `fix_python()`. The startup message no longer mentions `r-reticulate`; it mentions the old conda environment when one exists
+
 o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`
 
 

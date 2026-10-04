@@ -2,12 +2,15 @@
 % Please edit documentation in R/setup_miniconda.R
 \name{setup_miniconda}
 \alias{setup_miniconda}
-\title{Deprecated: Miniconda setup (use uv instead)}
+\title{Deprecated: Miniconda setup}
 \usage{
 setup_miniconda()
 }
 \description{
-setup_miniconda() is deprecated. The transforEmotion package now uses
-reticulate's uv-based ephemeral environments managed via `py_require()`.
-No conda or Miniconda installation is required.
+setup_miniconda() is no longer needed. transforEmotion installs Python
+itself with uv through \code{reticulate::py_require()}. Run
+\code{\link{fix_python}} once to remove the conda environment that older
+versions created and to build the new environment. Delete calls to
+\code{setup_miniconda()} and
+\code{reticulate::use_condaenv("transforEmotion")} from your scripts.
 }

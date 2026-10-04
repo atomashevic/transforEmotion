@@ -70,6 +70,17 @@ The Python environment and the models are stored in cache folders in your home d
 
 If the setup fails, the error shows uv's output. Fix the cause (usually the network connection) and try again in a new R session: Python cannot be set up again once it has started in a session.
 
+### Upgrading from an older version
+
+After an upgrade from version 0.1.7 or older, we recommend that you run `fix_python()` once in a new R session. It makes sure that the new Python environment is in place, so that all new features work:
+
+```R
+library(transforEmotion)
+fix_python()
+```
+
+Versions 0.1.7 and older set up Python differently and can leave a conda environment, reticulate's `r-reticulate` virtualenv or a `RETICULATE_PYTHON` setting behind. transforEmotion ignores them and always uses its own environment. `fix_python()` lists what older versions left, offers to remove the old conda environment, and builds the new environment. It deletes nothing without your consent. Rscript and Colab cannot answer a question, so there you name the items to delete, for example `fix_python(remove = "conda-env")`. Settings in `.Renviron` or `.Rprofile` are reported, never edited. To use your own Python instead, set `TRANSFOREMOTION_PYTHON` to its path.
+
 > [!WARNING]
 > If you use the [radian](https://github.com/randy3k/radian) console (VSCode/terminal), its Python session may block first-time environment provisioning. Use the default R console for initial setup, then switch back if you prefer.
 

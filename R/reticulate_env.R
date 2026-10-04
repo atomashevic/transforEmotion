@@ -196,6 +196,136 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# The only writer of RETICULATE_PYTHON. Before Python starts, point reticulate
+# at transforEmotion's Python for this R session: TRANSFOREMOTION_PYTHON if
+# set, otherwise "managed" (reticulate's uv environment built from
+# py_require()). RETICULATE_PYTHON outranks every other discovery route
+# (RETICULATE_PYTHON_ENV, use_virtualenv(required = TRUE), VIRTUAL_ENV,
+# ./.venv, the r-reticulate virtualenv), so no leftover from an older setup
+# can select an old Python. A replaced value is kept for .onAttach,
+# fix_python() and .te_release_python().
+.te_claim_python <- function() {
+  if (reticulate::py_available(initialize = FALSE)) return(invisible(FALSE))
+  target <- Sys.getenv("TRANSFOREMOTION_PYTHON", unset = "")
+  if (!nzchar(target)) target <- "managed"
+  old <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+  if (nzchar(old) && !identical(old, target) && !identical(old, .te_py_state$claimed)) {
+    .te_py_state$replaced_python <- old
+  }
+  Sys.setenv(RETICULATE_PYTHON = target)
+  .te_py_state$claimed <- target
+  invisible(TRUE)
+}
+
+#' @noRd
+# Undo the claim when the package is unloaded, unless something else has
+# changed RETICULATE_PYTHON since
+.te_release_python <- function() {
+  claimed <- .te_py_state$claimed
+  if (is.null(claimed) || !identical(Sys.getenv("RETICULATE_PYTHON"), claimed)) {
+    return(invisible(FALSE))
+  }
+  replaced <- .te_py_state$replaced_python
+  if (is.null(replaced)) Sys.unsetenv("RETICULATE_PYTHON")
+  else Sys.setenv(RETICULATE_PYTHON = replaced)
+  .te_py_state$claimed <- NULL
+  invisible(TRUE)
+}
+
+#' @noRd
+# Which Python this session uses. py_config() is called only after Python has
+# started, so this never starts Python. reticulate (>= 1.45.0) sets
+# `ephemeral` only for its managed uv environment.
+.te_python_in_use <- function() {
+  if (!reticulate::py_available(initialize = FALSE)) {
+    return(list(state = "not_started", path = NA_character_,
+                version = NA_character_, reason = NA_character_))
+  }
+  cfg <- reticulate::py_config()
+  list(
+    state = if (isTRUE(cfg$ephemeral)) "managed" else "foreign",
+    path = cfg$python,
+    version = as.character(cfg$version),
+    reason = if (is.null(cfg$forced)) NA_character_ else cfg$forced
+  )
+}
+
+#' @noRd
+# Text for a Python that transforEmotion did not build. `missing` lists the
+# modules it lacks, or is NULL when that was not checked.
+.te_foreign_python_message <- function(python, missing = NULL) {
+  selected <- if (!is.na(python$reason)) paste0(", selected by ", python$reason)
+  fixed <- nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))
+  paste(c(
+    "transforEmotion cannot use the Python running in this session:",
+    paste0(python$path, " (Python ", python$version, selected, ")."),
+    if (length(missing)) paste0("It has no module named: ", paste(missing, collapse = ", "), "."),
+    if (fixed) c(
+      "TRANSFOREMOTION_PYTHON selects this Python.",
+      "Install the packages from python_requirements() into it, or unset TRANSFOREMOTION_PYTHON."
+    ) else c(
+      "Python started before transforEmotion could select its own environment.",
+      "Restart R. Run library(transforEmotion) before anything that starts Python.",
+      "Run transforEmotion::fix_python() to find what selected this Python.",
+      "To use your own Python on purpose, set TRANSFOREMOTION_PYTHON to it."
+    )
+  ), collapse = "\n")
+}
+
+#' @noRd
+# A running Python that transforEmotion did not build: started before the
+# package was loaded, or TRANSFOREMOTION_PYTHON. Stops when modules are
+# missing. When all are present but the Python version is outside
+# .te_python_version (older setups used 3.10), warns once per session and
+# continues; not for TRANSFOREMOTION_PYTHON, which is an explicit choice.
+.te_check_foreign <- function(features) {
+  todo <- setdiff(unique(c("core", features)), .te_py_state$features)
+  if (!length(todo)) return(invisible(TRUE))
+  python <- .te_python_in_use()
+  modules <- unique(unlist(.te_feature_modules[todo], use.names = FALSE))
+  missing <- modules[!vapply(modules, reticulate::py_module_available, logical(1))]
+  if (length(missing)) {
+    stop(structure(
+      class = c("te_python_error", "error", "condition"),
+      list(message = .te_foreign_python_message(python, missing), call = NULL)
+    ))
+  }
+  fixed <- nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))
+  if (!fixed && !isTRUE(.te_py_state$version_warned) &&
+      !.te_python_supported(python$version)) {
+    .te_py_state$version_warned <- TRUE
+    warning(
+      "transforEmotion runs on a Python it did not set up: ", python$path,
+      " (Python ", python$version, ", torch ", .te_py_package_version("torch"),
+      ", transformers ", .te_py_package_version("transformers"), "). ",
+      "It was built for Python ", .te_python_version, ", so results can differ. ",
+      "Restart R and run library(transforEmotion) before anything that starts Python.",
+      call. = FALSE
+    )
+  }
+  .te_py_state$features <- union(.te_py_state$features, todo)
+  invisible(TRUE)
+}
+
+#' @noRd
+.te_python_supported <- function(version, constraint = .te_python_version) {
+  parts <- strsplit(constraint, ",", fixed = TRUE)[[1]]
+  ops <- sub("[0-9.]+$", "", parts)
+  bounds <- sub("^[<>=]+", "", parts)
+  v <- numeric_version(version, strict = FALSE)
+  if (is.na(v)) return(FALSE)
+  all(mapply(function(op, bound) match.fun(op)(v, numeric_version(bound)), ops, bounds))
+}
+
+#' @noRd
+.te_py_package_version <- function(package) {
+  tryCatch(
+    as.character(reticulate::import("importlib.metadata")$version(package)),
+    error = function(e) "unknown"
+  )
+}
+
+#' @noRd
 # Declare Python requirements for one or more feature sets. "core" is always
 # declared first. Before Python starts this only records requirements; after
 # it starts, reticulate installs the additions into the running session.
@@ -203,6 +333,7 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   if (identical(Sys.getenv("RETICULATE_AUTOCONFIGURE", unset = ""), "")) {
     Sys.setenv(RETICULATE_AUTOCONFIGURE = "FALSE")
   }
+  .te_claim_python()
 
   # A fixed environment (for example in a container image) already holds
   # every package; use it instead of declaring requirements
@@ -217,6 +348,7 @@ python_requirements <- function(extras = character(), gpu = FALSE,
       reticulate::use_python(python, required = TRUE)
       .te_py_state$fixed_python <- TRUE
     }
+    if (.te_python_in_use()$state == "foreign") return(.te_check_foreign(features))
     return(invisible(TRUE))
   }
 
@@ -226,13 +358,13 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 
   # Only the core set depends on the GPU (it picks the PyTorch build)
   if ("core" %in% todo) .te_py_state$use_gpu <- te_should_use_gpu()
-  # Once Python runs, reticulate installs additions at once and only warns
-  # when it cannot: offline, or when a package is already declared with
-  # another version constraint (Python started before transforEmotion was
-  # loaded). A running Python that already has the packages is used as is;
-  # otherwise stop, so the failure is reported here and the feature set is
-  # retried on the next call
-  started <- reticulate::py_available(initialize = FALSE)
+  state <- .te_python_in_use()$state
+  if (state == "foreign") return(.te_check_foreign(todo))
+  # Once the managed environment runs, reticulate installs additions at once
+  # and only warns when it cannot: offline, or when a package is already
+  # declared with another version constraint. A running Python that already
+  # has the packages is used as is; otherwise stop, so the failure is
+  # reported here and the feature set is retried on the next call
   for (feature in todo) {
     withCallingHandlers(
       reticulate::py_require(
@@ -240,7 +372,7 @@ python_requirements <- function(extras = character(), gpu = FALSE,
         python_version = .te_python_version
       ),
       warning = function(w) {
-        if (!started) return()
+        if (state != "managed") return()
         modules <- .te_feature_modules[[feature]]
         if (all(vapply(modules, reticulate::py_module_available, logical(1)))) {
           invokeRestart("muffleWarning")
