@@ -82,6 +82,16 @@ te_should_use_gpu <- function() {
   c(wheel("torch", .te_torch_version), wheel("torchvision", .te_torchvision_version))
 }
 
+# Modules that show a feature set is already installed in a running Python
+.te_feature_modules <- list(
+  core = c("torch", "transformers", "cv2"),
+  rag = c("llama_index.core", "llama_index.llms.huggingface",
+          "llama_index.embeddings.huggingface"),
+  youtube = "pytubefix",
+  findingemo = c("findingemo_light", "termcolor"),
+  gpu = "bitsandbytes"
+)
+
 #' @noRd
 .te_py_requirements <- function(feature, use_gpu = FALSE,
                                 sysname = Sys.info()[["sysname"]],
@@ -214,8 +224,11 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   # Only the core set depends on the GPU (it picks the PyTorch build)
   if ("core" %in% todo) .te_py_state$use_gpu <- te_should_use_gpu()
   # Once Python runs, reticulate installs additions at once and only warns
-  # when that fails (for example offline); stop instead, so the failure is
-  # reported here and the feature set is retried on the next call
+  # when it cannot: offline, or when a package is already declared with
+  # another version constraint (Python started before transforEmotion was
+  # loaded). A running Python that already has the packages is used as is;
+  # otherwise stop, so the failure is reported here and the feature set is
+  # retried on the next call
   started <- reticulate::py_available(initialize = FALSE)
   for (feature in todo) {
     withCallingHandlers(
@@ -224,10 +237,15 @@ python_requirements <- function(extras = character(), gpu = FALSE,
         python_version = .te_python_version
       ),
       warning = function(w) {
-        if (started) {
-          stop("Could not install the Python packages for '", feature, "': ",
-               conditionMessage(w), call. = FALSE)
+        if (!started) return()
+        modules <- .te_feature_modules[[feature]]
+        if (all(vapply(modules, reticulate::py_module_available, logical(1)))) {
+          invokeRestart("muffleWarning")
         }
+        stop("Could not install the Python packages for '", feature, "': ",
+             conditionMessage(w), "\nRestart R and load transforEmotion before ",
+             "anything starts Python, or set TRANSFOREMOTION_PYTHON to an ",
+             "environment that has the packages.", call. = FALSE)
       }
     )
     .te_py_state$features <- c(.te_py_state$features, feature)
@@ -319,12 +337,22 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# The package's cache folder. tools::R_user_dir() exists from R 4.0; on older
+# R, use the folder it returns on Linux
+.te_user_cache_dir <- function(r_version = getRversion()) {
+  if (r_version >= "4.0.0") return(tools::R_user_dir("transforEmotion", "cache"))
+  root <- Sys.getenv("R_USER_CACHE_DIR", unset = "")
+  if (!nzchar(root)) root <- Sys.getenv("XDG_CACHE_HOME", unset = path.expand("~/.cache"))
+  file.path(root, "R", "transforEmotion")
+}
+
+#' @noRd
 # llama-index downloads NLTK data into each Python environment on first
 # import. A single folder in the package cache lets data downloaded once (for
 # example by setup_modules(extras = "rag")) serve every environment and
 # offline sessions. An NLTK_DATA set by the user takes precedence.
 .te_use_nltk_cache <- function() {
-  nltk_dir <- file.path(tools::R_user_dir("transforEmotion", "cache"), "nltk_data")
+  nltk_dir <- file.path(.te_user_cache_dir(), "nltk_data")
   reticulate::py_run_string(sprintf(
     "import os; os.environ.setdefault('NLTK_DATA', %s)",
     encodeString(normalizePath(nltk_dir, winslash = "/", mustWork = FALSE), quote = "'")

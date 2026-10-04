@@ -91,11 +91,40 @@ test_that("a failed install into a running Python is an error, not a warning", {
   state$features <- "core"
   local_mocked_bindings(
     py_available = function(...) TRUE,
+    py_module_available = function(module) FALSE,
     py_require = function(...) warning("Call `py_require()` to remove or replace conflicting requirements."),
     .package = "reticulate"
   )
   expect_error(transforEmotion:::.te_require("youtube"), "Python packages for 'youtube'")
   expect_false("youtube" %in% state$features)
+})
+
+test_that("a running Python that already has the packages is used as is", {
+  # Python started before transforEmotion was loaded: reticulate refuses to
+  # change a declared constraint (numpy) but the environment is complete
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  state <- transforEmotion:::.te_py_state
+  old <- state$features
+  withr::defer(state$features <- old)
+  state$features <- character()
+  local_mocked_bindings(te_should_use_gpu = function() FALSE)
+  local_mocked_bindings(
+    py_available = function(...) TRUE,
+    py_module_available = function(module) TRUE,
+    py_require = function(...) warning("Call `py_require()` to remove or replace conflicting requirements."),
+    .package = "reticulate"
+  )
+  expect_no_warning(expect_no_error(transforEmotion:::.te_require("core")))
+  expect_true("core" %in% state$features)
+})
+
+test_that("the package cache folder matches tools::R_user_dir() on older R", {
+  skip_on_os(c("windows", "mac"))
+  cache_dir <- transforEmotion:::.te_user_cache_dir
+  withr::local_envvar(R_USER_CACHE_DIR = file.path(tempdir(), "rcache"))
+  expect_equal(cache_dir("3.6.3"), cache_dir())
+  withr::local_envvar(R_USER_CACHE_DIR = NA, XDG_CACHE_HOME = file.path(tempdir(), "xdg"))
+  expect_equal(cache_dir("3.6.3"), cache_dir())
 })
 
 test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
