@@ -1,4 +1,4 @@
-# Changes in version 0.1.8 (in development)
+# Changes in version 0.2.0 (in development)
 
 o CHANGE: faster, smaller Python setup. The first environment build downloads about 500 MB instead of about 3.4 GB on Linux, and later sessions reuse the cached environment in under a second
 

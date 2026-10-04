@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use transforEmotion, please cite the article below."
 title: "transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer Models"
 type: software
-version: 0.1.7
-date-released: 2026-01-05
+version: 0.2.0
+date-released: 2026-10-04
 url: "https://github.com/atomashevic/transforEmotion"
 repository-code: "https://github.com/atomashevic/transforEmotion"
 license: GPL-3.0-or-later

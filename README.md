@@ -1,4 +1,4 @@
-### CRAN 0.1.7 | GitHub 0.1.7
+### CRAN 0.1.7 | GitHub 0.2.0
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://img.shields.io/badge/DOI-10.5117%2FCCR2026.2.2.TOMA-blue)](https://doi.org/10.5117/CCR2026.2.2.TOMA) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa)](https://github.com/sponsors/atomashevic)
 
