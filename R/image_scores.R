@@ -60,7 +60,7 @@
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
   # Declare Python requirements
   ensure_te_py_env()
-  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
+  if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -184,7 +184,7 @@ image_scores_dir <- function(dir,
                              local_model_path = NULL) {
   # Declare Python requirements
   ensure_te_py_env()
-  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
+  if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")

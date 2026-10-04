@@ -263,6 +263,26 @@ is_vision_model_registered <- function(name) {
   return(name %in% names(.vision_model_registry))
 }
 
+#' @noRd
+# Whether a model loads through the EVA-CLIP adapter, which quantizes to 4 bit
+# with bitsandbytes on a GPU. Mirrors get_vision_adapter() in
+# inst/python/image.py: registered models by their architecture and resolved
+# id, other names by their id, so a direct id or a custom alias counts too.
+.te_uses_eva_adapter <- function(model) {
+  id <- model
+  arch <- ""
+  if (is_vision_model_registered(model)) {
+    config <- get_vision_model_config(model)
+    id <- config$model_id
+    if (!is.null(config$architecture)) arch <- tolower(config$architecture)
+  }
+  if (grepl("blip|align", arch) || (startsWith(arch, "clip") && arch != "clip-custom")) {
+    return(FALSE)
+  }
+  id <- tolower(id)
+  !grepl("blip|align|jina", id) && grepl("eva", id, fixed = TRUE)
+}
+
 #' Initialize Built-in Vision Models
 #'
 #' @description

@@ -143,6 +143,20 @@ setup_modules <- function(extras = character(), download_models = TRUE,
   if (any(grepl("\\.safetensors$", files))) ignore <- c(ignore, "*.bin", "*.pt", "*.pth")
 
   message("Downloading ", repo, " ...")
-  hub$snapshot_download(repo_id = repo, ignore_patterns = as.list(ignore))
+  path <- hub$snapshot_download(repo_id = repo, ignore_patterns = as.list(ignore))
+
+  # A checkpoint that holds only a fine-tuned CLIP vision encoder takes its
+  # text encoder and processor from the base model its config names
+  # (vision_only_base() in inst/python/image.py), so cache that model too
+  config <- file.path(path, "config.json")
+  if (file.exists(config)) {
+    config <- jsonlite::fromJSON(config, simplifyVector = FALSE)
+    base <- config[["_name_or_path"]]
+    if (identical(config[["model_type"]], "clip_vision_model") &&
+        is.character(base) && nzchar(base) && !identical(base, repo) &&
+        !dir.exists(base)) {
+      .te_download_model(base)
+    }
+  }
   invisible(TRUE)
 }

@@ -63,7 +63,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
     .te_require("youtube")
   }
-  if (identical(model, "eva-8B") && .te_uses_gpu()) .te_require("gpu")
+  if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
