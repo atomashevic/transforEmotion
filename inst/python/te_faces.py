@@ -15,6 +15,7 @@ assign_person_ids() same-person ids across tracks and still images
 extract_frames()    the frames video_scores() samples from a video
 faces_table()       all of the above for a list of images or video frames
 draw()              face boxes and labels drawn on an image, for checking
+display_copies()    smaller JPEG copies of images and frames for view_faces()
 """
 import math
 import os
@@ -191,6 +192,24 @@ def draw(image, boxes, labels, colors, out_path, preview_side=800):
         bgr = cv2.resize(bgr, (round(w * shrink), round(h * shrink)),
                          interpolation=cv2.INTER_AREA)
     return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+
+
+def display_copies(images, out_paths, max_side=1280, quality=85):
+    """Save a JPEG copy of each image, at most max_side pixels on its longer side.
+
+    The copies are EXIF-rotated like the images faces were detected in, so the
+    boxes of detect_faces() line up with them once scaled. Returns the original
+    (width, height) of each image.
+    """
+    from PIL import Image
+    sizes = []
+    for image, out_path in zip(images, out_paths):
+        img = load_image(image)
+        sizes.append(list(img.size))
+        if max(img.size) > int(max_side):
+            img.thumbnail((int(max_side), int(max_side)), Image.LANCZOS)
+        img.save(out_path, "JPEG", quality=int(quality))
+    return sizes
 
 
 def iou(a, b):

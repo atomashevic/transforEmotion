@@ -280,6 +280,15 @@ draw_faces(faces, max_images = 6)
 scores <- face_scores(select_faces(faces, persons = "p1"), classes = emotions)
 ```
 
+To look at the faces in your web browser instead, use `view_faces(faces)`: R opens a page that shows every image or sampled frame with its boxes, coloured by person, and a list of the people found. With `select = TRUE`, you click faces, video tracks or people and then Send to R, and `view_faces()` returns those faces:
+
+```r
+chosen <- view_faces(faces, select = TRUE)
+scores <- face_scores(chosen, classes = emotions)
+```
+
+The page is served by R on your own computer only and makes no outside requests. When R runs on a remote computer, forward the port over SSH (`view_faces()` prints the command), or use `live = FALSE` to write the page as a folder to copy, and read its exported choice with `read_face_selection()`.
+
 To try this, the package comes with a picture of two people (`system.file("extdata", "two-people.jpg", package = "transforEmotion")`) and a short clip in which both leave and one of them comes back alone (`"two-people.mp4"`).
 
 The same table can be passed as `face_selection` to `image_scores()`, `image_scores_dir()` and `video_scores()`. Grouping faces by person processes biometric data; use `identify = FALSE` to turn it off.
