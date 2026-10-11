@@ -14,6 +14,7 @@ embed()             SFace embeddings, kept in memory only: they are biometric
 assign_person_ids() same-person ids across tracks and still images
 extract_frames()    the frames video_scores() samples from a video
 faces_table()       all of the above for a list of images or video frames
+draw()              face boxes and labels drawn on an image, for checking
 """
 import math
 import os
@@ -151,6 +152,45 @@ def crop(rgb, box, padding=0.25):
     x0, y0 = max(0, int(x - px)), max(0, int(y - py))
     x1, y1 = min(w, int(math.ceil(x + bw + px))), min(h, int(math.ceil(y + bh + py)))
     return rgb[y0:y1, x0:x1]
+
+
+def draw(image, boxes, labels, colors, out_path, preview_side=800):
+    """Draw face boxes with labels on an image and save it to out_path.
+
+    boxes: [x, y, width, height] per face, in pixels of the EXIF-rotated image
+    (as faces_table() reports them); labels: one string per face (may be
+    empty); colors: one (red, green, blue) triple per face. Returns a copy no
+    larger than preview_side pixels on its longer side, as an RGB array, for
+    plotting.
+    """
+    import cv2
+    bgr = cv2.cvtColor(np.asarray(load_image(image)), cv2.COLOR_RGB2BGR)
+    h, w = bgr.shape[:2]
+    # Lines and text grow with the image, so they stay readable when shrunk
+    thick = max(2, round(max(h, w) / 400))
+    scale = max(0.5, max(h, w) / 1200)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    for box, label, color in zip(boxes, labels, colors):
+        x, y, bw, bh = (int(round(float(v))) for v in box)
+        bgr_color = tuple(int(c) for c in reversed(list(color)))
+        cv2.rectangle(bgr, (x, y), (x + bw, y + bh), bgr_color, thick)
+        if not label:
+            continue
+        (tw, th), base = cv2.getTextSize(label, font, scale, max(1, thick - 1))
+        pad = thick
+        # Above the box, or inside its top edge when there is no room
+        top = y - th - base - 2 * pad if y - th - base - 2 * pad >= 0 else y
+        cv2.rectangle(bgr, (x, top), (x + tw + 2 * pad, top + th + base + 2 * pad),
+                      bgr_color, -1)
+        cv2.putText(bgr, label, (x + pad, top + pad + th), font, scale, (255, 255, 255),
+                    max(1, thick - 1), cv2.LINE_AA)
+    if not cv2.imwrite(out_path, bgr):
+        raise ValueError("Cannot write " + out_path)
+    shrink = min(1.0, float(preview_side) / max(h, w))
+    if shrink < 1:
+        bgr = cv2.resize(bgr, (round(w * shrink), round(h * shrink)),
+                         interpolation=cv2.INTER_AREA)
+    return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 
 
 def iou(a, b):

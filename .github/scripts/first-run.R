@@ -109,6 +109,19 @@ if (phase == "first") {
     check(nrow(s) == 10 && !anyNA(s[emotions]), "faces of track 1 not scored")
   })
 
+  step("draw_faces (two-person example picture and clip)", {
+    two <- detect_faces(system.file("extdata", "two-people.jpg", package = "transforEmotion"))
+    check(identical(two$person_id, c("p1", "p2")), "expected two people")
+    check(all(file.exists(draw_faces(two, plot = FALSE))), "picture not drawn")
+    clip <- detect_faces(system.file("extdata", "two-people.mp4", package = "transforEmotion"),
+                         nframes = 20)
+    print(table(clip$track_id, clip$person_id))
+    tracks <- unique(as.data.frame(clip)[, c("track_id", "person_id")])
+    check(nrow(tracks) == 3 && length(unique(tracks$person_id)) == 2,
+          "the person who comes back does not keep their person_id")
+    check(length(draw_faces(clip, max_images = 4, plot = FALSE)) == 4, "frames not drawn")
+  })
+
   step("vad_scores", {
     s <- vad_scores("We won the final! This is the best day of my life.",
                     input_type = "text")

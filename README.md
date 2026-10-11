@@ -273,9 +273,14 @@ Faces are found with OpenCV's YuNet detector. To reproduce scores from versions 
 faces <- detect_faces("interview.mp4", nframes = 50)
 table(faces$person_id)
 
+# Draw the boxes, track and person on a few frames
+draw_faces(faces, max_images = 6)
+
 # Every face of one person, across the whole video
 scores <- face_scores(select_faces(faces, persons = "p1"), classes = emotions)
 ```
+
+To try this, the package comes with a picture of two people (`system.file("extdata", "two-people.jpg", package = "transforEmotion")`) and a short clip in which both leave and one of them comes back alone (`"two-people.mp4"`).
 
 The same table can be passed as `face_selection` to `image_scores()`, `image_scores_dir()` and `video_scores()`. Grouping faces by person processes biometric data; use `identify = FALSE` to turn it off.
 
@@ -426,6 +431,8 @@ The example images included in this package (`inst/extdata/`) have different lic
 - `trump1.jpg`, `trump2.jpg`: Official U.S. government portraits from Wikipedia. These works are copyright-free and therefore in the public domain under the terms of Title 17, Chapter 1, Section 105 of the U.S Code. Users may freely use, modify, and distribute these images for any purpose without attribution requirements.
 
 - `boris-1.png`, `boris-2.png`: Screenshots from YouTube video (https://www.youtube.com/watch?v=hdYNcv-chgY). These images are licensed under Creative Commons Attribution license (reuse allowed). Users may use, modify, and distribute these images, but must provide appropriate attribution to the original source.
+
+- `two-people.jpg`, `two-people.mp4`: made from `boris-1.png`, `boris-2.png` and `trump1.jpg` by `data-raw/example-media.py`, under the same terms as those images (credit the YouTube video above for the Boris Johnson frames).
 
 ## Citation
 

@@ -90,17 +90,20 @@
 #'   All processing is done locally; images and frames are never sent to a
 #'   remote server.
 #'
-#' @seealso \code{\link{select_faces}}, \code{\link{face_scores}}
+#' @seealso \code{\link{select_faces}}, \code{\link{face_scores}},
+#'   \code{\link{draw_faces}}
 #'
 #' @examples
 #' \dontrun{
-#' image <- system.file("extdata", "boris-1.png", package = "transforEmotion")
+#' image <- system.file("extdata", "two-people.jpg", package = "transforEmotion")
 #' faces <- detect_faces(image)
-#' faces[, c("face", "x", "y", "width", "height", "confidence")]
+#' faces[, c("face", "person_id", "x", "y", "width", "height", "confidence")]
+#' draw_faces(faces)
 #'
 #' # Every face of one person in a video, scored once per sampled frame
-#' faces <- detect_faces("interview.mp4", nframes = 50)
-#' table(faces$person_id)
+#' video <- system.file("extdata", "two-people.mp4", package = "transforEmotion")
+#' faces <- detect_faces(video, nframes = 20)
+#' table(faces$track_id, faces$person_id)
 #' scores <- face_scores(select_faces(faces, persons = "p1"),
 #'                       classes = c("happy", "sad", "angry", "neutral"))
 #' }
@@ -284,8 +287,7 @@ face_scores <- function(faces, classes, model = "oai-base", local_model_path = N
   if (!nrow(faces)) return(out)
 
   settings <- attr(faces, "settings")
-  is_video <- identical(settings$type, "video") ||
-    ("frame_index" %in% names(faces) && any(!is.na(faces$frame_index)))
+  is_video <- .te_is_video_faces(faces, settings)
   paths <- if (is_video) .te_face_frame_paths(faces, settings) else faces$source
   if (is_video) {
     cleanup <- attr(paths, "cleanup")

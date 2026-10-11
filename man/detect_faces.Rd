@@ -131,18 +131,21 @@ computer without internet access, set the environment variable
 
 \examples{
 \dontrun{
-image <- system.file("extdata", "boris-1.png", package = "transforEmotion")
+image <- system.file("extdata", "two-people.jpg", package = "transforEmotion")
 faces <- detect_faces(image)
-faces[, c("face", "x", "y", "width", "height", "confidence")]
+faces[, c("face", "person_id", "x", "y", "width", "height", "confidence")]
+draw_faces(faces)
 
 # Every face of one person in a video, scored once per sampled frame
-faces <- detect_faces("interview.mp4", nframes = 50)
-table(faces$person_id)
+video <- system.file("extdata", "two-people.mp4", package = "transforEmotion")
+faces <- detect_faces(video, nframes = 20)
+table(faces$track_id, faces$person_id)
 scores <- face_scores(select_faces(faces, persons = "p1"),
                       classes = c("happy", "sad", "angry", "neutral"))
 }
 
 }
 \seealso{
-\code{\link{select_faces}}, \code{\link{face_scores}}
+\code{\link{select_faces}}, \code{\link{face_scores}},
+  \code{\link{draw_faces}}
 }
