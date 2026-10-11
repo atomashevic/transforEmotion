@@ -7,14 +7,29 @@ network access: the files here are the source and are copied as they are.
 
 | File | Role |
 |---|---|
-| `index.html` | The page. Its Content-Security-Policy allows only files in its own folder. |
+| `index.html` | The page. Its Content-Security-Policy allows only files in its own folder and requests to the R session that serves it. |
 | `style.css` | Layout and colours (light and dark). |
 | `logic.js` | Pure functions: labels, colours, selection, the exported file. Tested in Node by `tests/js/`. |
 | `app.js` | Builds the page from `window.TE_TASK` with `logic.js`. |
 
 `view_faces()` copies these files into a new folder, next to `data.js` and
-`media/`. It works when opened from disk (`file://`), so `data.js` is a plain
-script that sets `window.TE_TASK`: browsers block `fetch()` on such pages.
+`media/`, and serves the folder from R with httpuv (`R/face_server.R`) on
+127.0.0.1, under a random path. With `live = FALSE` it only writes the folder,
+which then also works when opened from disk (`file://`). That is why
+`data.js` is a plain script that sets `window.TE_TASK`: browsers block
+`fetch()` on such pages.
+
+## Talking to R
+
+When R serves the page in select mode, `data.js` also sets
+`window.TE_API = {"selection": "api/selection", "cancel": "api/cancel"}`
+(relative to the page). **Send to R** POSTs the selection below as JSON to
+`api/selection`, and `view_faces()` returns the chosen rows; **Cancel** POSTs
+to `api/cancel`. If R does not answer (it stopped waiting), the page offers
+the selection as a file instead. Without `window.TE_API` the page shows
+**Export selection**. The server answers only POSTs of JSON to these paths,
+with the server's own address as the `Host`; any other address outside the
+page is a 404 that never reaches R.
 
 ## data.js (`schema: "transforEmotion.face_task"`, version 1.0.0)
 
