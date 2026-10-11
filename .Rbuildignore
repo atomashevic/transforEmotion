@@ -50,3 +50,6 @@ transforEmotion\.Rproj
 
 # Colab notebook
 ^notebooks$
+
+# Scripts that build files in inst/extdata
+^data-raw$

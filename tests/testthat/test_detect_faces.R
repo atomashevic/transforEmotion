@@ -1,7 +1,7 @@
-# detect_faces(), select_faces(), face_scores() and face_selection. The tests
-# at the top use made-up face tables and mock Python; the tests at the bottom
-# run the te_faces Python module and need TRANSFOREMOTION_PYTHON to point at a
-# Python environment with OpenCV.
+# detect_faces(), select_faces(), face_scores(), draw_faces() and
+# face_selection. The tests at the top use made-up face tables and mock Python;
+# the tests at the bottom run the te_faces Python module and need
+# TRANSFOREMOTION_PYTHON to point at a Python environment with OpenCV.
 
 # A faces table as detect_faces() returns it: two images, three faces
 fake_faces <- function(sources = c("a.jpg", "b.jpg")) {
@@ -250,6 +250,102 @@ test_that("image_scores_dir warns when images share a file name", {
   expect_equal(nrow(out), 2)
 })
 
+# Mocks the Python drawing: records each call and writes an empty file
+mock_draw <- function(env = parent.frame()) {
+  calls <- new.env()
+  calls$list <- list()
+  draw <- function(image, boxes, labels, colors, out_path, ...) {
+    calls$list[[length(calls$list) + 1]] <- list(
+      image = image, boxes = boxes, labels = unlist(labels), colors = colors
+    )
+    file.create(out_path)
+    array(255, c(2, 3, 3))
+  }
+  local_mocked_bindings(ensure_te_py_env = function() invisible(TRUE),
+                        .te_faces_py = function() list(draw = draw), .env = env)
+  calls
+}
+
+test_that("faces are labelled by number, track and person, and coloured by person", {
+  faces <- fake_faces()
+  expect_equal(.te_face_labels(faces, FALSE), c("face 1, p1", "face 2, p2", "face 1, p1"))
+  colors <- .te_face_colors(faces)
+  expect_identical(colors[[1]], colors[[3]])
+  expect_false(identical(colors[[1]], colors[[2]]))
+
+  faces$person_id <- c("p1", NA, NA)
+  expect_equal(.te_face_labels(faces, FALSE), c("face 1, p1", "face 2", "face 1"))
+
+  # Video: tracks instead of face numbers; without person ids, a colour per track
+  faces$track_id <- c(1L, 2L, 1L)
+  faces$person_id <- NULL
+  expect_equal(.te_face_labels(faces, TRUE), c("track 1", "track 2", "track 1"))
+  colors <- .te_face_colors(faces)
+  expect_identical(colors[[1]], colors[[3]])
+  expect_false(identical(colors[[1]], colors[[2]]))
+})
+
+test_that("drawn images are laid out to fit the plot window", {
+  img <- function(h, w) array(0, c(h, w, 3))
+  grDevices::pdf(NULL, width = 12, height = 4)
+  withr::defer(grDevices::dev.off())
+  expect_equal(.te_image_grid(rep(list(img(10, 10)), 3)), c(1, 3))
+  expect_equal(.te_image_grid(rep(list(img(10, 20)), 4)), c(2, 2))
+  # At most six to a page
+  expect_equal(.te_image_grid(rep(list(img(10, 10)), 20)), c(2, 3))
+})
+
+test_that("draw_faces draws each image once, with its faces", {
+  dir <- withr::local_tempdir()
+  calls <- mock_draw()
+  faces <- fake_faces(c("one/a.jpg", "two/a.jpg"))
+  paths <- draw_faces(faces, dir = dir, plot = FALSE)
+  # Images with the same file name get different files
+  expect_equal(basename(paths), c("a-faces.png", "a-1-faces.png"))
+  expect_equal(vapply(calls$list, `[[`, "", "image"), c("one/a.jpg", "two/a.jpg"))
+  first <- calls$list[[1]]
+  expect_equal(first$labels, c("face 1, p1", "face 2, p2"))
+  expect_equal(first$boxes, list(c(10, 20, 50, 50), c(200, 20, 80, 80)))
+  expect_equal(calls$list[[2]]$colors, first$colors[1])
+
+  calls$list <- list()
+  draw_faces(faces, labels = "", max_images = 1, dir = dir, plot = FALSE)
+  expect_length(calls$list, 1)
+  expect_equal(calls$list[[1]]$labels, c("", ""))
+
+  grDevices::pdf(NULL)
+  withr::defer(grDevices::dev.off())
+  expect_no_error(plot(faces, dir = dir))
+
+  expect_error(draw_faces(faces, labels = c("a", "b")), "one entry per row")
+  expect_error(draw_faces(data.frame(a = 1)), "data frame from detect_faces")
+  expect_message(none <- draw_faces(faces[0, ]), "No faces to draw")
+  expect_length(none, 0)
+})
+
+test_that("draw_faces draws video frames with track numbers", {
+  dir <- withr::local_tempdir()
+  calls <- mock_draw()
+  cleaned <- FALSE
+  local_mocked_bindings(.te_face_frame_paths = function(faces, settings) {
+    structure(paste0("frame-", faces$frame_index, ".jpg"),
+              cleanup = function() cleaned <<- TRUE)
+  })
+  faces <- fake_faces(c("v.mp4", "v.mp4"))
+  faces$frame <- c(0L, 0L, 1L)
+  faces$frame_index <- c(0L, 0L, 25L)
+  faces$time <- c(0, 0, 1)
+  faces$track_id <- c(1L, 2L, 1L)
+  attr(faces, "settings") <- list(type = "video", face_detector = "yunet")
+
+  paths <- draw_faces(faces, dir = dir, plot = FALSE)
+  expect_equal(basename(paths), c("v-frame-0-faces.png", "v-frame-1-faces.png"))
+  expect_equal(vapply(calls$list, `[[`, "", "image"), c("frame-0.jpg", "frame-25.jpg"))
+  expect_equal(calls$list[[1]]$labels, c("track 1, p1", "track 2, p2"))
+  # The frames extracted again for drawing are removed
+  expect_true(cleaned)
+})
+
 # ---------------------------------------------------------------------------
 # te_faces in Python
 # ---------------------------------------------------------------------------
@@ -388,4 +484,28 @@ test_that("extract_frames samples the frames video_scores() analyses", {
   expect_equal(index(frames), c(10L, 15L, 20L, 25L))
   expect_error(te_faces$extract_frames(video, 5L, ff = 15L, frame_dir = dir),
                "too short")
+})
+
+test_that("draw_faces draws the boxes on the example picture and clip", {
+  skip_without_face_python()
+  dir <- withr::local_tempdir()
+  faces <- detect_faces(fixture("two-people.jpg"), identify = FALSE)
+  expect_equal(nrow(faces), 2)
+  path <- draw_faces(faces, dir = dir, plot = FALSE)
+  expect_equal(basename(path), "two-people-faces.png")
+  # The middle of each box's left edge has the face's colour (BGR in OpenCV)
+  drawn <- reticulate::import("cv2")$imread(path)
+  for (k in 1:2) {
+    pixel <- drawn[round(faces$y[k] + faces$height[k] / 2) + 1, round(faces$x[k]) + 1, ]
+    expect_equal(as.numeric(pixel), rev(.te_face_palette[[k]]))
+  }
+
+  # 20 frames, 0.6 s apart, cover the whole clip
+  video <- detect_faces(fixture("two-people.mp4"), nframes = 20, identify = FALSE)
+  expect_setequal(unique(video$track_id), 1:3)
+  before <- list.files(tempdir(), pattern = "^te_frames_")
+  paths <- draw_faces(video, max_images = 3, dir = dir, plot = FALSE)
+  expect_length(paths, 3)
+  expect_true(all(file.exists(paths)))
+  expect_equal(list.files(tempdir(), pattern = "^te_frames_"), before)
 })
