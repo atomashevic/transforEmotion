@@ -146,6 +146,11 @@ test_that("the package cache folder matches tools::R_user_dir() on older R", {
 
 test_that("a TRANSFOREMOTION_PYTHON that does not exist is reported clearly", {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = file.path(tempdir(), "no-such-python"))
+  # As if no earlier test had started a fixed Python
+  state <- transforEmotion:::.te_py_state
+  fixed <- state$fixed_python
+  state$fixed_python <- NULL
+  withr::defer(state$fixed_python <- fixed)
   expect_error(transforEmotion:::.te_require("core"), "does not exist")
 })
 

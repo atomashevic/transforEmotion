@@ -21,7 +21,8 @@ together with the core packages:
 }}
 
 \item{download_models}{Logical. Download the default text, image and
-sentence-similarity models into the Hugging Face cache (about 1 GB), and,
+sentence-similarity models into the Hugging Face cache (about 1 GB), the
+face recognition model \code{\link{detect_faces}} uses (10 MB), and,
 when \code{extras} includes \code{"rag"}, the default embedding model and
 TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
 Skipped when \code{HF_HUB_OFFLINE} is set.}

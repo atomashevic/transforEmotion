@@ -259,9 +259,25 @@ image_scores(image, emotions, model = "oai-base")
 
 You can define up to 10 emotions. The output is a data frame with 1 row and columns corresponding to emotions. The values are FER scores for each emotion.
 
-If there is no face detected in the image, the output will be a 0x0 data frame.
+If there is no face detected in the image, the output is one row of `NA` scores.
 
-If there are multiple faces detected in the image, by default the function will return the FER scores for the largest (focal) face. Alternatively, you can select the face on the left or the right side of the image by specifying the `face_selection` argument.
+If there are multiple faces detected in the image, by default the function will return the FER scores for the largest (focal) face. Alternatively, you can select the face on the left or the right side of the image by specifying the `face_selection` argument, or score every face with `face_selection = "all"`.
+
+Faces are found with OpenCV's YuNet detector. To reproduce scores from versions before 0.1.8, which used a Haar cascade, set `face_detector = "haar"`.
+
+## Inspecting and Choosing Faces
+
+`detect_faces()` lists every face it finds in images or in frames sampled from a video, with its box, confidence, a track id that follows it from frame to frame, and a person id shared by all faces of the same person (OpenCV's SFace face recognizer; its 10 MB model is downloaded on first use). Pick the faces to analyse with `select_faces()` or ordinary subsetting, and score them with `face_scores()`:
+
+```r
+faces <- detect_faces("interview.mp4", nframes = 50)
+table(faces$person_id)
+
+# Every face of one person, across the whole video
+scores <- face_scores(select_faces(faces, persons = "p1"), classes = emotions)
+```
+
+The same table can be passed as `face_selection` to `image_scores()`, `image_scores_dir()` and `video_scores()`. Grouping faces by person processes biometric data; use `identify = FALSE` to turn it off.
 
 ## Video Example
 

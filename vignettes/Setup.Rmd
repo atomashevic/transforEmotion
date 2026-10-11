@@ -132,7 +132,7 @@ This code runs FER on the Mona Lisa painting and returns the following output, a
 1 0.02142187 0.02024468 0.0604699 0.04037686 0.03273294 0.1061871 0.7185667
 ```
 
-In case there is no face recognized on the image, the function will return an empty dataframe, preceeded by a warning message. We can test this with an image of three penguins from the South Shetland Islands.
+In case there is no face recognized on the image, the function will return one row of `NA` scores, preceded by a message. We can test this with an image of three penguins from the South Shetland Islands.
 
 ```{r image_scores_nas, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 
@@ -145,7 +145,8 @@ This gives the following output:
 
 ```{r image_scores_nas_output, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE}
 No face found in the image
-data frame with 0 columns and 0 rows
+  excitement happiness pride anger fear sadness neutral
+1         NA        NA    NA    NA   NA      NA      NA
 ```
 
 ## 4. Using `video_scores' {#section_4}

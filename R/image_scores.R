@@ -18,12 +18,16 @@
 #'
 #' @param image The path to the image file or URL of the image.
 #' @param classes A character vector of classes to classify the image into.
-#' @param face_selection The method to select the face in the image. Can be "largest",
-#'   "left", "right", or "none". Default is "largest" and will select the largest face
-#'   in the image. "left" and "right" will select the face on the far left or the
-#'   far right side of the image. "none" will use the whole image without cropping.
-#'   Face_selection method is irrelevant if there is
-#'   only one face in the image.
+#' @param face_selection The face(s) to score. Can be "largest", "left", "right",
+#'   "none", "all", face numbers, or a data frame of faces. Default is "largest"
+#'   and will select the largest face in the image. "left" and "right" will select
+#'   the face on the far left or the far right side of the image. "none" will use
+#'   the whole image without cropping. These four return one row, as before.
+#'   "all" scores every face, face numbers (such as \code{c(1, 3)}) score those
+#'   faces, numbered from left to right as \code{\link{detect_faces}} numbers
+#'   them, and a data frame from \code{\link{detect_faces}} or
+#'   \code{\link{select_faces}} scores its faces in this image without detecting
+#'   them again; these return one row per face (see \code{\link{face_scores}}).
 #' @param model A string specifying the vision model to use. Options include:
 #'   \itemize{
 #'     \item Built-in models: "oai-base" (default), "oai-large", "eva-8B", "jina-v2",
@@ -50,6 +54,9 @@
 #'   
 #'   Warning: Using very large models from local paths may cause memory issues or crashes 
 #'   depending on your system's resources.
+#' @param face_detector \code{"yunet"} (default), OpenCV's YuNet face detector,
+#'   or \code{"haar"}, the Haar cascade used before version 0.1.8. Use
+#'   \code{"haar"} to reproduce scores from earlier versions.
 #' @return A data frame containing the scores for each class.
 #'
 #' @author Aleksandar Tomasevic <atomashevic@gmail.com>
@@ -57,7 +64,8 @@
 #' @importFrom reticulate py
 #' @export
 
-image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL) {
+image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL,
+                         face_detector = c("yunet", "haar")) {
   # Declare Python requirements
   ensure_te_py_env()
   if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
@@ -98,10 +106,9 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
   }
 
   # check if face_selection is valid
-  if (!face_selection %in% c("largest", "left", "right", "none")) {
-  stop("Argument face_selection must be one of: largest, left, right, none")
-  }
-  
+  selection <- .te_face_selection(face_selection)
+  face_detector <- match.arg(face_detector)
+
   # Validate model using registry system
   # Resolve model name to actual model ID for Python
   actual_model_id <- model
@@ -139,6 +146,13 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
     }
   })
   
+  # All faces, face numbers or a faces table: one row per face
+  if (selection$mode != "rule") {
+    faces <- .te_image_faces(image, selection, face_detector)
+    vision <- list(model_id = actual_model_id, architecture = model_architecture)
+    return(.te_face_scores(faces, classes, vision, local_model_path))
+  }
+
   result <- without_hf_token({
     reticulate::py$classify_image(
       image = image, 
@@ -146,7 +160,8 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
       face = face_selection, 
       model_name = actual_model_id,  # Use resolved model ID
       local_model_path = local_model_path,
-      model_architecture = model_architecture
+      model_architecture = model_architecture,
+      face_detector = face_detector
     )
   })
   if (is.null(result)) {
@@ -168,12 +183,19 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
 #'
 #' @param dir Path to a directory containing images.
 #' @param classes Character vector of labels/classes (length >= 2).
-#' @param face_selection Face selection strategy: "largest", "left", "right", or "none".
+#' @param face_selection Face selection strategy: "largest", "left", "right", or
+#'   "none" (one row per image), "all" (one row per face, with faces of the same
+#'   person sharing a \code{person_id}; see \code{\link{detect_faces}}), or a
+#'   data frame from \code{\link{detect_faces}} (its faces in these images).
 #' @param pattern Optional regex to filter images (default supports common formats).
 #' @param recursive Whether to search subdirectories (default FALSE).
 #' @param model CLIP model alias or HuggingFace model id (see image_scores()).
 #' @param local_model_path Optional local path to a pre-downloaded model.
-#' @return A data.frame with columns: image_id and one column per class.
+#' @param face_detector \code{"yunet"} (default) or \code{"haar"}; see
+#'   \code{\link{image_scores}}.
+#' @return A data.frame with columns: image_id and one column per class. With
+#'   "all" or a data frame of faces, one row per face, with the columns of
+#'   \code{\link{face_scores}} after image_id.
 #' @export
 image_scores_dir <- function(dir,
                              classes,
@@ -181,7 +203,8 @@ image_scores_dir <- function(dir,
                              pattern = "\\.(jpg|jpeg|png|bmp)$",
                              recursive = FALSE,
                              model = "oai-base",
-                             local_model_path = NULL) {
+                             local_model_path = NULL,
+                             face_detector = c("yunet", "haar")) {
   # Declare Python requirements
   ensure_te_py_env()
   if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
@@ -193,9 +216,8 @@ image_scores_dir <- function(dir,
   if (!dir.exists(dir)) stop("Directory does not exist: ", dir)
   if (!is.character(classes)) stop("Classes must be a character vector.")
   if (length(classes) < 2) stop("Classes must have at least 2 elements.")
-  if (!face_selection %in% c("largest", "left", "right", "none")) {
-  stop("Argument face_selection must be one of: largest, left, right, none")
-  }
+  selection <- .te_face_selection(face_selection, allow_ids = FALSE)
+  face_detector <- match.arg(face_detector)
 
   # Resolve model name to actual model ID for Python (same as image_scores)
   actual_model_id <- model
@@ -236,6 +258,27 @@ image_scores_dir <- function(dir,
     warning("No images found in directory: ", dir)
     return(data.frame(image_id = character(0), check.names = FALSE))
   }
+  # image_id is the file name, so files with the same name in different
+  # subdirectories cannot be told apart
+  dup <- unique(basename(files)[duplicated(basename(files))])
+  if (length(dup)) {
+    warning("Several images share a file name, so their image_id is the same: ",
+            paste(utils::head(dup, 5), collapse = ", "),
+            if (length(dup) > 5) ", ...", call. = FALSE)
+  }
+
+  # All faces or a faces table: one row per face
+  if (selection$mode != "rule") {
+    faces <- if (selection$mode == "table") {
+      table <- selection$value
+      table[normalizePath(table$source, mustWork = FALSE) %in% normalizePath(files), , drop = FALSE]
+    } else {
+      detect_faces(files, face_detector = face_detector)
+    }
+    vision <- list(model_id = actual_model_id, architecture = model_architecture)
+    out <- .te_face_scores(faces, classes, vision, local_model_path)
+    return(cbind(image_id = basename(out$source), out, stringsAsFactors = FALSE))
+  }
 
   # Import python module (use same environment as image_scores)
   module_import <- try({
@@ -255,7 +298,8 @@ image_scores_dir <- function(dir,
       face = face_selection,
       model_name = actual_model_id,  # Use resolved model ID
       local_model_path = local_model_path,
-      model_architecture = model_architecture
+      model_architecture = model_architecture,
+      face_detector = face_detector
     )
   })
 
@@ -268,4 +312,22 @@ image_scores_dir <- function(dir,
   }
   df <- df[expected_cols]
   return(df)
+}
+
+#' @noRd
+# Faces of one image for image_scores(): detected (all of them, or the given
+# face numbers) or taken from a detect_faces() table
+.te_image_faces <- function(image, selection, face_detector) {
+  if (selection$mode == "table") {
+    faces <- selection$value
+    same <- faces$source == image |
+      normalizePath(faces$source, mustWork = FALSE) == normalizePath(image, mustWork = FALSE)
+    if (!any(same)) {
+      stop("face_selection has no faces in this image (", image, ").", call. = FALSE)
+    }
+    return(select_faces(faces[same, , drop = FALSE]))
+  }
+  faces <- detect_faces(image, face_detector = face_detector, identify = FALSE)
+  if (selection$mode == "ids") faces <- select_faces(faces, ids = selection$value)
+  faces
 }

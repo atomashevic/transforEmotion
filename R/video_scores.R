@@ -6,8 +6,16 @@
 #' @param classes A character vector specifying the classes to analyze.
 #' @param nframes The number of frames to analyze in the video. Default is 100.
 #' @param face_selection The method for selecting faces in the video. Options are
-#'   "largest", "left", "right", or "none". Default is "largest". Use "none"
-#'   to classify the whole frame without face cropping.
+#'   "largest", "left", "right", "none", "all", or a data frame of faces.
+#'   Default is "largest". Use "none" to classify the whole frame without face
+#'   cropping. These four pick one face per frame and return one row per
+#'   frame, as before. "all" scores every face in every frame, and a data
+#'   frame from \code{\link{detect_faces}} or \code{\link{select_faces}} (for
+#'   example the faces of one person) scores those faces; both return one row
+#'   per face with its frame, time, track and person (see
+#'   \code{\link{face_scores}}). A data frame of faces brings its own frame
+#'   sampling settings, so \code{nframes}, \code{start}, \code{end},
+#'   \code{uniform} and \code{ffreq} are ignored.
 #' @param start The start time of the video range to analyze. Default is 0.
 #' @param end The end time of the video range to analyze. Default is -1 and this means that video won't be cut. If end is a positive number greater than start, the video will be cut from start to end.
 #' @param uniform Logical indicating whether to uniformly sample frames from the video. Default is FALSE.
@@ -42,7 +50,11 @@
 #'
 #'   Warning: Using very large models from local paths may cause memory issues or crashes
 #'   depending on your system's resources, especially when processing videos with many frames.
-#' @return A result object containing the analyzed video scores.
+#' @param face_detector \code{"yunet"} (default), OpenCV's YuNet face detector,
+#'   or \code{"haar"}, the Haar cascade used before version 0.1.8. Use
+#'   \code{"haar"} to reproduce scores from earlier versions.
+#' @return A data frame of scores, one row per frame that could be read (or
+#'   one row per face; see \code{face_selection}).
 #'
 #' @section Data Privacy:
 #'   All processing is done locally with the downloaded model,
@@ -57,7 +69,8 @@
 video_scores <- function(video, classes, nframes = 100, face_selection = "largest",
                          start = 0, end = -1, uniform = FALSE, ffreq = 15,
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
-                         video_name = "temp", model = "oai-base", local_model_path = NULL) {
+                         video_name = "temp", model = "oai-base", local_model_path = NULL,
+                         face_detector = c("yunet", "haar")) {
   # Declare Python requirements; pytubefix is only needed for YouTube URLs
   ensure_te_py_env()
   if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
@@ -94,9 +107,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   }
 
   # Check if face_selection is valid
-  if(!face_selection %in% c("largest", "left", "right", "none")){
-    stop("Argument face_selection must be one of: largest, left, right, none")
-  }
+  selection <- .te_face_selection(face_selection, allow_ids = FALSE)
+  face_detector <- match.arg(face_detector)
 
   # Validate model using registry system
   model_architecture <- NULL
@@ -152,6 +164,26 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                                     save_video || !grepl("youtu", video))
   on.exit(cleanup(), add = TRUE)
 
+  # All faces or a faces table: one row per face
+  if (selection$mode != "rule") {
+    faces <- if (selection$mode == "table") {
+      table <- selection$value
+      same <- table$source == video |
+        normalizePath(table$source, mustWork = FALSE) == normalizePath(video, mustWork = FALSE)
+      if (!all(same)) {
+        stop("face_selection holds faces of another video.", call. = FALSE)
+      }
+      table
+    } else {
+      detect_faces(video, face_detector = face_detector, nframes = nframes,
+                   start = start, end = end, uniform = uniform, ffreq = ffreq,
+                   save_frames = TRUE, save_video = TRUE, save_dir = save_dir,
+                   video_name = video_name)
+    }
+    vision <- list(model_id = actual_model_id, architecture = model_architecture)
+    return(.te_face_scores(faces, classes, vision, local_model_path))
+  }
+
   result <- without_hf_token({
     reticulate::py$yt_analyze(
       url = video,
@@ -166,7 +198,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
       video_name = video_name,
       model_name = actual_model_id,
       model_architecture = model_architecture,
-      local_model_path = local_model_path
+      local_model_path = local_model_path,
+      face_detector = face_detector
     )
   })
 
