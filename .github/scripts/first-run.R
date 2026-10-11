@@ -122,6 +122,15 @@ if (phase == "first") {
     check(length(draw_faces(clip, max_images = 4, plot = FALSE)) == 4, "frames not drawn")
   })
 
+  step("view_faces (writes the page; no browser)", {
+    page <- dirname(view_faces(two, select = TRUE, open = FALSE))
+    check(all(file.exists(file.path(page, c("index.html", "app.js", "logic.js", "data.js")))),
+          "page files missing")
+    check(length(list.files(file.path(page, "media"))) == 1, "picture copy missing")
+    page <- dirname(view_faces(clip, open = FALSE))
+    check(length(list.files(file.path(page, "media"))) == 20, "frame copies missing")
+  })
+
   step("vad_scores", {
     s <- vad_scores("We won the final! This is the best day of my life.",
                     input_type = "text")
