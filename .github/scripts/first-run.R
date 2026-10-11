@@ -81,6 +81,34 @@ if (phase == "first") {
     check(nrow(s) >= 1, "no frames scored")
   })
 
+  step("detect_faces and face_scores (images)", {
+    images <- system.file("extdata", c("boris-1.png", "trump1.jpg", "boris-2.png"),
+                          package = "transforEmotion")
+    faces <- detect_faces(images)
+    print(faces[, c("face", "person_id", "x", "y", "width", "height", "confidence")])
+    check(nrow(faces) == 3, "expected one face per image")
+    check(identical(faces$person_id, c("p1", "p2", "p1")), "same person not recognised")
+    s <- face_scores(select_faces(faces, persons = "p1"), classes = emotions)
+    print(s[, c("person_id", emotions)])
+    check(nrow(s) == 2 && !anyNA(s[emotions]), "faces of p1 not scored")
+  })
+
+  step("image_scores (all faces; Haar)", {
+    s <- image_scores(image, classes = emotions, face_selection = "all")
+    check(nrow(s) == 1 && !anyNA(s[emotions]), "face_selection = 'all' scored no face")
+    s <- image_scores(image, classes = emotions, face_detector = "haar")
+    check(!anyNA(s), "the Haar detector found no face")
+  })
+
+  step("detect_faces and video_scores (one person)", {
+    faces <- detect_faces(video, nframes = 10)
+    print(faces[, c("frame", "time", "face", "track_id", "person_id", "width")])
+    check(nrow(faces) == 10, "expected one face per frame")
+    check(all(faces$track_id == 1) && all(faces$person_id == "p1"), "expected one track and person")
+    s <- video_scores(video, classes = emotions, face_selection = select_faces(faces, tracks = 1))
+    check(nrow(s) == 10 && !anyNA(s[emotions]), "faces of track 1 not scored")
+  })
+
   step("vad_scores", {
     s <- vad_scores("We won the final! This is the best day of my life.",
                     input_type = "text")
@@ -103,6 +131,9 @@ if (phase == "first") {
     check(names(which.max(s[[1]])) == "joy", "top class is not joy")
   })
   step("image_scores (cached model)", image_scores(image, classes = emotions))
+  step("detect_faces (cached face model)", {
+    check(identical(detect_faces(image)$person_id, "p1"), "person_id missing")
+  })
 }
 
 print(results[, c("step", "status", "seconds")], row.names = FALSE)

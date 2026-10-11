@@ -48,6 +48,26 @@ o FIX: `image_scores()`, `image_scores_dir()` and `video_scores()` reloaded the 
 
 o CHANGE: citation now points to the published article in Computational Communication Research (doi:10.5117/CCR2026.2.2.TOMA); see `citation("transforEmotion")`
 
+o ADD: `detect_faces()` finds every face in images or in the frames sampled from a video and returns one row per face with its box, confidence, five landmarks, a track id that follows the face across video frames, and a `person_id` shared by faces of the same person (across images, or across all tracks of a video, so a person who leaves and comes back keeps one id). `select_faces()` keeps faces by rule, face number, track or person, and `face_scores()` scores exactly those faces
+
+o ADD: `face_selection` in `image_scores()`, `image_scores_dir()` and `video_scores()` also takes `"all"` (one row per face), face numbers (`image_scores()`), or a data frame from `detect_faces()` or `select_faces()`, for example the faces of one person in a video
+
+o ADD: same-person recognition uses OpenCV's SFace model (10 MB, Apache 2.0), downloaded on first use or by `setup_modules()`; set `TRANSFOREMOTION_SFACE_MODEL` to use a copy on a computer without internet access. Face embeddings stay in memory and are never returned or saved; `identify = FALSE` turns recognition off
+
+o CHANGE: faces are found with OpenCV's YuNet detector (a 230 KB model shipped with the package) instead of a Haar cascade. YuNet also finds small, tilted and partly turned faces, so the face that is scored, and therefore the scores, can differ from earlier versions; `face_detector = "haar"` in `image_scores()`, `image_scores_dir()` and `video_scores()` reproduces earlier results
+
+o CHANGE: with YuNet, images are rotated by their EXIF orientation before faces are detected, as phone photos are displayed
+
+o FIX: `video_scores()` scored the wrong frames after a frame that could not be read: it looked frames up by a running count, so it scored a missing (or leftover) frame file and dropped the last frame. Unreadable frames are now left out, and the result has one row per frame that was read
+
+o FIX: `video_scores(uniform = TRUE)` failed with "Video is too short for requested number of frames" whenever `ffreq * nframes` exceeded the video's length, although uniform sampling does not use `ffreq`, and could ask for frames past the end. Frames are now spread evenly over the whole video (or the `start`-`end` cut), and a cut video no longer samples frames past `end`
+
+o FIX: `evaluate_emotions()` reported Scott's pi as Krippendorff's alpha; the expected disagreement now counts pairs of values without replacement, as Krippendorff's alpha does, so alpha is slightly higher for small samples
+
+o FIX: `image_scores_dir(recursive = TRUE)` warns when images in different folders share a file name, since their `image_id` is the same
+
+o FIX: the documentation said that an image without a face returns `NULL`; it returns one row of `NA` scores
+
 
 # Changes in version 0.1.7
 

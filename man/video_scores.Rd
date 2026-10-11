@@ -18,7 +18,8 @@ video_scores(
   save_dir = "temp/",
   video_name = "temp",
   model = "oai-base",
-  local_model_path = NULL
+  local_model_path = NULL,
+  face_detector = c("yunet", "haar")
 )
 }
 \arguments{
@@ -29,8 +30,16 @@ video_scores(
 \item{nframes}{The number of frames to analyze in the video. Default is 100.}
 
 \item{face_selection}{The method for selecting faces in the video. Options are
-"largest", "left", "right", or "none". Default is "largest". Use "none"
-to classify the whole frame without face cropping.}
+"largest", "left", "right", "none", "all", or a data frame of faces.
+Default is "largest". Use "none" to classify the whole frame without face
+cropping. These four pick one face per frame and return one row per
+frame, as before. "all" scores every face in every frame, and a data
+frame from \code{\link{detect_faces}} or \code{\link{select_faces}} (for
+example the faces of one person) scores those faces; both return one row
+per face with its frame, time, track and person (see
+\code{\link{face_scores}}). A data frame of faces brings its own frame
+sampling settings, so \code{nframes}, \code{start}, \code{end},
+\code{uniform} and \code{ffreq} are ignored.}
 
 \item{start}{The start time of the video range to analyze. Default is 0.}
 
@@ -75,9 +84,14 @@ Note: Video processing is memory-intensive, so use caution with large models.}
 
   Warning: Using very large models from local paths may cause memory issues or crashes
   depending on your system's resources, especially when processing videos with many frames.}
+
+\item{face_detector}{\code{"yunet"} (default), OpenCV's YuNet face detector,
+or \code{"haar"}, the Haar cascade used before version 0.1.8. Use
+\code{"haar"} to reproduce scores from earlier versions.}
 }
 \value{
-A result object containing the analyzed video scores.
+A data frame of scores, one row per frame that could be read (or
+  one row per face; see \code{face_selection}).
 }
 \description{
 This function retrieves facial expression recognition (FER) scores from a specific number of frames extracted from a YouTube video using a specified Hugging Face CLIP model. It utilizes Python libraries for facial recognition and emotion detection in text, images, and video.

@@ -24,6 +24,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /usr/local/bin/
 ENV TE_HOME=/opt/transforEmotion
 ENV HF_HOME=${TE_HOME}/huggingface \
     NLTK_DATA=${TE_HOME}/nltk_data \
+    TRANSFOREMOTION_SFACE_MODEL=${TE_HOME}/face_recognition_sface_2021dec_int8.onnx \
     UV_PYTHON_INSTALL_DIR=${TE_HOME}/python \
     UV_PYTHON_PREFERENCE=only-managed
 

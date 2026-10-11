@@ -11,7 +11,8 @@ image_scores_dir(
   pattern = "\\\\.(jpg|jpeg|png|bmp)$",
   recursive = FALSE,
   model = "oai-base",
-  local_model_path = NULL
+  local_model_path = NULL,
+  face_detector = c("yunet", "haar")
 )
 }
 \arguments{
@@ -19,7 +20,10 @@ image_scores_dir(
 
 \item{classes}{Character vector of labels/classes (length >= 2).}
 
-\item{face_selection}{Face selection strategy: "largest", "left", "right", or "none".}
+\item{face_selection}{Face selection strategy: "largest", "left", "right", or
+"none" (one row per image), "all" (one row per face, with faces of the same
+person sharing a \code{person_id}; see \code{\link{detect_faces}}), or a
+data frame from \code{\link{detect_faces}} (its faces in these images).}
 
 \item{pattern}{Optional regex to filter images (default supports common formats).}
 
@@ -28,9 +32,14 @@ image_scores_dir(
 \item{model}{CLIP model alias or HuggingFace model id (see image_scores()).}
 
 \item{local_model_path}{Optional local path to a pre-downloaded model.}
+
+\item{face_detector}{\code{"yunet"} (default) or \code{"haar"}; see
+\code{\link{image_scores}}.}
 }
 \value{
-A data.frame with columns: image_id and one column per class.
+A data.frame with columns: image_id and one column per class. With
+  "all" or a data frame of faces, one row per face, with the columns of
+  \code{\link{face_scores}} after image_id.
 }
 \description{
 This function scans a directory for image files and computes scores for each

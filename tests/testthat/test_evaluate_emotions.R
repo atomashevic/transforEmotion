@@ -210,6 +210,26 @@ test_that("evaluate_emotions Krippendorff's alpha", {
   expect_lte(results$krippendorff_alpha, 1)
 })
 
+test_that("evaluate_emotions Krippendorff's alpha matches the published example", {
+  # Two coders, ten units, nominal data: Krippendorff (2011), "Computing
+  # Krippendorff's alpha-reliability", section A, alpha = 0.095. Scott's pi on
+  # the same data is 0.048.
+  coder_a <- c(0, 1, 0, 0, 0, 0, 0, 0, 1, 0)
+  coder_b <- c(1, 1, 1, 0, 0, 1, 0, 0, 0, 0)
+  test_data <- data.frame(
+    id = 1:10,
+    truth = c("no", "yes")[coder_a + 1],
+    pred = c("no", "yes")[coder_b + 1],
+    stringsAsFactors = FALSE
+  )
+
+  results <- evaluate_emotions(test_data, metrics = "krippendorff")
+
+  # Do = 4/10; De = 1 - (6 * 5 + 14 * 13) / (20 * 19)
+  expect_equal(results$krippendorff_alpha, 1 - 0.4 / (168 / 380))
+  expect_equal(round(results$krippendorff_alpha, 3), 0.095)
+})
+
 test_that("evaluate_emotions plotting data", {
   
   test_data <- data.frame(

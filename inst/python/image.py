@@ -7,7 +7,7 @@ from transformers import CLIPTokenizerFast, CLIPImageProcessor, CLIPVisionModel,
 import torch
 import requests
 import cv2
-from PIL import Image
+from PIL import Image, ImageOps
 import warnings
 from transformers import logging
 import torchvision.transforms as T
@@ -19,6 +19,8 @@ from transformers import AlignProcessor, AlignModel
 
 warnings.filterwarnings("ignore")
 logging.set_verbosity_error()
+
+import te_faces  # face detection, tracking and same-person ids (inst/python)
 
 # Load face detector once to avoid per-image overhead
 try:
@@ -642,20 +644,23 @@ def crop_face(image, padding=50, side='largest'):
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
     return Image.fromarray(result)
 
-def classify_image(image, labels, face, model_name="oai-base", local_model_path=None, model_architecture=None):
-    """Classify image emotions using specified model.
+def select_face_crop(pil_image, side='largest', face_detector='haar', padding=0.25):
+    """Crop the face that `side` picks; the whole image for 'none'; None if no face.
 
-    Args:
-        image: Path to image file or URL
-        labels: List of emotion labels to classify
-        face: Face selection strategy ('largest', 'left', 'right', 'none')
-        model_name: Name of HuggingFace model or predefined shorthand
-        local_model_path: Optional path to local model directory
+    face_detector 'haar' is crop_face() unchanged (fixed 50 px padding). 'yunet'
+    pads by a share of the box size, as face_scores() does.
     """
-    # Get appropriate adapter
-    adapter = get_vision_adapter(model_name, local_model_path, model_architecture)
-    
-    # Load and prepare image
+    if side == 'none' or face_detector == 'haar':
+        return crop_face(pil_image, side=side)
+    rgb = np.asarray(pil_image)
+    faces = te_faces.select(te_faces.detect(rgb, face_detector), side)
+    if not faces:
+        return None
+    f = faces[0]
+    return Image.fromarray(te_faces.crop(rgb, (f['x'], f['y'], f['width'], f['height']), padding))
+
+def _open_image(image, face_detector='haar'):
+    """Open a path or URL as an RGB PIL image; YuNet also applies EXIF rotation."""
     if not image.startswith('http'):
         if not os.path.exists(image):
             raise ValueError("Image file does not exist at the specified path")
@@ -665,11 +670,30 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
             pil_image = Image.open(requests.get(image, stream=True).raw)
         except:
             raise ValueError("Cannot retrieve image from URL")
+    if face_detector != 'haar':
+        pil_image = ImageOps.exif_transpose(pil_image)
+    return pil_image.convert('RGB')
 
-    pil_image = pil_image.convert('RGB')
+def classify_image(image, labels, face, model_name="oai-base", local_model_path=None, model_architecture=None,
+                   face_detector='haar'):
+    """Classify image emotions using specified model.
+
+    Args:
+        image: Path to image file or URL
+        labels: List of emotion labels to classify
+        face: Face selection strategy ('largest', 'left', 'right', 'none')
+        model_name: Name of HuggingFace model or predefined shorthand
+        local_model_path: Optional path to local model directory
+        face_detector: 'haar' (crop_face(), as before) or 'yunet'
+    """
+    # Get appropriate adapter
+    adapter = get_vision_adapter(model_name, local_model_path, model_architecture)
     
+    # Load and prepare image
+    pil_image = _open_image(image, face_detector)
+
     # Crop face unless explicitly disabled
-    processed_image = crop_face(pil_image, side=face)
+    processed_image = select_face_crop(pil_image, side=face, face_detector=face_detector)
     
     if processed_image is None:
         print('No face found in the image')
@@ -678,7 +702,8 @@ def classify_image(image, labels, face, model_name="oai-base", local_model_path=
     # Use adapter for inference
     return adapter(processed_image, labels)
 
-def classify_images_batch(images, labels, face='largest', model_name="oai-base", local_model_path=None, model_architecture=None):
+def classify_images_batch(images, labels, face='largest', model_name="oai-base", local_model_path=None, model_architecture=None,
+                          face_detector='haar'):
     """Classify a batch of images efficiently by computing text embeddings once.
 
     Args:
@@ -687,6 +712,7 @@ def classify_images_batch(images, labels, face='largest', model_name="oai-base",
         face: 'largest' | 'left' | 'right' | 'none'
         model_name: Model alias or HF id
         local_model_path: Optional local model directory
+        face_detector: 'haar' (crop_face(), as before) or 'yunet'
 
     Returns:
         pandas.DataFrame with one row per image: columns ['image_id', *labels]
@@ -725,9 +751,11 @@ def classify_images_batch(images, labels, face='largest', model_name="oai-base",
                     pil_image = Image.open(img)
                 else:
                     pil_image = Image.open(requests.get(img, stream=True).raw)
-                
+
+                if face_detector != 'haar':
+                    pil_image = ImageOps.exif_transpose(pil_image)
                 pil_image = pil_image.convert('RGB')
-                face_img = crop_face(pil_image, side=face)
+                face_img = select_face_crop(pil_image, side=face, face_detector=face_detector)
                 
                 if face_img is None:
                     results.append(row)
@@ -772,6 +800,31 @@ def classify_images_batch(images, labels, face='largest', model_name="oai-base",
             df[c] = np.nan
     df = df[cols]
     return df
+
+def classify_face_boxes(images, boxes, labels, model_name="oai-base", local_model_path=None,
+                        model_architecture=None, padding=0.25):
+    """Score given face boxes, one row per (image, box) pair in input order.
+
+    Args:
+        images: List of image paths or URLs (repeated for each box)
+        boxes: List of [x, y, width, height] in pixels of the EXIF-rotated
+            image, as te_faces.faces_table() (detect_faces() in R) reports them
+        labels: List of labels
+        padding: Share of the box size added on each side of the crop
+
+    Returns:
+        pandas.DataFrame with one column per label
+    """
+    adapter = get_vision_adapter(model_name, local_model_path, model_architecture)
+    rows = []
+    current, rgb = None, None
+    for img, box in zip(images, boxes):
+        if img != current:  # rows of one image are adjacent; load it once
+            rgb = np.asarray(te_faces.load_image(img))
+            current = img
+        face_img = Image.fromarray(te_faces.crop(rgb, box, padding))
+        rows.append(adapter(face_img, list(labels)))
+    return pd.DataFrame(rows, columns=list(labels))
 
 # ============================================================================
 # Model Registry and Factory Functions

@@ -605,14 +605,14 @@ print.emotion_evaluation <- function(x, ...) {
   # Observed disagreement
   observed_disagreement <- mean(truth_num != pred_num)
   
-  # Expected disagreement (marginal distributions)
-  # Align counts across all classes and replace NAs with zeros
+  # Expected disagreement from the pooled values of both raters (2n of them),
+  # drawn without replacement as in Krippendorff's coincidence matrix
   truth_counts <- table(factor(truth_num, levels = seq_along(classes)))
   pred_counts  <- table(factor(pred_num,  levels = seq_along(classes)))
   total_counts <- as.numeric(truth_counts) + as.numeric(pred_counts)
-  
-  # Expected disagreement under independence
-  expected_disagreement <- 1 - sum((total_counts / (2 * n))^2, na.rm = TRUE)
+  n_values <- 2 * n
+  expected_disagreement <- 1 - sum(total_counts * (total_counts - 1)) /
+    (n_values * (n_values - 1))
   
   # Krippendorff's alpha with guards
   if (is.na(expected_disagreement) || expected_disagreement == 0) {

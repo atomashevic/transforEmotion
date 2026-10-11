@@ -55,7 +55,8 @@ check_nvidia_gpu <- function() {
 #'   \item{\code{"gpu"}}{\code{bitsandbytes}, used for 4-bit quantization of EVA-CLIP-8B}
 #' }
 #' @param download_models Logical. Download the default text, image and
-#' sentence-similarity models into the Hugging Face cache (about 1 GB), and,
+#' sentence-similarity models into the Hugging Face cache (about 1 GB), the
+#' face recognition model \code{\link{detect_faces}} uses (10 MB), and,
 #' when \code{extras} includes \code{"rag"}, the default embedding model and
 #' TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
 #' Skipped when \code{HF_HUB_OFFLINE} is set.
@@ -112,6 +113,8 @@ setup_modules <- function(extras = character(), download_models = TRUE,
   defaults <- if (isTRUE(download_models)) {
     c(.te_default_models, if ("rag" %in% extras) .te_default_rag_models)
   }
+  # Face recognition model for detect_faces() (not on the Hugging Face Hub)
+  if (isTRUE(download_models) && !.te_hf_offline()) .te_sface_model()
   if (length(c(defaults, models)) && .te_hf_offline()) {
     message("HF_HUB_OFFLINE is set; skipping model downloads.")
     return(invisible(NULL))
