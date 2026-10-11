@@ -1,24 +1,7 @@
 # detect_faces(), select_faces(), face_scores(), draw_faces() and
-# face_selection. The tests at the top use made-up face tables and mock Python;
-# the tests at the bottom run the te_faces Python module and need
-# TRANSFOREMOTION_PYTHON to point at a Python environment with OpenCV.
-
-# A faces table as detect_faces() returns it: two images, three faces
-fake_faces <- function(sources = c("a.jpg", "b.jpg")) {
-  out <- data.frame(
-    source = sources[c(1, 1, 2)], frame = NA_integer_, frame_index = NA_integer_,
-    time = NA_real_, face = c(1L, 2L, 1L), track_id = NA_integer_,
-    person_id = c("p1", "p2", "p1"), x = c(10, 200, 50), y = 20,
-    width = c(50, 80, 60), height = c(50, 80, 60), confidence = 0.9,
-    detector = "yunet", image_width = 400L, image_height = 300L,
-    stringsAsFactors = FALSE
-  )
-  for (lm in .te_landmark_columns) out[[lm]] <- 1
-  attr(out, "media") <- data.frame(source = sources, n_faces = c(2L, 1L))
-  attr(out, "settings") <- list(type = "images", face_detector = "yunet")
-  class(out) <- c("te_faces", "data.frame")
-  out
-}
+# face_selection. The tests at the top use made-up face tables (helper-faces.R)
+# and mock Python; the tests at the bottom run the te_faces Python module and
+# need TRANSFOREMOTION_PYTHON to point at a Python environment with OpenCV.
 
 # Mocks Python for .te_face_scores(): the scores come back in the order the
 # boxes were sent, which is the order of the image paths
@@ -349,16 +332,6 @@ test_that("draw_faces draws video frames with track numbers", {
 # ---------------------------------------------------------------------------
 # te_faces in Python
 # ---------------------------------------------------------------------------
-
-skip_without_face_python <- function() {
-  skip_on_cran()
-  skip_if(!nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")),
-          "TRANSFOREMOTION_PYTHON is not set")
-  ensure_te_py_env()
-  skip_if_not(reticulate::py_module_available("cv2"), "OpenCV is not available")
-}
-
-fixture <- function(name) system.file("extdata", name, package = "transforEmotion")
 
 test_that("YuNet and Haar find the face in each fixture", {
   skip_without_face_python()
