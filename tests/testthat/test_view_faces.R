@@ -74,6 +74,7 @@ test_that("view_faces writes a page with the images and faces", {
   expect_equal(task$mode, "view")
   expect_equal(task$title, "Test")
   expect_equal(task$media$label, c("a.jpg", "b.jpg"))
+  expect_true(all(is.na(task$media$key))) # the made-up files do not exist
   expect_equal(task$media$img_w, c(400, 400))
   expect_equal(task$faces$face_id, c("m01#0#1", "m01#0#2", "m02#0#1"))
   expect_equal(task$faces$w, c(50, 80, 60))
@@ -148,6 +149,29 @@ test_that("read_face_selection returns the chosen faces", {
   expect_error(read_face_selection(as.character(selection("m01#0#1", c("x.jpg", "b.jpg"))), faces),
                "other images or another video")
   expect_error(read_face_selection('{"schema": "something else"}', faces), "not a face selection")
+
+  # Same file names in another folder: told apart by their content
+  dirs <- file.path(withr::local_tempdir(), c("p1", "p2"))
+  for (i in 1:2) {
+    dir.create(dirs[i])
+    writeLines(paste("a in", i), file.path(dirs[i], "a.jpg"))
+    writeLines(paste("b in", i), file.path(dirs[i], "b.jpg"))
+  }
+  ours <- fake_faces(file.path(dirs[1], c("a.jpg", "b.jpg")))
+  theirs <- fake_faces(file.path(dirs[2], c("a.jpg", "b.jpg")))
+  keyed <- jsonlite::toJSON(list(
+    schema = "transforEmotion.face_selection", task_id = "t",
+    media = data.frame(media_id = c("m01", "m02"), label = c("a.jpg", "b.jpg"),
+                       key = .te_media_key(ours$source[c(1, 3)])),
+    selected_face_ids = "m02#0#1"
+  ), auto_unbox = TRUE)
+  expect_equal(nrow(read_face_selection(as.character(keyed), ours)), 1)
+  expect_error(read_face_selection(as.character(keyed), theirs), "other images or another video")
+  # Files that cannot be read any more are checked by name only
+  unlink(dirs[1], recursive = TRUE)
+  expect_equal(nrow(read_face_selection(as.character(keyed), ours)), 1)
+  expect_equal(.te_media_key(c(file.path(dirs[2], "b.jpg"), "https://example.org/x.jpg", dirs[2]))[-1],
+               c(NA_character_, NA_character_))
   expect_error(read_face_selection(file.path(tempdir(), "no-such.json"), faces), "does not exist")
 })
 
@@ -273,4 +297,5 @@ test_that("view_faces writes display copies of the example picture", {
   size <- reticulate::import("PIL.Image")$open(file.path(dir, task$media$src))$size
   expect_equal(max(unlist(size)), 300)
   expect_equal(task$faces$x, round(faces$x, 4))
+  expect_equal(task$media$key, unname(tools::md5sum(faces$source[1])))
 })

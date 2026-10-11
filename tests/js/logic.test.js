@@ -14,7 +14,8 @@ const face = (id, extra) => Object.assign({ face_id: id, media_id: id.split("#")
   confidence: 0.9, track_id: null, person_id: null }, extra);
 const imageTask = () => ({
   schema: "transforEmotion.face_task", schema_version: "1.0.0", task_id: "t", mode: "select",
-  media: [{ media_id: "m01", media_type: "image", label: "a.jpg" }, { media_id: "m02", media_type: "image", label: "b.jpg" }],
+  media: [{ media_id: "m01", media_type: "image", label: "a.jpg", key: "0cc175b9c0f1b6a831c399e269772661" },
+    { media_id: "m02", media_type: "image", label: "b.jpg" }],
   faces: [face("m01#0#1", { person_id: "p1" }), face("m01#0#2", { person_id: "p2" }), face("m02#0#1", { person_id: "p1" })]
 });
 // A video: tracks 1 and 2 are person p1, track 3 is p2
@@ -75,7 +76,8 @@ test("the exported selection lists faces, tracks and whole people", () => {
   assert.equal(doc.schema, "transforEmotion.face_selection");
   assert.deepEqual(doc.selected_face_ids, ["m01#0#1", "m02#0#1"]); // table order; unknown ids dropped
   assert.deepEqual(doc.selected_person_ids, ["p1"]);
-  assert.deepEqual(doc.media, [{ media_id: "m01", label: "a.jpg" }, { media_id: "m02", label: "b.jpg" }]);
+  assert.deepEqual(doc.media, [{ media_id: "m01", label: "a.jpg", key: "0cc175b9c0f1b6a831c399e269772661" },
+    { media_id: "m02", label: "b.jpg", key: null }]);
 
   const video = Object.assign(imageTask(), { faces: videoFaces() });
   const t = L.selectionDocument(video, new Set(["m01#0#1", "m01#15#1", "m01#0#2"]), "now");
