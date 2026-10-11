@@ -1,33 +1,41 @@
 #' Look at detected faces in the browser, and choose faces to analyse
 #'
-#' Writes a small web page that shows every image, or every sampled video
-#' frame, with its face boxes, and opens it in your web browser. Faces of the
-#' same person share a colour, and a People panel lists each person with the
-#' images, frames and tracks they appear in. With \code{select = TRUE}, you
-#' can click faces, video tracks or people to choose the faces to analyse,
-#' export the choice, and read it back with \code{read_face_selection()}.
+#' Starts a small web page from R that shows every image, or every sampled
+#' video frame, with its face boxes, and opens it in your web browser. Faces
+#' of the same person share a colour, and a People panel lists each person
+#' with the images, frames and tracks they appear in. With
+#' \code{select = TRUE}, you click faces, video tracks or people, then
+#' \strong{Send to R}, and \code{view_faces()} returns the chosen faces.
 #'
-#' The page is a folder with \code{index.html}, a few script files and small
-#' copies of the images or frames. It needs no server and no internet
-#' connection, and it makes no outside requests, so it also works after you
-#' copy the folder from a remote computer (for example a cluster) to your
-#' own.
+#' The page is served by R itself (with \pkg{httpuv}) on your own computer
+#' only (\code{127.0.0.1}), at an address with a random part that only you
+#' get. It makes no outside requests. While R waits for a selection, the
+#' console is busy; press Esc (Ctrl+C in a terminal) to stop waiting.
+#'
+#' With \code{live = FALSE}, no server is started: the page is written as a
+#' folder that also works when opened from disk, for example after copying it
+#' from a remote computer to yours. Its \strong{Export selection} button then
+#' downloads a file that \code{\link{read_face_selection}()} reads.
 #'
 #' @param faces A data frame returned by \code{\link{detect_faces}} or
 #'   \code{\link{select_faces}}.
-#' @param select Logical. Let the viewer choose faces and export the choice.
+#' @param select Logical. Let the viewer choose faces and return them.
 #'   Default is \code{FALSE}.
 #' @param selected Faces to start with selected, as rows of \code{faces} (for
 #'   example \code{select_faces(faces, "largest")}). Only with
 #'   \code{select = TRUE}.
-#' @param dir A new or empty folder for the page. Default is a new folder in
-#'   the temporary directory, which R deletes when the session ends.
+#' @param live Logical. Serve the page from R (the default). \code{FALSE}
+#'   only writes the folder.
 #' @param open Logical. Open the page in the web browser. Default is
 #'   \code{TRUE} in an interactive session.
+#' @param dir A new or empty folder for the page. Default is a new folder in
+#'   the temporary directory, which R deletes when the session ends.
 #' @param title Title shown at the top of the page.
 #' @param max_side Longest side, in pixels, of the image and frame copies in
 #'   the page. Boxes are drawn in the original pixels, whatever the size of
 #'   the copies.
+#' @param port Port of the local server. Default is a free port chosen at
+#'   random; set one to forward it over SSH when R runs on a remote computer.
 #'
 #' @details
 #' Images without a face are shown too when \code{faces} is a complete
@@ -38,15 +46,23 @@
 #'
 #' In select mode, clicking a face in a still image selects that face;
 #' clicking a face in a video selects its whole track; clicking a person
-#' selects every face of that person. \strong{Export selection} downloads
-#' \code{selection-<task>.json}, and shows the same text in the page to copy
-#' if downloads are blocked.
+#' selects every face of that person.
 #'
-#' The page lists file names and shows the images, so share the folder only
-#' with people who may see them. It contains no face embeddings and no
-#' scores.
+#' When R runs on a remote computer over SSH, forward the port first (the
+#' message printed by \code{view_faces()} gives the command), or use
+#' \code{live = FALSE} and copy the folder.
 #'
-#' @return The path of the page's \code{index.html}, invisibly.
+#' The page lists file names and shows the images, so share it only with
+#' people who may see them. It contains no face embeddings and no scores.
+#'
+#' @return With \code{select = TRUE}: the chosen rows of \code{faces}, which
+#'   \code{\link{face_scores}} scores and \code{face_selection} in
+#'   \code{\link{image_scores}}, \code{\link{image_scores_dir}} and
+#'   \code{\link{video_scores}} accepts, or \code{NULL} if you click
+#'   \strong{Cancel}. Otherwise, invisibly, the page: a list with its
+#'   \code{url}, its folder \code{dir}, and \code{stop()}, which stops the
+#'   server. With \code{live = FALSE}, the path of the page's
+#'   \code{index.html}, invisibly.
 #'
 #' @seealso \code{\link{draw_faces}} for the same boxes as plots in R,
 #'   \code{\link{select_faces}} to choose faces by rule, number or person.
@@ -58,15 +74,19 @@
 #' faces <- detect_faces(images)
 #' view_faces(faces)
 #'
-#' # Choose faces in the browser, export, then read the downloaded file
-#' view_faces(faces, select = TRUE)
-#' chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
+#' # Click the faces to keep, then Send to R
+#' chosen <- view_faces(faces, select = TRUE)
 #' face_scores(chosen, classes = c("happy", "sad", "angry", "neutral"))
+#'
+#' # Without a server: a folder to copy, and a file to read back
+#' view_faces(faces, select = TRUE, live = FALSE, dir = "faces-page")
+#' chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
 #' }
 #'
 #' @export
-view_faces <- function(faces, select = FALSE, selected = NULL, dir = NULL,
-                       open = interactive(), title = NULL, max_side = 1280) {
+view_faces <- function(faces, select = FALSE, selected = NULL, live = TRUE,
+                       open = interactive(), dir = NULL, title = NULL, max_side = 1280,
+                       port = NULL) {
   .te_check_faces_table(faces)
   if (!nrow(faces)) stop("faces has no rows to show.", call. = FALSE)
   if (!is.null(selected)) {
@@ -77,8 +97,70 @@ view_faces <- function(faces, select = FALSE, selected = NULL, dir = NULL,
   if (dir.exists(dir) && length(list.files(dir, all.files = TRUE, no.. = TRUE))) {
     stop("dir must be a new or empty folder: ", dir, call. = FALSE)
   }
-  dir.create(file.path(dir, "media"), recursive = TRUE, showWarnings = FALSE)
+  mode <- if (isTRUE(select)) "select" else "view"
+  api <- if (isTRUE(live) && mode == "select") c("selection", "cancel") else character()
+  task <- .te_write_face_page(faces, dir, mode, title, max_side, selected, api)
 
+  if (!isTRUE(live)) {
+    index <- normalizePath(file.path(dir, "index.html"))
+    if (isTRUE(open)) utils::browseURL(index)
+    if (mode == "select") {
+      message("Select faces in the browser and click Export selection. Then read the ",
+              "downloaded file with read_face_selection(\"<path>/selection-", task$task_id,
+              ".json\", faces).")
+    }
+    return(invisible(index))
+  }
+
+  if (mode == "view") {
+    server <- .te_serve_page(dir, port = port)
+    .te_open_page(server, open, paste(
+      "The faces are at %s. The page stays up until R ends;",
+      "to stop it sooner, keep what view_faces() returns and call its $stop()."
+    ))
+    return(invisible(structure(list(url = server$url, dir = normalizePath(dir), stop = server$stop),
+                               class = "te_face_page")))
+  }
+
+  state <- new.env(parent = emptyenv())
+  server <- .te_serve_page(dir, port = port, handlers = list(
+    selection = function(body) {
+      if (!identical(body$task_id, task$task_id)) stop("This page belongs to another view_faces() call.")
+      state$result <- .te_selection_rows(body, faces)
+      list(ok = TRUE, n_faces = nrow(state$result))
+    },
+    cancel = function(body) {
+      state$cancelled <- TRUE
+      list(ok = TRUE)
+    }
+  ))
+  on.exit(server$stop(), add = TRUE)
+  .te_open_page(server, open, paste(
+    "Choose faces at %s and click Send to R.",
+    "R waits until then; press Esc (Ctrl+C in a terminal) to stop waiting."
+  ))
+  .te_wait_for(function() !is.null(state$result) || isTRUE(state$cancelled))
+  if (is.null(state$result)) {
+    message("Selection cancelled.")
+    return(invisible(NULL))
+  }
+  message(nrow(state$result), " face(s) selected.")
+  state$result
+}
+
+#' @export
+print.te_face_page <- function(x, ...) {
+  cat("Faces page at ", x$url, "\nFolder: ", x$dir, "\nStop it with $stop().\n", sep = "")
+  invisible(x)
+}
+
+#' @noRd
+# Writes the page into dir: the app's files, data.js and the display copies.
+# api names the server's handlers the page may call (data.js sets
+# window.TE_API); none for a page opened from disk. Returns the task.
+.te_write_face_page <- function(faces, dir, mode, title, max_side, selected = NULL,
+                                api = character()) {
+  dir.create(file.path(dir, "media"), recursive = TRUE, showWarnings = FALSE)
   settings <- attr(faces, "settings")
   is_video <- .te_is_video_faces(faces, settings)
   media_ids <- .te_media_ids(faces)
@@ -104,23 +186,21 @@ view_faces <- function(faces, select = FALSE, selected = NULL, dir = NULL,
   shown$img_w <- vapply(sizes, function(s) as.integer(s[[1]]), integer(1))
   shown$img_h <- vapply(sizes, function(s) as.integer(s[[2]]), integer(1))
 
-  mode <- if (isTRUE(select)) "select" else "view"
   task <- .te_face_task(faces, shown, is_video, mode, title,
-                        selected_ids = if (is.null(selected)) character() else .te_face_ids(selected))
+                        selected_ids = if (is.null(selected)) character() else .te_face_ids(selected),
+                        live = length(api) > 0)
   json <- jsonlite::toJSON(task, auto_unbox = TRUE, null = "null", na = "null", digits = 4)
-  writeLines(paste0("window.TE_TASK = ", json, ";"), file.path(dir, "data.js"), useBytes = TRUE)
+  js <- paste0("window.TE_TASK = ", json, ";")
+  if (length(api)) {
+    # Relative to the page, so the server's random prefix is not repeated here
+    endpoints <- stats::setNames(as.list(paste0("api/", api)), api)
+    js <- c(js, paste0("window.TE_API = ", jsonlite::toJSON(endpoints, auto_unbox = TRUE), ";"))
+  }
+  writeLines(js, file.path(dir, "data.js"), useBytes = TRUE)
   app <- system.file("www", "face-annotator", .te_face_app_files, package = "transforEmotion",
                      mustWork = TRUE)
   file.copy(app, dir, overwrite = TRUE)
-
-  index <- normalizePath(file.path(dir, "index.html"))
-  if (isTRUE(open)) utils::browseURL(index)
-  if (mode == "select") {
-    message("Select faces in the browser and click Export selection. Then read the ",
-            "downloaded file with read_face_selection(\"<path>/selection-", task$task_id,
-            ".json\", faces).")
-  }
-  invisible(index)
+  task
 }
 
 #' Read faces chosen in the browser
@@ -159,7 +239,13 @@ read_face_selection <- function(file, faces) {
   sel <- tryCatch(jsonlite::fromJSON(file, simplifyVector = TRUE),
                   error = function(e) stop("Cannot read the selection: ", conditionMessage(e),
                                            call. = FALSE))
-  if (!identical(sel$schema, "transforEmotion.face_selection")) {
+  .te_selection_rows(sel, faces)
+}
+
+#' @noRd
+# The rows of faces a selection (parsed JSON, from a file or the page) names
+.te_selection_rows <- function(sel, faces) {
+  if (!is.list(sel) || !identical(sel$schema, "transforEmotion.face_selection")) {
     stop("This is not a face selection exported by view_faces().", call. = FALSE)
   }
   chosen <- as.character(unlist(sel$selected_face_ids))
@@ -241,7 +327,8 @@ read_face_selection <- function(file, faces) {
 
 #' @noRd
 # The task view_faces() writes to data.js (window.TE_TASK)
-.te_face_task <- function(faces, shown, is_video, mode, title, selected_ids = character()) {
+.te_face_task <- function(faces, shown, is_video, mode, title, selected_ids = character(),
+                          live = FALSE) {
   face_ids <- .te_face_ids(faces)
   column <- function(name, fill = NA) if (name %in% names(faces)) faces[[name]] else rep(fill, nrow(faces))
   media_id <- shown$media_id[match(faces$source, shown$source)]
@@ -278,7 +365,9 @@ read_face_selection <- function(file, faces) {
     selected = face_ids %in% selected_ids,
     stringsAsFactors = FALSE
   )
-  instructions <- if (mode == "select") {
+  instructions <- if (mode == "select" && live) {
+    "Click faces, video tracks or people to select them, then Send to R."
+  } else if (mode == "select") {
     paste("Click faces, video tracks or people to select them, then Export selection",
           "and read the file in R with read_face_selection().")
   } else {

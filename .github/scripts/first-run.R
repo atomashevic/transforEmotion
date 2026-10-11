@@ -122,13 +122,17 @@ if (phase == "first") {
     check(length(draw_faces(clip, max_images = 4, plot = FALSE)) == 4, "frames not drawn")
   })
 
-  step("view_faces (writes the page; no browser)", {
-    page <- dirname(view_faces(two, select = TRUE, open = FALSE))
-    check(all(file.exists(file.path(page, c("index.html", "app.js", "logic.js", "data.js")))),
+  step("view_faces (served by R, and as a folder; no browser)", {
+    page <- view_faces(two, open = FALSE)
+    served <- tryCatch(vapply(paste0(page$url, c("", "data.js", "media/m01.jpg")), function(u) {
+      httr::status_code(httr::GET(u, httr::timeout(10)))
+    }, numeric(1)), finally = page$stop())
+    check(all(served == 200), "page not served")
+    folder <- dirname(view_faces(two, select = TRUE, live = FALSE, open = FALSE))
+    check(all(file.exists(file.path(folder, c("index.html", "app.js", "logic.js", "data.js")))),
           "page files missing")
-    check(length(list.files(file.path(page, "media"))) == 1, "picture copy missing")
-    page <- dirname(view_faces(clip, open = FALSE))
-    check(length(list.files(file.path(page, "media"))) == 20, "frame copies missing")
+    folder <- dirname(view_faces(clip, live = FALSE, open = FALSE))
+    check(length(list.files(file.path(folder, "media"))) == 20, "frame copies missing")
   })
 
   step("vad_scores", {

@@ -8,52 +8,71 @@ view_faces(
   faces,
   select = FALSE,
   selected = NULL,
-  dir = NULL,
+  live = TRUE,
   open = interactive(),
+  dir = NULL,
   title = NULL,
-  max_side = 1280
+  max_side = 1280,
+  port = NULL
 )
 }
 \arguments{
 \item{faces}{A data frame returned by \code{\link{detect_faces}} or
 \code{\link{select_faces}}.}
 
-\item{select}{Logical. Let the viewer choose faces and export the choice.
+\item{select}{Logical. Let the viewer choose faces and return them.
 Default is \code{FALSE}.}
 
 \item{selected}{Faces to start with selected, as rows of \code{faces} (for
 example \code{select_faces(faces, "largest")}). Only with
 \code{select = TRUE}.}
 
-\item{dir}{A new or empty folder for the page. Default is a new folder in
-the temporary directory, which R deletes when the session ends.}
+\item{live}{Logical. Serve the page from R (the default). \code{FALSE}
+only writes the folder.}
 
 \item{open}{Logical. Open the page in the web browser. Default is
 \code{TRUE} in an interactive session.}
+
+\item{dir}{A new or empty folder for the page. Default is a new folder in
+the temporary directory, which R deletes when the session ends.}
 
 \item{title}{Title shown at the top of the page.}
 
 \item{max_side}{Longest side, in pixels, of the image and frame copies in
 the page. Boxes are drawn in the original pixels, whatever the size of
 the copies.}
+
+\item{port}{Port of the local server. Default is a free port chosen at
+random; set one to forward it over SSH when R runs on a remote computer.}
 }
 \value{
-The path of the page's \code{index.html}, invisibly.
+With \code{select = TRUE}: the chosen rows of \code{faces}, which
+  \code{\link{face_scores}} scores and \code{face_selection} in
+  \code{\link{image_scores}}, \code{\link{image_scores_dir}} and
+  \code{\link{video_scores}} accepts, or \code{NULL} if you click
+  \strong{Cancel}. Otherwise, invisibly, the page: a list with its
+  \code{url}, its folder \code{dir}, and \code{stop()}, which stops the
+  server. With \code{live = FALSE}, the path of the page's
+  \code{index.html}, invisibly.
 }
 \description{
-Writes a small web page that shows every image, or every sampled video
-frame, with its face boxes, and opens it in your web browser. Faces of the
-same person share a colour, and a People panel lists each person with the
-images, frames and tracks they appear in. With \code{select = TRUE}, you
-can click faces, video tracks or people to choose the faces to analyse,
-export the choice, and read it back with \code{read_face_selection()}.
+Starts a small web page from R that shows every image, or every sampled
+video frame, with its face boxes, and opens it in your web browser. Faces
+of the same person share a colour, and a People panel lists each person
+with the images, frames and tracks they appear in. With
+\code{select = TRUE}, you click faces, video tracks or people, then
+\strong{Send to R}, and \code{view_faces()} returns the chosen faces.
 }
 \details{
-The page is a folder with \code{index.html}, a few script files and small
-copies of the images or frames. It needs no server and no internet
-connection, and it makes no outside requests, so it also works after you
-copy the folder from a remote computer (for example a cluster) to your
-own.
+The page is served by R itself (with \pkg{httpuv}) on your own computer
+only (\code{127.0.0.1}), at an address with a random part that only you
+get. It makes no outside requests. While R waits for a selection, the
+console is busy; press Esc (Ctrl+C in a terminal) to stop waiting.
+
+With \code{live = FALSE}, no server is started: the page is written as a
+folder that also works when opened from disk, for example after copying it
+from a remote computer to yours. Its \strong{Export selection} button then
+downloads a file that \code{\link{read_face_selection}()} reads.
 
 
 Images without a face are shown too when \code{faces} is a complete
@@ -64,13 +83,14 @@ are extracted again (as in \code{\link{face_scores}}), unless
 
 In select mode, clicking a face in a still image selects that face;
 clicking a face in a video selects its whole track; clicking a person
-selects every face of that person. \strong{Export selection} downloads
-\code{selection-<task>.json}, and shows the same text in the page to copy
-if downloads are blocked.
+selects every face of that person.
 
-The page lists file names and shows the images, so share the folder only
-with people who may see them. It contains no face embeddings and no
-scores.
+When R runs on a remote computer over SSH, forward the port first (the
+message printed by \code{view_faces()} gives the command), or use
+\code{live = FALSE} and copy the folder.
+
+The page lists file names and shows the images, so share it only with
+people who may see them. It contains no face embeddings and no scores.
 }
 \examples{
 \dontrun{
@@ -79,10 +99,13 @@ images <- system.file("extdata", c("two-people.jpg", "boris-2.png", "trump2.jpg"
 faces <- detect_faces(images)
 view_faces(faces)
 
-# Choose faces in the browser, export, then read the downloaded file
-view_faces(faces, select = TRUE)
-chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
+# Click the faces to keep, then Send to R
+chosen <- view_faces(faces, select = TRUE)
 face_scores(chosen, classes = c("happy", "sad", "angry", "neutral"))
+
+# Without a server: a folder to copy, and a file to read back
+view_faces(faces, select = TRUE, live = FALSE, dir = "faces-page")
+chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
 }
 
 }

@@ -2,7 +2,8 @@
  *
  * view mode shows every image and sampled video frame with its face boxes,
  * coloured by person. select mode makes faces, tracks and people clickable
- * and exports the chosen face_ids for read_face_selection() in R.
+ * and sends the chosen face_ids to R, when R serves the page, or exports
+ * them for read_face_selection() when the page is opened from disk.
  * The logic lives in logic.js; this file only builds the page.
  */
 (function () {
@@ -41,6 +42,17 @@
   }
   function fatal(msg) {
     put(ui.main, el("div", { class: "card narrow", role: "alert" }, el("h2", { text: "Cannot open these faces" }), el("p", { text: msg })));
+  }
+
+  /* Talking to R, when R serves the page (window.TE_API, set in data.js) */
+  const api = window.TE_API || null;
+  async function postJson(url, data) {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data), cache: "no-store" });
+    let out = {};
+    try { out = await res.json(); } catch (e) { /* not JSON */ }
+    if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`);
+    return out;
   }
 
   /* Leaving the page: a download, and the same JSON shown in the page */
@@ -278,15 +290,42 @@
 
     ui.tools.append(el("label", { class: "check" },
       el("input", { type: "checkbox", id: "show-scores", onchange: (e) => { showScores = e.target.checked; render(); } }), "Show confidence"));
+    const selection = () => L.selectionDocument(task, chosen, new Date().toISOString());
+    const exportFile = () => deliver(`selection-${task.task_id}.json`, selection());
+    // Served by R: the choice goes straight back to view_faces()
+    async function sendToR(btn) {
+      btn.disabled = true;
+      try {
+        const doc = selection();
+        await postJson(api.selection, doc);
+        finished(`Sent ${plural(doc.selected_face_ids.length, "face")} to R.`);
+      } catch (e) {
+        btn.disabled = false;
+        say("R did not take the selection: " + e.message);
+        exportFile();
+      }
+    }
+    async function cancel() {
+      try { await postJson(api.cancel, { task_id: task.task_id }); } catch (e) { /* R stopped waiting already */ }
+      finished("Cancelled. R got no faces.");
+    }
+    function finished(msg) {
+      ui.foot.hidden = true;
+      put(ui.tools);
+      put(ui.main, el("div", { class: "card narrow", role: "status" }, el("h2", { text: msg }),
+        el("p", { class: "muted", text: "You can close this tab." })));
+    }
     if (selecting) {
       ui.foot.hidden = false;
+      const send = api && api.selection && el("button", { type: "button", class: "primary", id: "send-selection",
+        text: "Send to R", onclick: (e) => sendToR(e.currentTarget) });
       put(ui.foot, el("div", { role: "status" }, sumText),
         el("details", {}, el("summary", { text: "Show face_ids" }), sumIds),
         el("div", { class: "row" },
           el("button", { type: "button", onclick: () => { chosen.clear(); initial.forEach((id) => chosen.add(id)); sync(); }, text: "Reset" }),
           el("button", { type: "button", onclick: () => { chosen.clear(); sync(); }, text: "Clear" }),
-          el("button", { type: "button", class: "primary", id: "export-selection", text: "Export selection",
-            onclick: () => deliver(`selection-${task.task_id}.json`, L.selectionDocument(task, chosen, new Date().toISOString())) })));
+          send ? [api.cancel && el("button", { type: "button", id: "cancel-selection", onclick: cancel, text: "Cancel" }), send]
+            : el("button", { type: "button", class: "primary", id: "export-selection", text: "Export selection", onclick: exportFile })));
     }
     render();
   }
