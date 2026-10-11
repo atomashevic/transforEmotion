@@ -252,7 +252,16 @@ read_face_selection <- function(file, faces) {
   if (is.data.frame(sel$media) && all(c("media_id", "label") %in% names(sel$media))) {
     media <- .te_media_ids(faces)
     both <- match(sel$media$media_id, media$media_id)
-    if (any(!is.na(both) & basename(media$source[both]) != sel$media$label)) {
+    other <- !is.na(both) & basename(media$source[both]) != sel$media$label
+    # Files with the same names (another participant's folder, say) differ in
+    # content; files that cannot be read now are checked by name only
+    if ("key" %in% names(sel$media)) {
+      saved <- as.character(sel$media$key)
+      now <- rep(NA_character_, length(both))
+      now[!is.na(both)] <- .te_media_key(media$source[both[!is.na(both)]])
+      other <- other | (!is.na(saved) & !is.na(now) & saved != now)
+    }
+    if (any(other)) {
       stop("The selection was made on other images or another video than faces.", call. = FALSE)
     }
   }
@@ -279,6 +288,16 @@ read_face_selection <- function(file, faces) {
   sources <- c(sources, setdiff(unique(faces$source), sources))
   ids <- sprintf("m%0*d", max(2, nchar(length(sources))), seq_along(sources))
   data.frame(source = sources, media_id = ids, stringsAsFactors = FALSE)
+}
+
+#' @noRd
+# MD5 of each image or video file, so a selection is read with the same files
+# and not with others of the same name; NA for URLs and missing files
+.te_media_key <- function(sources) {
+  keys <- rep(NA_character_, length(sources))
+  local <- file.exists(sources) & !dir.exists(sources)
+  keys[local] <- unname(tools::md5sum(sources[local]))
+  keys
 }
 
 #' @noRd
@@ -336,6 +355,7 @@ read_face_selection <- function(file, faces) {
     size <- shown[1, c("img_w", "img_h")]
     media <- list(list(
       media_id = shown$media_id[1], media_type = "video", label = basename(shown$source[1]),
+      key = .te_media_key(shown$source[1]),
       img_w = size$img_w, img_h = size$img_h,
       frames = data.frame(frame = shown$frame, frame_index = shown$frame_index,
                           timestamp_s = shown$time, src = shown$file,
@@ -344,8 +364,10 @@ read_face_selection <- function(file, faces) {
     img_w <- rep(size$img_w, nrow(faces))
     img_h <- rep(size$img_h, nrow(faces))
   } else {
+    keys <- .te_media_key(shown$source)
     media <- lapply(seq_len(nrow(shown)), function(i) list(
       media_id = shown$media_id[i], media_type = "image", label = basename(shown$source[i]),
+      key = keys[i],
       src = shown$file[i], img_w = shown$img_w[i], img_h = shown$img_h[i]
     ))
     img_w <- shown$img_w[match(media_id, shown$media_id)]

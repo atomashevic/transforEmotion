@@ -34,9 +34,9 @@ page is a 404 that never reaches R.
 ## data.js (`schema: "transforEmotion.face_task"`, version 1.0.0)
 
 - `task_id`, `mode` (`"view"` or `"select"`), `title`, `instructions`.
-- `media`: one entry per image, `{media_id, media_type: "image", label, src, img_w, img_h}`,
-  or one video, `{media_id, media_type: "video", label, img_w, img_h, frames: [{frame, frame_index, timestamp_s, src}]}`.
-  `label` is the file name; `src` is a smaller copy under `media/`;
+- `media`: one entry per image, `{media_id, media_type: "image", label, key, src, img_w, img_h}`,
+  or one video, `{media_id, media_type: "video", label, key, img_w, img_h, frames: [{frame, frame_index, timestamp_s, src}]}`.
+  `label` is the file name; `key` its MD5; `src` is a smaller copy under `media/`;
   `img_w` and `img_h` are the original size in pixels.
 - `faces`: `{face_id, media_id, media_type, frame, frame_index, timestamp_s, img_w, img_h,
   x, y, w, h, confidence, detector, track_id, person_id, selected}`.
@@ -50,8 +50,10 @@ line up with the smaller copies without any arithmetic.
 
 `{schema, schema_version, task_id, exported_at, media: [{media_id, label}],
 selected_face_ids, selected_tracks: [{media_id, track_id}], selected_person_ids}`.
+`media` also carries each file's MD5 as `key` (null for URLs).
 `read_face_selection()` keeps the rows of the faces table whose ids are in
-`selected_face_ids`, after checking that `media` names the same files.
+`selected_face_ids`, after checking that `media` names the same files, by
+name and, where it can still read them, by content.
 `selected_person_ids` lists only people whose faces are all selected.
 
 ## Tests

@@ -110,7 +110,8 @@
       task_id: task.task_id,
       exported_at: exportedAt,
       // lets R check that the selection is read with the same images or video
-      media: (task.media || []).map((m) => ({ media_id: m.media_id, label: m.label })),
+      // (key: the file's MD5, when R could read it)
+      media: (task.media || []).map((m) => ({ media_id: m.media_id, label: m.label, key: m.key == null ? null : m.key })),
       selected_face_ids: selectedIds(faces, chosen),
       selected_tracks: Array.from(tracks.values()),
       selected_person_ids: persons
