@@ -36,7 +36,9 @@ A list with
 \describe{
   \item{frames}{\code{scores} (a data frame, or a list of them) in time
     order, with the class columns holding the posterior probabilities and a
-    \code{label} column with the most probable emotion.}
+    \code{label} column with the most probable emotion (replacing any
+    \code{label} column already there). No class may be called
+    \code{label}, \code{video} or \code{n_frames}.}
   \item{clips}{A data frame with one row per video: \code{video} (the name
     in the list, or its number), \code{n_frames}, the posterior of each
     class and \code{label}. The clip posterior is the posterior at the last

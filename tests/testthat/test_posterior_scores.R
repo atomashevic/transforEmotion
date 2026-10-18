@@ -146,6 +146,18 @@ test_that("rows are put in time order and one face per frame is required", {
   expect_error(posterior_scores(two_faces, calibration), "several faces in one frame")
 })
 
+test_that("classes cannot take the names of output columns", {
+  v <- clips$a
+  names(v)[2] <- "label"
+  expect_error(calibrate_scores(v), "cannot be called \"label\"")
+  names(v)[2] <- "n_frames"
+  expect_error(calibrate_scores(v), "cannot be called \"n_frames\"")
+  # A non-numeric label column already in scores is not a class and is replaced
+  w <- cbind(clips$a, label = "old")
+  result <- posterior_scores(w, calibrate_scores(clips))
+  expect_true(all(result$frames$label %in% classes))
+})
+
 test_that("inputs are checked", {
   calibration <- calibrate_scores(clips)
   expect_error(posterior_scores(clips, list()), "calibrate_scores")

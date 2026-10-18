@@ -179,7 +179,9 @@ calibrate_scores <- function(scores, labels = NULL, classes = NULL, alpha = NULL
 #' \describe{
 #'   \item{frames}{\code{scores} (a data frame, or a list of them) in time
 #'     order, with the class columns holding the posterior probabilities and a
-#'     \code{label} column with the most probable emotion.}
+#'     \code{label} column with the most probable emotion (replacing any
+#'     \code{label} column already there). No class may be called
+#'     \code{label}, \code{video} or \code{n_frames}.}
 #'   \item{clips}{A data frame with one row per video: \code{video} (the name
 #'     in the list, or its number), \code{n_frames}, the posterior of each
 #'     class and \code{label}. The clip posterior is the posterior at the last
@@ -273,6 +275,10 @@ print.te_calibration <- function(x, ...) {
   invisible(x)
 }
 
+# Columns posterior_scores() adds next to the class columns, so no class may have
+# these names
+.te_posterior_columns <- c("label", "video", "n_frames")
+
 # Columns of a faces table (detect_faces(), face_scores()) that are not scores
 .te_face_columns <- c("source", "frame", "frame_index", "time", "face", "track_id",
                       "person_id", "x", "y", "width", "height", "confidence",
@@ -299,6 +305,12 @@ print.te_calibration <- function(x, ...) {
   classes <- as.character(classes)
   if (length(classes) < 2) {
     stop("scores needs at least two class columns; name them with classes.", call. = FALSE)
+  }
+  reserved <- intersect(classes, .te_posterior_columns)
+  if (length(reserved)) {
+    stop("A class cannot be called ", paste0("\"", reserved, "\"", collapse = ", "),
+         ": posterior_scores() writes a column of that name. Rename the score column.",
+         call. = FALSE)
   }
   for (v in videos) {
     missing <- setdiff(classes, names(v))
