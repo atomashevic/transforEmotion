@@ -44,6 +44,14 @@ test_that("labels give a confusion matrix whose rows sum to one", {
   expect_warning(calibrate_scores(clips, labels = c("happy", NA, NA, NA)), "No labelled video")
 })
 
+test_that("frames that are all the same get the smallest alpha", {
+  still <- lapply(clips, function(v) v[rep(1, 30), ])
+  expect_equal(calibrate_scores(still)$alpha, 0.01)
+  # Too few frames to measure a correlation: each frame counts in full
+  short <- lapply(clips, function(v) v[1:2, ])
+  expect_equal(calibrate_scores(short)$alpha, 1)
+})
+
 test_that("with labels alpha is fitted only on emotions with two or more labelled videos", {
   # Only "sad" has two labelled videos, so alpha is fitted on them alone
   fitted <- calibrate_scores(clips, labels = c("happy", "sad", "neutral", "sad"))

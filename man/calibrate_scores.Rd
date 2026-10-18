@@ -75,7 +75,9 @@ evidence \eqn{L_t(c)} for each emotion \eqn{c}:
 0.1}, ten frames count as one independent look. Without labels it is
 \eqn{(1 - \rho) / (1 + \rho)}, where \eqn{\rho} is the correlation of the
 evidence between neighbouring frames, the share of independent
-observations in a series with that correlation.
+observations in a series with that correlation. Videos whose frames all
+have the same scores are left out of the correlation; if every video is
+like that, \eqn{\alpha} is 0.01.
 
 Scores are renormalised over \code{classes} in every row, which is the
 same as scoring with only those labels.

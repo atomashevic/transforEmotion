@@ -64,7 +64,9 @@
 #' 0.1}, ten frames count as one independent look. Without labels it is
 #' \eqn{(1 - \rho) / (1 + \rho)}, where \eqn{\rho} is the correlation of the
 #' evidence between neighbouring frames, the share of independent
-#' observations in a series with that correlation.
+#' observations in a series with that correlation. Videos whose frames all
+#' have the same scores are left out of the correlation; if every video is
+#' like that, \eqn{\alpha} is 0.01.
 #'
 #' Scores are renormalised over \code{classes} in every row, which is the
 #' same as scoring with only those labels.
@@ -416,15 +418,24 @@ print.te_calibration <- function(x, ...) {
 .te_alpha_autocorrelation <- function(mats, calibration) {
   num <- 0
   den <- 0
+  constant <- 0
   for (m in mats) {
     e <- .te_raw_evidence(m, calibration)
     e <- e[stats::complete.cases(m), , drop = FALSE]
     if (nrow(e) < 3) next
     e <- sweep(e, 2, colMeans(e))
+    # Every frame the same (a still video, duplicated frames): no variation to
+    # correlate, but the frames are copies of each other
+    if (max(abs(e)) < 1e-10) {
+      constant <- constant + 1
+      next
+    }
     num <- num + sum(e[-1, ] * e[-nrow(e), ])
     den <- den + sum(e^2)
   }
-  if (den == 0) return(1)
+  # Only videos of copies: weight them as one look per video. No video with
+  # three frames (images, very short clips): nothing says frames repeat
+  if (den == 0) return(if (constant > 0) 0.01 else 1)
   rho <- num / den
   if (rho <= 0) return(1)
   max(0.01, (1 - rho) / (1 + rho))
