@@ -19,6 +19,8 @@ auto_device <- function(device, transformer, verbose = TRUE)
     "ministral-3b" = 7000,
     "ministral-8b" = 18400,
     "qwen3-1.7b" = 1800,
+    "qwen2.5-1.5b" = 3100,
+    "qwen2.5-3b" = 6200,
     # New: PleIAs and JSON-tuned 1B (approximate)
     "pleias-rag-350m" = 360,
     "pleias-rag-1b" = 900,

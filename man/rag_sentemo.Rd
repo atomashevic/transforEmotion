@@ -10,7 +10,8 @@ rag_sentemo(
   task = c("emotion", "sentiment"),
   labels_set = NULL,
   max_labels = 5,
-  transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen3-1.7B", "Ministral-3B"),
+  transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen2.5-1.5B", "Qwen2.5-3B",
+    "Qwen3-1.7B", "Ministral-3B"),
   similarity_top_k = 5,
   response_mode = c("compact", "refine", "simple_summarize"),
   output = c("table", "json", "csv"),
@@ -39,6 +40,8 @@ for \code{task = "sentiment"}.}
   \item \code{"TinyLLAMA"} (default)
   \item \code{"Gemma3-1B"}
   \item \code{"Gemma3-4B"}
+  \item \code{"Qwen2.5-1.5B"}
+  \item \code{"Qwen2.5-3B"} (not gated, no token needed)
   \item \code{"Qwen3-0.6B"}
   \item \code{"Qwen3-1.7B"}
   \item \code{"Ministral-3B"}
@@ -58,10 +61,10 @@ jointly. Default FALSE.}
 (e.g., \code{device}, \code{keep_in_env}).}
 }
 \value{
-For Gemma3-1B/4B and \code{output = "table"}/\code{"csv"}, 
+For Gemma 3 and Qwen 2.5 and \code{output = "table"}/\code{"csv"}, 
   a data.frame with columns\cr
 \code{doc_id, text, label, confidence}.\cr
-For Gemma3-1B/4B and \code{output = "json"}, a JSON array 
+For Gemma 3 and Qwen 2.5 and \code{output = "json"}, a JSON array 
   of per-doc objects with those fields.\cr
 For other models, structured outputs are not supported; 
   the function falls back to \code{output = "text"} and 
@@ -80,6 +83,7 @@ texts <- c(
 )
 rag_sentemo(texts, task = "emotion", output = "table")
 rag_sentemo(texts, task = "sentiment", output = "json")
+rag_sentemo(texts, task = "emotion", output = "table", transformer = "Qwen2.5-3B")
 }
 
 }
