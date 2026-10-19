@@ -71,10 +71,11 @@ seconds are repeated to fill CLAP's 10-second input.
 
 General-purpose CLAP models separate speech emotions much less well than
 CLIP separates facial expressions. On RAVDESS (1440 acted English clips,
-eight emotions), \code{"laion-clap"} with one-word classes such as
-\code{"angry"} had an unweighted average recall of 0.13, where chance is
-0.125. Check the scores against labelled examples from your own data
-before you use them.
+eight emotions), \code{"laion-clap"} had an unweighted average recall of
+0.13 with one-word classes such as \code{"angry"} and 0.17 with classes
+such as \code{"a person speaking angrily"}, where chance is 0.125. Check
+the scores against labelled examples from your own data before you use
+them.
 }
 \section{Data Privacy}{
 

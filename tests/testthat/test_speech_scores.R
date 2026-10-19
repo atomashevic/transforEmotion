@@ -25,6 +25,33 @@ test_that("speech_scores checks its arguments before starting Python", {
   expect_error(speech_scores(wav, classes, model = ""), "laion-clap")
 })
 
+test_that("only http(s) URLs on YouTube hosts count as YouTube videos", {
+  yes <- c("https://www.youtube.com/watch?v=abc", "http://youtube.com/watch?v=abc",
+           "https://youtu.be/abc", "HTTPS://WWW.YouTube.com/watch?v=abc",
+           "https://m.youtube.com/watch?v=abc")
+  no <- c("/data/youtube/interview.wav", "youtube.wav", "https://example.com/youtube.wav",
+          "https://notyoutube.com/watch?v=abc", "https://youtube.com.example.org/a")
+  expect_true(all(.te_is_youtube_url(yes)))
+  expect_false(any(.te_is_youtube_url(no)))
+
+  # A local file in a folder named youtube is read, not downloaded
+  dir <- file.path(withr::local_tempdir(), "youtube")
+  dir.create(dir)
+  wav <- file.path(dir, "interview.wav")
+  file.create(wav)
+  required <- NULL
+  local_mocked_bindings(
+    .te_require = function(features) required <<- features,
+    .te_audio_py = function() list(
+      download_youtube_audio = function(...) stop("downloaded"),
+      speech_analyze = function(...) list(start = list(0), end = list(5),
+                                          scores = matrix(c(0.5, 0.5), nrow = 1))
+    )
+  )
+  expect_equal(nrow(speech_scores(wav, c("a", "b"))), 1)
+  expect_equal(required, "audio")
+})
+
 test_that("speech_scores maps the model name and builds one row per segment", {
   expect_equal(.te_speech_model_id("laion-clap"), "laion/larger_clap_music_and_speech")
   expect_equal(.te_speech_model_id("laion/larger_clap_general"), "laion/larger_clap_general")

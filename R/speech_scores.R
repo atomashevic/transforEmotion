@@ -40,10 +40,11 @@
 #'
 #' General-purpose CLAP models separate speech emotions much less well than
 #' CLIP separates facial expressions. On RAVDESS (1440 acted English clips,
-#' eight emotions), \code{"laion-clap"} with one-word classes such as
-#' \code{"angry"} had an unweighted average recall of 0.13, where chance is
-#' 0.125. Check the scores against labelled examples from your own data
-#' before you use them.
+#' eight emotions), \code{"laion-clap"} had an unweighted average recall of
+#' 0.13 with one-word classes such as \code{"angry"} and 0.17 with classes
+#' such as \code{"a person speaking angrily"}, where chance is 0.125. Check
+#' the scores against labelled examples from your own data before you use
+#' them.
 #'
 #' @return A data frame with one row per segment: \code{segment} (1, 2, ...),
 #'   \code{start} and \code{end} (the segment's times in the file, in seconds)
@@ -71,8 +72,8 @@ speech_scores <- function(audio, classes, nsegments = 100, segment_length = 5,
   if (!is.character(audio) || length(audio) != 1 || is.na(audio)) {
     stop("audio must be one file path or YouTube URL.", call. = FALSE)
   }
-  is_youtube <- grepl("youtu", audio, fixed = TRUE)
-  if (grepl("^http", audio) && !is_youtube) {
+  is_youtube <- .te_is_youtube_url(audio)
+  if (grepl("^https?://", audio, ignore.case = TRUE) && !is_youtube) {
     stop("You need to provide a YouTube video URL or a local file.", call. = FALSE)
   }
   if (!is_youtube && !file.exists(audio)) {
@@ -166,6 +167,13 @@ speech_scores <- function(audio, classes, nsegments = 100, segment_length = 5,
   colnames(scores) <- classes
   data.frame(segment = seq_along(starts), start = starts,
              end = as.numeric(unlist(res$end)), scores, check.names = FALSE)
+}
+
+#' @noRd
+# A YouTube video URL: http(s), host youtube.com (any subdomain) or youtu.be.
+# A local path that contains "youtube" is not one.
+.te_is_youtube_url <- function(x) {
+  grepl("^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)(/|$)", x, ignore.case = TRUE)
 }
 
 #' @noRd
