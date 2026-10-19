@@ -1,5 +1,7 @@
 # Changes in version 0.1.8 (in development)
 
+o FIX: `video_scores()` and `detect_faces()` failed for every YouTube URL with "Failed to get video stream after 3 attempts", because YouTube no longer offers progressive streams (video and audio in one file). They now download the highest H.264 video-only MP4 at 720p or below when no progressive stream exists, so a video kept with `save_video = TRUE` has no sound
+
 o CHANGE: faster, smaller Python setup. The first environment build downloads about 500 MB instead of about 3.4 GB on Linux, and later sessions reuse the cached environment in under a second
 
 o CHANGE: PyTorch is installed as a CPU-only build unless an NVIDIA GPU is detected (CUDA 12.6 build on Linux and Windows); override with `TE_FORCE_CPU=1` or `TRANSFOREMOTION_USE_GPU=1`

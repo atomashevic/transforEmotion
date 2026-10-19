@@ -52,7 +52,8 @@ get the same frames.}
 \code{save_dir}. Default is \code{FALSE}.}
 
 \item{save_video}{Logical. Keep a downloaded YouTube video in
-\code{save_dir}. Default is \code{FALSE}.}
+\code{save_dir}. Default is \code{FALSE}. The video has no sound when
+YouTube offers no stream with video and audio in one file.}
 
 \item{save_dir}{Directory for video frames. Default is a temporary
 directory.}

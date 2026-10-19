@@ -33,7 +33,8 @@
 #' @param save_frames Logical. Keep the extracted video frames in
 #'   \code{save_dir}. Default is \code{FALSE}.
 #' @param save_video Logical. Keep a downloaded YouTube video in
-#'   \code{save_dir}. Default is \code{FALSE}.
+#'   \code{save_dir}. Default is \code{FALSE}. The video has no sound when
+#'   YouTube offers no stream with video and audio in one file.
 #' @param save_dir Directory for video frames. Default is a temporary
 #'   directory.
 #' @param video_name Name used for the frame files
