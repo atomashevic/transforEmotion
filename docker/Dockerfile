@@ -7,7 +7,7 @@
 #   docker build -f docker/Dockerfile --build-arg GPU=1 -t transforemotion:cuda .
 #
 # Build arguments:
-#   EXTRAS  comma-separated feature sets: rag, youtube, findingemo, gpu
+#   EXTRAS  comma-separated feature sets: rag, youtube, audio, findingemo, gpu
 #           ("rag" also downloads the rag() models, about 2.3 GB)
 #   MODELS  comma-separated extra Hugging Face model IDs to include
 #   GPU     1 for the CUDA 12.6 build of PyTorch (run with --gpus all)

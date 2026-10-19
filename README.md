@@ -49,7 +49,7 @@ library(transforEmotion)
 setup_modules()
 ```
 
-Optional features add their Python packages the first time they are used: `rag()` adds LlamaIndex and downloads a language model (TinyLLAMA, about 2 GB), `video_scores()` adds `pytubefix` for YouTube URLs, and the FindingEmo functions add `findingemo-light`. To prepare them in advance, run `setup_modules(extras = c("rag", "youtube", "findingemo"))`.
+Optional features add their Python packages the first time they are used: `rag()` adds LlamaIndex and downloads a language model (TinyLLAMA, about 2 GB), `video_scores()` adds `pytubefix` for YouTube URLs, `speech_scores()` adds `av` (PyAV) to read audio, and the FindingEmo functions add `findingemo-light`. To prepare them in advance, run `setup_modules(extras = c("rag", "youtube", "audio", "findingemo"))`.
 
 Then run an analysis:
 

@@ -1,5 +1,7 @@
 # Changes in version 0.1.8 (in development)
 
+o ADD: `speech_scores()` scores segments of the audio track of an audio file, a video file or a YouTube video against user-defined classes with LAION CLAP (`laion/larger_clap_music_and_speech`, zero-shot), one row per segment with its start and end time. `nsegments`, `segment_length` (at most 10 s), `start`, `end` and `uniform` choose the segments, as `nframes`, `start`, `end` and `uniform` choose the frames in `video_scores()`. Audio is read with PyAV (`av`, which bundles FFmpeg), added on first use; prepare it with `setup_modules(extras = "audio")`. For YouTube URLs only the audio is downloaded
+
 o FIX: `video_scores()` and `detect_faces()` failed for every YouTube URL with "Failed to get video stream after 3 attempts", because YouTube no longer offers progressive streams (video and audio in one file). They now download the highest H.264 video-only MP4 at 720p or below when no progressive stream exists, so a video kept with `save_video = TRUE` has no sound
 
 o CHANGE: faster, smaller Python setup. The first environment build downloads about 500 MB instead of about 3.4 GB on Linux, and later sessions reuse the cached environment in under a second

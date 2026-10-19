@@ -35,7 +35,7 @@ test_that("feature sets are defined and core excludes heavy unused packages", {
   expect_true(any(grepl("^opencv-python-headless", core)))
   expect_false(any(grepl("tensorflow|bitsandbytes|llama-index|pytubefix", core)))
 
-  for (feature in c("rag", "youtube", "findingemo", "gpu")) {
+  for (feature in c("rag", "youtube", "audio", "findingemo", "gpu")) {
     expect_type(transforEmotion:::.te_py_requirements(feature), "character")
   }
   expect_error(transforEmotion:::.te_py_requirements("nope"), "Unknown Python feature set")
@@ -129,7 +129,7 @@ test_that("a running Python that already has the packages is used as is", {
 
 test_that("every package of a feature set is checked by its import name", {
   modules <- transforEmotion:::.te_feature_modules
-  for (feature in c("core", "rag", "youtube", "findingemo", "gpu")) {
+  for (feature in c("core", "rag", "youtube", "audio", "findingemo", "gpu")) {
     expect_length(modules[[feature]],
                   length(transforEmotion:::.te_py_requirements(feature)))
   }

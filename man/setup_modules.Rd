@@ -16,6 +16,7 @@ together with the core packages:
 \describe{
   \item{\code{"rag"}}{LlamaIndex packages used by \code{rag()}}
   \item{\code{"youtube"}}{\code{pytubefix}, used by \code{video_scores()} for YouTube URLs}
+  \item{\code{"audio"}}{\code{av} (PyAV, with FFmpeg), used by \code{speech_scores()} to read audio}
   \item{\code{"findingemo"}}{\code{findingemo-light}, used by the FindingEmo dataset functions}
   \item{\code{"gpu"}}{\code{bitsandbytes}, used for 4-bit quantization of EVA-CLIP-8B}
 }}
