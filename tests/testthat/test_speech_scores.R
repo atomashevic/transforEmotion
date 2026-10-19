@@ -144,6 +144,21 @@ test_that("audio is decoded to mono at the requested rate and cut", {
 
   video <- system.file("extdata", "two-people.mp4", package = "transforEmotion")
   expect_error(te_audio$load_audio(video), "No audio stream")
+  expect_error(te_audio$audio_duration(video), "No audio stream")
+})
+
+test_that("only the samples inside the windows are kept", {
+  skip_without_audio_python()
+  te_audio <- .te_audio_py()
+  wav <- write_tone(withr::local_tempfile(fileext = ".wav"), 30)
+  expect_equal(te_audio$audio_duration(wav), 30, tolerance = 1e-3)
+
+  windows <- list(c(1, 2), c(14, 16.5), c(29, 31))
+  kept <- te_audio$load_windows(wav, windows, 48000L)
+  expect_equal(vapply(kept, length, 1), c(1, 2.5, 1) * 48000, tolerance = 1e-3)
+  # Each window holds the same samples as decoding that range alone
+  expect_equal(kept[[2]], te_audio$load_audio(wav, 14, 16.5, 48000L))
+  expect_length(te_audio$load_windows(wav, list(), 48000L), 0)
 })
 
 test_that("speech_scores scores each segment with LAION CLAP", {

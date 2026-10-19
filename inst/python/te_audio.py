@@ -16,45 +16,81 @@ import numpy as np
 _models = {}
 
 
+def _mono_chunks(path, sampling_rate):
+    """Yield the first audio stream of a file as mono float32 sample chunks."""
+    import av
+    with av.open(path) as container:
+        if not container.streams.audio:
+            raise ValueError("No audio stream in: " + path)
+        stream = container.streams.audio[0]
+        resampler = av.AudioResampler(format="flt", layout="mono", rate=sampling_rate)
+        for frame in container.decode(stream):
+            for out in resampler.resample(frame):
+                yield out.to_ndarray().reshape(-1)
+        for out in resampler.resample(None):  # flush the resampler
+            yield out.to_ndarray().reshape(-1)
+
+
+def load_windows(path, windows, sampling_rate=48000):
+    """Decode the samples of each (start, stop) window, in seconds.
+
+    The windows must be sorted and must not overlap; stop=None means the end
+    of the audio. The file is decoded once, only the samples in the windows
+    are kept, and decoding stops at the end of the last window. Returns one
+    mono float32 array per window.
+    """
+    bounds = [(int(round(s * sampling_rate)),
+               None if e is None else int(round(e * sampling_rate)))
+              for s, e in windows]
+    last = None if any(e is None for _, e in bounds) else max([e for _, e in bounds] + [0])
+    kept = [[] for _ in bounds]
+    seen = 0  # samples decoded so far
+    i = 0     # first window that does not end before the current chunk
+    if last != 0:
+        for samples in _mono_chunks(path, sampling_rate):
+            lo, hi = seen, seen + len(samples)
+            seen = hi
+            while i < len(bounds) and bounds[i][1] is not None and bounds[i][1] <= lo:
+                i += 1
+            j = i
+            while j < len(bounds) and bounds[j][0] < hi:
+                first, stop = bounds[j]
+                a = max(first, lo) - lo
+                b = (hi if stop is None else min(stop, hi)) - lo
+                if b > a:
+                    kept[j].append(samples[a:b])
+                j += 1
+            if last is not None and seen >= last:
+                break
+    return [np.concatenate(k).astype(np.float32, copy=False) if k
+            else np.zeros(0, dtype=np.float32) for k in kept]
+
+
 def load_audio(path, start=0.0, stop=None, sampling_rate=48000):
     """Decode the first audio stream of a file to mono float32 samples.
 
     Returns the samples from `start` to `stop` seconds (stop=None: to the end
     of the audio). Decoding stops once `stop` is reached.
     """
+    return load_windows(path, [(start, stop)], sampling_rate)[0]
+
+
+def audio_duration(path, sampling_rate=48000):
+    """Length of the first audio stream of a file, in seconds.
+
+    Taken from the file's metadata; files without it are decoded once and
+    their samples counted, without keeping them.
+    """
     import av
-    first = int(round(start * sampling_rate))
-    last = None if stop is None else int(round(stop * sampling_rate))
-    chunks = []
-    seen = 0  # samples decoded so far
-
-    def keep(frames):
-        nonlocal seen
-        for out in frames:
-            samples = out.to_ndarray().reshape(-1)
-            lo, hi = seen, seen + len(samples)
-            seen = hi
-            a = max(first, lo) - lo
-            b = (hi if last is None else min(last, hi)) - lo
-            if b > a:
-                chunks.append(samples[a:b])
-        return last is not None and seen >= last
-
     with av.open(path) as container:
         if not container.streams.audio:
             raise ValueError("No audio stream in: " + path)
         stream = container.streams.audio[0]
-        resampler = av.AudioResampler(format="flt", layout="mono", rate=sampling_rate)
-        done = False
-        for frame in container.decode(stream):
-            if keep(resampler.resample(frame)):
-                done = True
-                break
-        if not done:
-            keep(resampler.resample(None))  # flush the resampler
-    if not chunks:
-        return np.zeros(0, dtype=np.float32)
-    return np.concatenate(chunks).astype(np.float32, copy=False)
+        if stream.duration and stream.time_base:
+            return float(stream.duration * stream.time_base)
+        if container.duration:
+            return container.duration / av.time_base
+    return sum(len(c) for c in _mono_chunks(path, sampling_rate)) / sampling_rate
 
 
 def download_youtube_audio(url, out_dir, name):
@@ -159,18 +195,30 @@ def speech_analyze(path, labels, nsegments=100, segment_length=5.0, start=0.0, e
     sampling_rate = processor.feature_extractor.sampling_rate
     start = float(start)
     stop = None if end == -1 else float(end)
-    if not uniform:
+    if uniform:
+        # Plan the segments from the length of the audio, then decode only them,
+        # so a long recording is never held in memory
+        total = audio_duration(path, sampling_rate)
+        duration = (total if stop is None else min(stop, total)) - start
+        times = plan_segments(duration, nsegments, segment_length, uniform)
+        segments = load_windows(path, [(start + s, start + e) for s, e in times],
+                                sampling_rate)
+        # The metadata length can be slightly off: cut segments at the real end
+        kept = [((s, s + len(x) / sampling_rate), x)
+                for (s, _), x in zip(times, segments) if len(x)]
+        times = [t for t, _ in kept]
+        segments = [x for _, x in kept]
+    else:
         # Consecutive segments need only the first nsegments * segment_length seconds
         needed = start + int(nsegments) * float(segment_length)
         stop = needed if stop is None else min(stop, needed)
-    samples = load_audio(path, start, stop, sampling_rate)
-    duration = len(samples) / sampling_rate
-    if duration <= 0:
+        samples = load_audio(path, start, stop, sampling_rate)
+        times = plan_segments(len(samples) / sampling_rate, nsegments, segment_length)
+        segments = [samples[int(round(s * sampling_rate)):int(round(e * sampling_rate))]
+                    for s, e in times]
+    if not times:
         raise ValueError("No audio between %g s and %s." %
                          (start, "the end" if end == -1 else "%g s" % float(end)))
-    times = plan_segments(duration, nsegments, segment_length, uniform)
-    segments = [samples[int(round(s * sampling_rate)):int(round(e * sampling_rate))]
-                for s, e in times]
     scores = score_segments(segments, labels, model_name, local_model_path, batch_size)
     return dict(start=[start + s for s, _ in times], end=[start + e for _, e in times],
                 scores=scores)
