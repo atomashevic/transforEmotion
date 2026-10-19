@@ -98,6 +98,17 @@ test_that("posterior_scores() returns posteriors per frame and per clip", {
   expect_equal(nrow(one$clips), 1)
 })
 
+test_that("videos without a name are numbered by their position", {
+  calibration <- calibrate_scores(clips)
+  partly <- list(first = clips$a, clips$b, third = clips$c, clips$d)
+  result <- posterior_scores(partly, calibration)
+  expect_equal(result$clips$video, c("first", "2", "third", "4"))
+  expect_named(result$frames, c("first", "2", "third", "4"))
+  unnamed <- posterior_scores(unname(clips), calibration)
+  expect_equal(unnamed$clips$video, 1:4)
+  expect_null(names(unnamed$frames))
+})
+
 test_that("correcting for the model's lean finds the shown emotion", {
   # Raw scores favour neutral in every clip; the calibrated posterior does not
   calibration <- calibrate_scores(clips)

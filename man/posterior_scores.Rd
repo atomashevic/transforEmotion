@@ -40,7 +40,8 @@ A list with
     \code{label} column already there). No class may be called
     \code{label}, \code{video} or \code{n_frames}.}
   \item{clips}{A data frame with one row per video: \code{video} (the name
-    in the list, or its number), \code{n_frames}, the posterior of each
+    in the list, or its number for a video without a name; \code{frames}
+    is named the same way), \code{n_frames}, the posterior of each
     class and \code{label}. The clip posterior is the posterior at the last
     frame, which has seen every frame; it is the same for both methods. With
     \code{stay} near 1 it is the posterior of one emotion for the whole
