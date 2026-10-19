@@ -52,6 +52,14 @@ test_that("only http(s) URLs on YouTube hosts count as YouTube videos", {
   expect_equal(required, "audio")
 })
 
+test_that("setup_modules downloads the CLAP model only with the audio extra", {
+  clap <- "laion/larger_clap_music_and_speech"
+  expect_false(clap %in% .te_setup_models(character()))
+  expect_false(clap %in% .te_setup_models("rag"))
+  expect_true(clap %in% .te_setup_models("audio"))
+  expect_true(all(.te_default_models %in% .te_setup_models("audio")))
+})
+
 test_that("speech_scores maps the model name and builds one row per segment", {
   expect_equal(.te_speech_model_id("laion-clap"), "laion/larger_clap_music_and_speech")
   expect_equal(.te_speech_model_id("laion/larger_clap_general"), "laion/larger_clap_general")

@@ -59,7 +59,9 @@ check_nvidia_gpu <- function() {
 #' sentence-similarity models into the Hugging Face cache (about 1 GB), the
 #' face recognition model \code{\link{detect_faces}} uses (10 MB), and,
 #' when \code{extras} includes \code{"rag"}, the default embedding model and
-#' TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
+#' TinyLLAMA used by \code{rag()} (about 2.3 GB), and, when \code{extras}
+#' includes \code{"audio"}, the LAION CLAP model used by
+#' \code{\link{speech_scores}} (about 800 MB). Default \code{TRUE}.
 #' Skipped when \code{HF_HUB_OFFLINE} is set.
 #' @param models Character vector of additional Hugging Face model IDs to
 #' download, such as \code{"facebook/bart-large-mnli"}. Use it to prepare
@@ -111,9 +113,7 @@ setup_modules <- function(extras = character(), download_models = TRUE,
   # NLTK data llama-index would otherwise download on first import
   if ("rag" %in% extras && !.te_hf_offline()) .te_download_nltk_data()
 
-  defaults <- if (isTRUE(download_models)) {
-    c(.te_default_models, if ("rag" %in% extras) .te_default_rag_models)
-  }
+  defaults <- if (isTRUE(download_models)) .te_setup_models(extras)
   # Face recognition model for detect_faces() (not on the Hugging Face Hub)
   if (isTRUE(download_models) && !.te_hf_offline()) .te_sface_model()
   if (length(c(defaults, models)) && .te_hf_offline()) {
@@ -125,6 +125,16 @@ setup_modules <- function(extras = character(), download_models = TRUE,
   for (repo in setdiff(models, defaults)) .te_download_model(repo)
 
   invisible(NULL)
+}
+
+#' @noRd
+# Models setup_modules() downloads for the chosen extras
+.te_setup_models <- function(extras) {
+  c(
+    .te_default_models,
+    if ("rag" %in% extras) .te_default_rag_models,
+    if ("audio" %in% extras) unname(.te_speech_models)  # speech_scores()
+  )
 }
 
 #' @noRd

@@ -25,7 +25,9 @@ together with the core packages:
 sentence-similarity models into the Hugging Face cache (about 1 GB), the
 face recognition model \code{\link{detect_faces}} uses (10 MB), and,
 when \code{extras} includes \code{"rag"}, the default embedding model and
-TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
+TinyLLAMA used by \code{rag()} (about 2.3 GB), and, when \code{extras}
+includes \code{"audio"}, the LAION CLAP model used by
+\code{\link{speech_scores}} (about 800 MB). Default \code{TRUE}.
 Skipped when \code{HF_HUB_OFFLINE} is set.}
 
 \item{models}{Character vector of additional Hugging Face model IDs to
