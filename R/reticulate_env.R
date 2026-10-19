@@ -91,6 +91,7 @@ te_should_use_gpu <- function() {
   rag = c("llama_index.core", "llama_index.llms.huggingface",
           "llama_index.embeddings.huggingface", "pypdf", "rank_bm25"),
   youtube = "pytubefix",
+  audio = "av",
   findingemo = c("findingemo_light", "termcolor"),
   gpu = "bitsandbytes"
 )
@@ -130,6 +131,8 @@ te_should_use_gpu <- function() {
       "rank-bm25"
     ),
     youtube = "pytubefix",
+    # Audio decoding for speech_scores(); the wheels bundle FFmpeg
+    audio = "av>=14,<20",
     findingemo = c("findingemo-light", "termcolor"),
     # 4-bit quantization for EVA-CLIP-8B
     gpu = "bitsandbytes",
@@ -139,10 +142,10 @@ te_should_use_gpu <- function() {
 
 #' @noRd
 .te_check_extras <- function(extras) {
-  unknown <- setdiff(extras, c("rag", "youtube", "findingemo", "gpu"))
+  unknown <- setdiff(extras, c("rag", "youtube", "audio", "findingemo", "gpu"))
   if (length(unknown)) {
     stop("Unknown extras: ", paste(unknown, collapse = ", "),
-         ". Choose from: rag, youtube, findingemo, gpu.", call. = FALSE)
+         ". Choose from: rag, youtube, audio, findingemo, gpu.", call. = FALSE)
   }
   unique(extras)
 }

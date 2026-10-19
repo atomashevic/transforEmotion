@@ -16,6 +16,7 @@ together with the core packages:
 \describe{
   \item{\code{"rag"}}{LlamaIndex packages used by \code{rag()}}
   \item{\code{"youtube"}}{\code{pytubefix}, used by \code{video_scores()} for YouTube URLs}
+  \item{\code{"audio"}}{\code{av} (PyAV, with FFmpeg), used by \code{speech_scores()} to read audio}
   \item{\code{"findingemo"}}{\code{findingemo-light}, used by the FindingEmo dataset functions}
   \item{\code{"gpu"}}{\code{bitsandbytes}, used for 4-bit quantization of EVA-CLIP-8B}
 }}
@@ -24,7 +25,9 @@ together with the core packages:
 sentence-similarity models into the Hugging Face cache (about 1 GB), the
 face recognition model \code{\link{detect_faces}} uses (10 MB), and,
 when \code{extras} includes \code{"rag"}, the default embedding model and
-TinyLLAMA used by \code{rag()} (about 2.3 GB). Default \code{TRUE}.
+TinyLLAMA used by \code{rag()} (about 2.3 GB), and, when \code{extras}
+includes \code{"audio"}, the LAION CLAP model used by
+\code{\link{speech_scores}} (about 800 MB). Default \code{TRUE}.
 Skipped when \code{HF_HUB_OFFLINE} is set.}
 
 \item{models}{Character vector of additional Hugging Face model IDs to

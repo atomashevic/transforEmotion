@@ -51,7 +51,8 @@ sampling settings, so \code{nframes}, \code{start}, \code{end},
 
 \item{save_video}{Logical indicating whether to save the analyzed video. Default is FALSE.
 A saved YouTube video has no sound when YouTube offers no stream with
-video and audio in one file, which is now the usual case.}
+video and audio in one file, which is now the usual case; use
+\code{\link{speech_scores}} for the audio.}
 
 \item{save_frames}{Logical indicating whether to save the analyzed frames. Default is FALSE.}
 

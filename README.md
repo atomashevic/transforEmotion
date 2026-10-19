@@ -49,7 +49,7 @@ library(transforEmotion)
 setup_modules()
 ```
 
-Optional features add their Python packages the first time they are used: `rag()` adds LlamaIndex and downloads a language model (TinyLLAMA, about 2 GB), `video_scores()` adds `pytubefix` for YouTube URLs, and the FindingEmo functions add `findingemo-light`. To prepare them in advance, run `setup_modules(extras = c("rag", "youtube", "findingemo"))`.
+Optional features add their Python packages the first time they are used: `rag()` adds LlamaIndex and downloads a language model (TinyLLAMA, about 2 GB), `video_scores()` adds `pytubefix` for YouTube URLs, `speech_scores()` adds `av` (PyAV) to read audio, and the FindingEmo functions add `findingemo-light`. To prepare them in advance, run `setup_modules(extras = c("rag", "youtube", "audio", "findingemo"))`.
 
 Then run an analysis:
 
@@ -341,6 +341,30 @@ image_scores(image, classes = emotions, model = "oai-large-fer")
 ```
 
 > **Note:** The memory requirements listed above are approximate and represent the minimum RAM needed. For optimal performance, we recommend having at least 16GB of system RAM when using any of these models. If you're processing videos or multiple images in batch, more RAM might be needed. When using GPU acceleration, similar VRAM requirements apply. We recommend using 'oai-base' or 'oai-large' for most applications as they provide a good balance between accuracy and resource usage.
+
+## Speech Example
+
+`speech_scores()` splits the audio track of an audio file, a video file or a YouTube video into segments and scores each segment against the classes with a CLAP audio-text model (`laion/larger_clap_music_and_speech`), zero-shot, as `image_scores()` does with CLIP. The segments are chosen as `video_scores()` chooses frames: `nsegments`, `segment_length` (at most 10 seconds), `start`, `end` and `uniform`.
+
+```R
+emotions <- c("a person speaking angrily", "a person speaking happily",
+              "a person speaking sadly", "a person speaking in a neutral voice")
+
+# Consecutive 5-second segments from 10 s to 120 s
+result <- speech_scores("interview.mp4", classes = emotions,
+                        nsegments = 20, segment_length = 5, start = 10, end = 120)
+```
+
+The result has one row per segment, with `segment`, `start` and `end` (seconds in the file) and one column of scores per class.
+
+LAION CLAP is a general audio model and separates speech emotions poorly. On RAVDESS (1440 acted English clips from 24 actors, one segment per clip, clip prediction = highest score), unweighted average recall was:
+
+| Classes | `"angry"`, `"happy"`, ... | `"a person speaking angrily"`, ... |
+|---|---|---|
+| 8 emotions (chance 0.125) | 0.13 | 0.17 |
+| angry, happy, neutral, sad (chance 0.25) | 0.28 | 0.33 |
+
+Most clips were predicted as neutral. Use the scores for exploration only, and validate them on a labelled sample from your own data (see `evaluate_emotions()`).
 
 ## Vision Model Registry (experimental)
 

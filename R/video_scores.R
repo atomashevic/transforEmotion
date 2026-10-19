@@ -22,7 +22,8 @@
 #' @param ffreq The frame frequency for sampling frames from the video. Default is 15.
 #' @param save_video Logical indicating whether to save the analyzed video. Default is FALSE.
 #'   A saved YouTube video has no sound when YouTube offers no stream with
-#'   video and audio in one file, which is now the usual case.
+#'   video and audio in one file, which is now the usual case; use
+#'   \code{\link{speech_scores}} for the audio.
 #' @param save_frames Logical indicating whether to save the analyzed frames. Default is FALSE.
 #' @param save_dir The directory to save the analyzed frames. Default is "temp/".
 #' @param video_name The name of the analyzed video. Default is "temp".
