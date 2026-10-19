@@ -58,6 +58,8 @@ o ADD: `face_selection` in `image_scores()`, `image_scores_dir()` and `video_sco
 
 o ADD: same-person recognition uses OpenCV's SFace model (10 MB, Apache 2.0), downloaded on first use or by `setup_modules()`; set `TRANSFOREMOTION_SFACE_MODEL` to use a copy on a computer without internet access. Face embeddings stay in memory and are never returned or saved; `identify = FALSE` turns recognition off
 
+o ADD: `calibrate_scores()` and `posterior_scores()` treat frame scores as noisy evidence instead of taking them at face value. `calibrate_scores()` learns a model's average score for each class (its lean towards some labels) and, from videos with known emotions, its confusions; `posterior_scores()` combines each frame with the frames before it (a hidden Markov model over the emotions; `method = "smooth"` also uses the frames after it) and returns posteriors for every frame and for each clip. On held-out CREMA-D clips with six labels, clip accuracy against the face-only vote rose from 0.55 to 0.59 without labels and to 0.61 with labels for "oai-base-fer", and from 0.28 to 0.37 and 0.40 for "oai-base"; the top label of a frame changes about 0.5 times a second instead of 3 to 4
+
 o CHANGE: faces are found with OpenCV's YuNet detector (a 230 KB model shipped with the package) instead of a Haar cascade. YuNet also finds small, tilted and partly turned faces, so the face that is scored, and therefore the scores, can differ from earlier versions; `face_detector = "haar"` in `image_scores()`, `image_scores_dir()` and `video_scores()` reproduces earlier results
 
 o CHANGE: with YuNet, images are rotated by their EXIF orientation before faces are detected, as phone photos are displayed
