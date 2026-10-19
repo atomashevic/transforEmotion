@@ -360,6 +360,40 @@ skip_without_face_python <- function() {
 
 fixture <- function(name) system.file("extdata", name, package = "transforEmotion")
 
+test_that("the YouTube download picks progressive, else H.264 video-only MP4", {
+  skip_without_face_python()
+  te_faces <- .te_faces_py()
+  # Fake pytubefix streams: only the attributes pick_youtube_stream() reads
+  streams <- function(...) {
+    rows <- list(...)
+    types <- reticulate::import("types")
+    lapply(rows, function(r) do.call(types$SimpleNamespace, r))
+  }
+  stream <- function(res, codec, progressive = FALSE, audio = progressive, subtype = "mp4") {
+    list(resolution = res, video_codec = codec, subtype = subtype, is_progressive = progressive,
+         includes_video_track = TRUE, includes_audio_track = audio)
+  }
+  pick <- function(...) {
+    s <- te_faces$pick_youtube_stream(streams(...))
+    if (is.null(s)) NULL else c(s$resolution, s$video_codec)
+  }
+  # A progressive stream is preferred, the highest one
+  expect_equal(pick(stream("360p", "avc1.42001E", TRUE), stream("720p", "avc1.4D401F"),
+                    stream("240p", "avc1.4D4015", TRUE)), c("360p", "avc1.42001E"))
+  # Otherwise H.264 video-only up to 720p; AV1, WebM and audio-only are skipped
+  adaptive <- list(stream("1080p", "avc1.640028"), stream("720p", "av01.0.05M.08"),
+                   stream("720p", "vp9", subtype = "webm"), stream("480p", "avc1.4D401E"),
+                   stream("720p", "avc1.4D401F"),
+                   list(resolution = NULL, video_codec = NULL, subtype = "mp4",
+                        is_progressive = FALSE, includes_video_track = FALSE,
+                        includes_audio_track = TRUE))
+  expect_equal(do.call(pick, adaptive), c("720p", "avc1.4D401F"))
+  # All taller than 720p: the lowest
+  expect_equal(pick(stream("2160p", "avc1.640033"), stream("1080p", "avc1.640028")),
+               c("1080p", "avc1.640028"))
+  expect_null(pick(stream("720p", "av01.0.05M.08")))
+})
+
 test_that("YuNet and Haar find the face in each fixture", {
   skip_without_face_python()
   images <- fixture(c("boris-1.png", "boris-2.png", "trump1.jpg", "trump2.jpg"))

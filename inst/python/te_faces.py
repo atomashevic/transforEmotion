@@ -324,20 +324,49 @@ def assign_person_ids(units, threshold=0.363):
     return ids
 
 
+def _height(stream):
+    """The stream's height in pixels from its resolution ("720p"), or None."""
+    digits = "".join(ch for ch in (stream.resolution or "").split("p")[0] if ch.isdigit())
+    return int(digits) if digits else None
+
+
+def pick_youtube_stream(streams, max_height=720):
+    """The stream download_youtube() saves, or None when there is none.
+
+    The highest progressive MP4 (video with audio) if YouTube offers one.
+    Otherwise the highest H.264 video-only MP4 no taller than max_height, or
+    the lowest one if all are taller: only the frames are scored, so no audio
+    is needed, and OpenCV may not decode the AV1 streams YouTube also offers.
+    """
+    streams = [s for s in streams if s.subtype == "mp4" and _height(s) is not None]
+    progressive = [s for s in streams if s.is_progressive]
+    if progressive:
+        return max(progressive, key=_height)
+    h264 = [s for s in streams if not s.is_progressive and s.includes_video_track
+            and not s.includes_audio_track and (s.video_codec or "").startswith("avc1")]
+    if not h264:
+        return None
+    low = [s for s in h264 if _height(s) <= max_height]
+    return max(low, key=_height) if low else min(h264, key=_height)
+
+
 def download_youtube(url, frame_dir, video_name):
-    """Download a YouTube video to <frame_dir>/<video_name>.mp4; return its path."""
+    """Download a YouTube video to <frame_dir>/<video_name>.mp4; return its path.
+
+    The file has no audio track when YouTube offers no progressive stream
+    (see pick_youtube_stream()).
+    """
     from pytubefix import YouTube  # optional dependency, added by the R functions
     yt = YouTube(url)
     video = None
     for _ in range(3):  # three attempts to get the video stream
         try:
-            video = yt.streams.filter(progressive=True, file_extension="mp4") \
-                .order_by("resolution").desc().first()
+            video = pick_youtube_stream(yt.streams)
             break
         except Exception:
             print("Error occurred while getting video stream. Retrying ... ")
     if video is None:
-        raise ValueError("Failed to get video stream after 3 attempts.")
+        raise ValueError("Failed to get an H.264 MP4 video stream for: " + url)
     video_path = os.path.join(frame_dir, video_name + ".mp4")
     print(f"Downloading video to {video_path}")
     for _ in range(3):
