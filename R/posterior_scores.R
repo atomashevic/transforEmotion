@@ -24,9 +24,9 @@
 #'   \code{NULL} (default) estimates it: with labels, as the value that gives
 #'   the labelled videos the best clip posteriors (log score, with each video
 #'   left out of the confusion matrix it is scored with, and only videos whose
-#'   emotion has at least one other labelled video); without labels, or with
-#'   no such video, from the correlation of the evidence between neighbouring
-#'   frames.
+#'   emotion has at least one other labelled video), but never above the
+#'   value from the correlation of the evidence between neighbouring frames;
+#'   without labels, or with no such video, that value itself.
 #'
 #' @return An object of class \code{te_calibration}, a list with
 #' \describe{
@@ -471,7 +471,10 @@ print.te_calibration <- function(x, ...) {
 .te_alpha_fit <- function(mats, labels, counts, calibration) {
   repeated <- names(which(table(labels) >= 2))
   labelled <- which(!is.na(labels) & labels %in% repeated)
-  if (length(labelled) == 0) return(.te_alpha_autocorrelation(mats, calibration))
+  # The correlation between neighbouring frames bounds alpha from above: the log
+  # score can make frames count less, never more, than their independent share
+  upper <- .te_alpha_autocorrelation(mats, calibration)
+  if (length(labelled) == 0) return(upper)
   totals <- lapply(labelled, function(i) {
     confusion <- .te_confusion(counts, labels, calibration$classes, leave_out = i)
     colSums(.te_raw_evidence(mats[[i]], calibration, confusion))
@@ -483,5 +486,5 @@ print.te_calibration <- function(x, ...) {
       s[truth[j]] - (max(s) + log(sum(exp(s - max(s)))))
     }, numeric(1)))
   }
-  stats::optimize(score, c(1e-4, 1), maximum = TRUE)$maximum
+  stats::optimize(score, c(1e-4, upper), maximum = TRUE)$maximum
 }

@@ -25,9 +25,9 @@ column except the columns of a faces table (\code{frame}, \code{time},
 \code{NULL} (default) estimates it: with labels, as the value that gives
 the labelled videos the best clip posteriors (log score, with each video
 left out of the confusion matrix it is scored with, and only videos whose
-emotion has at least one other labelled video); without labels, or with
-no such video, from the correlation of the evidence between neighbouring
-frames.}
+emotion has at least one other labelled video), but never above the
+value from the correlation of the evidence between neighbouring frames;
+without labels, or with no such video, that value itself.}
 }
 \value{
 An object of class \code{te_calibration}, a list with

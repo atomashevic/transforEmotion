@@ -47,6 +47,9 @@ test_that("labels give a confusion matrix whose rows sum to one", {
 test_that("frames that are all the same get the smallest alpha", {
   still <- lapply(clips, function(v) v[rep(1, 30), ])
   expect_equal(calibrate_scores(still)$alpha, 0.01)
+  # Also with labels: copies of a frame never count as independent looks
+  labelled <- calibrate_scores(still, labels = c("happy", "sad", "neutral", "sad"))
+  expect_lte(labelled$alpha, 0.01)
   # Too few frames to measure a correlation: each frame counts in full
   short <- lapply(clips, function(v) v[1:2, ])
   expect_equal(calibrate_scores(short)$alpha, 1)
