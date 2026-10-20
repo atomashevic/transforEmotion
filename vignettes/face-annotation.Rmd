@@ -1,0 +1,129 @@
+---
+title: "Checking faces and coding them by hand"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Checking faces and coding them by hand}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This vignette goes from a video to the faces in it, to choosing which faces to analyse, to a round of manual coding, and from there to a check of the model's scores against the coders.
+The code needs the package's Python environment and a web browser, so it is shown here without being run.
+
+## Find the faces
+
+`detect_faces()` finds every face in the sampled frames of a video, follows each face from frame to frame as a track, and groups tracks of the same person (`person_id`).
+The example clip shows two people, then a black gap, then one of them alone.
+
+```{r}
+library(transforEmotion)
+clip <- system.file("extdata", "two-people.mp4", package = "transforEmotion")
+faces <- detect_faces(clip, nframes = 20)
+table(faces$track_id, faces$person_id)
+```
+
+## Look at them, and choose
+
+`view_faces()` starts a page from R and opens it in your browser.
+Every sampled frame is shown with its boxes, in one colour per person, and a People panel lists who appears where.
+
+```{r}
+view_faces(faces)
+```
+
+With `select = TRUE`, click faces, whole tracks or people, then **Send to R**: `view_faces()` returns those rows.
+
+```{r}
+chosen <- view_faces(faces, select = TRUE)
+scores <- face_scores(chosen, classes = c("happy", "sad", "angry", "neutral"))
+```
+
+The same choice can be made without a browser: `select_faces(faces, persons = "p1")`.
+
+## Set up a coding task
+
+`annotation_task()` turns faces into items for coders.
+Each item shows one face outlined in its frame, with a close-up, and asks first whether the outline holds a face at all; only then does it ask for the emotion and its intensity.
+Detector mistakes are therefore marked as such and never get an emotion.
+
+```{r}
+emotions <- c("happy", "sad", "angry", "neutral")
+task <- annotation_task(
+  faces, classes = emotions,
+  questions = annotation_questions(c("face_check", "emotion", "intensity")),
+  coders = c("C01", "C02"), overlap = 1,
+  dir = "faces-round-1"
+)
+```
+
+`overlap = 1` has every coder code every face, which is what agreement needs.
+With `overlap = 0.2`, a fifth of the faces are coded by everyone and the rest are split between the coders.
+Each coder gets the faces in their own random order, set by `seed`.
+
+The page coders see holds small copies of the frames under neutral names, the boxes and the questions: no file names, no scores, and no other coder's answers.
+`items.csv` in the task folder says which face each item is; keep it for yourself.
+
+## Code
+
+`annotate_faces()` starts the coding page from R.
+It runs in the background, so R stays free, and saves every answer in `faces-round-1/results/<coder>.jsonl` the moment it is given.
+A coder who closes the page and comes back continues where they stopped.
+
+```{r}
+coding <- annotate_faces(task, coder = "C01")
+```
+
+Coders answer with the mouse or the number keys, press Enter for the next face, Backspace to undo, the left arrow to go back and S to skip.
+
+```{r}
+annotation_progress(task)
+coding$stop()
+```
+
+For coders on other computers, send them a copy of the `page` folder.
+Opened from disk, the page keeps answers in their browser and ends with **Export annotations**; put the exported files into `results`.
+
+In a Jupyter notebook, such as Google Colab, `annotate_faces(task)` shows the coding page below the cell instead, because a page served from R cannot be reached from a notebook running on another computer.
+Code as above, then click **Copy R code** and run the copied line in a new cell:
+
+```{r}
+answers <- read_annotations(task, "te-annotations:eyJzY2hlbWEiOi...")
+```
+
+The line holds every answer given so far; copy it again after more coding and keep the last one, as these answers are not saved in `results`.
+
+## Read the answers and check agreement
+
+```{r}
+ann <- read_annotations(task)
+annotation_agreement(ann)
+```
+
+`annotation_agreement()` gives, for each question, Krippendorff's alpha (nominal for categories, interval for ratings), Fleiss' kappa when every face was coded by the same number of coders, and the share of coder pairs who agree.
+A question that was not asked, such as the emotion of something that is not a face, counts as missing, not as a disagreement.
+
+## Compare the model with the coders
+
+`consensus_labels()` turns the coders' answers into one label per face, the most common one, with ties left out.
+Faces most coders marked as not a face have no emotion label.
+
+```{r}
+truth <- consensus_labels(ann, "emotion")
+truth <- truth[!is.na(truth$label), ]
+
+scores <- face_scores(faces, classes = emotions)
+both <- merge(truth, scores, by = c("source", "frame_index", "face"))
+both$pred <- emotions[max.col(both[emotions])]
+evaluate_emotions(both, id_col = "item_id", truth_col = "label", pred_col = "pred",
+                  probs_cols = emotions, classes = emotions)
+```
+
+## Privacy
+
+Faces are personal data, and grouping them by person is biometric processing.
+Everything here runs on your computer: the pages are served by R to your own browser only, make no outside requests, and the face embeddings used to group people are never saved.
+Share task folders only with people who may see the footage, and use `identify = FALSE` in `detect_faces()` to skip grouping by person.

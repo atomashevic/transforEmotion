@@ -4,6 +4,9 @@
  * coloured by person. select mode makes faces, tracks and people clickable
  * and sends the chosen face_ids to R, when R serves the page, or exports
  * them for read_face_selection() when the page is opened from disk.
+ * annotate mode shows one face at a time with the task's questions and
+ * saves each answer in R (annotate_faces()), or in the browser and an
+ * exported file when the page is opened from disk.
  * The logic lives in logic.js; this file only builds the page.
  */
 (function () {
@@ -69,27 +72,38 @@
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (e) { /* ignore */ }
   }
-  function showCode(code) {
-    $("#export-h").textContent = "R code for this selection";
+  function showCode(code, heading, reader, what) {
+    $("#export-h").textContent = heading || "R code for this selection";
     $("#export-text").value = code;
     $("#export-text").setAttribute("aria-label", "R code");
     $("#export-text").rows = 4;
     $("#export-copy").textContent = "Copy code";
     put($("#export-note"), "Paste this line into a new cell and run it: ",
-      el("code", { text: "read_face_selection()" }), " returns the selected faces.");
+      el("code", { text: reader || "read_face_selection()" }), ` returns ${what || "the selected faces"}.`);
     $("#export").hidden = false;
     $("#export-copy").focus();
   }
-  function deliver(filename, data) {
+  // hint: what to do with the file in R, as [text, code, text]
+  function deliver(filename, data, hint) {
     const text = JSON.stringify(data, null, 2);
     download(filename, text);
     $("#export-text").value = text;
-    put($("#export-note"), `Downloaded as ${filename}. In R, read it with `,
-      el("code", { text: `read_face_selection("${filename}", faces)` }),
-      `, giving the path of the download. If no file appeared, copy the text below and save it as ${filename}.`);
+    $("#export-h").textContent = hint.title;
+    put($("#export-note"), `Downloaded as ${filename}. ${hint.before}`, el("code", { text: hint.code }),
+      `${hint.after} If no file appeared, copy the text below and save it as ${filename}.`);
     $("#export").hidden = false;
     $("#export-copy").focus();
   }
+  function warn(msg) { // stays until the problem is gone
+    const b = $("#banner");
+    b.textContent = msg || "";
+    b.hidden = !msg;
+  }
+  const store = { // localStorage, which may be blocked; never required
+    get(k) { try { return JSON.parse(window.localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { window.localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  };
+  const nowIso = () => new Date().toISOString();
   $("#export-close").addEventListener("click", () => { $("#export").hidden = true; });
   $("#export-copy").addEventListener("click", async () => {
     const ta = $("#export-text");
@@ -129,7 +143,7 @@
       });
     }
     st.svg.append(g);
-    st.box.append(el("span", { class: "badge" + (f.y / st.H < 0.07 ? " inside" : ""), "aria-hidden": "true",
+    if (o.badge) st.box.append(el("span", { class: "badge" + (f.y / st.H < 0.07 ? " inside" : ""), "aria-hidden": "true",
       "data-face": f.face_id, text: o.badge, style: { left: pct(f.x, st.W), top: pct(f.y, st.H), "--c": o.colour } }));
   }
   // A square close-up made by pointing an SVG viewBox at the box: no canvas
@@ -305,7 +319,8 @@
     ui.tools.append(el("label", { class: "check" },
       el("input", { type: "checkbox", id: "show-scores", onchange: (e) => { showScores = e.target.checked; render(); } }), "Show confidence"));
     const selection = () => L.selectionDocument(task, chosen, new Date().toISOString());
-    const exportFile = () => deliver(`selection-${task.task_id}.json`, selection());
+    const exportFile = () => deliver(`selection-${task.task_id}.json`, selection(), { title: "Exported selection",
+      before: "In R, read it with ", code: `read_face_selection("selection-${task.task_id}.json", faces)`, after: ", giving the path of the download." });
     const copyCode = () => showCode(L.selectionCode(task, chosen, new Date().toISOString(), notebook.faces));
     // Served by R: the choice goes straight back to view_faces()
     async function sendToR(btn) {
@@ -346,6 +361,246 @@
     render();
   }
 
+  /* Annotate mode: one face at a time, questions answered by click or key */
+  function annotator(task) {
+    const items = task.items, byId = new Map(items.map((it) => [it.item_id, it]));
+    const questions = task.questions;
+    const settings = Object.assign({ allow_back: true, allow_skip: true, show_progress: true, context_padding: 0.25 }, task.settings);
+    const coders = task.assignments.map((a) => a.coder_id);
+    const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : "s-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const lastKey = `te-annot:${task.task_id}:last-coder`;
+    let coder = null, order = [], pos = 0, records = [], unsent = [], cur = null, saving = Promise.resolve();
+    const storeKey = () => `te-annot:${task.task_id}:${coder}`; // pages opened from disk share one storage
+    const options = new Map(questions.map((q) => [q.id, L.optionsOf(q, task)]));
+    const progress = el("span", { class: "progress", role: "progressbar", "aria-label": "Faces done", "aria-valuemin": "0" }, el("span"));
+    const progressText = el("span", { class: "muted", id: "progress-text" });
+
+    function chooseCoder() {
+      cur = null;
+      put(ui.tools);
+      const wanted = /[?&]coder=([A-Za-z0-9_.-]{1,40})(?:&|$)/.exec(location.search);
+      if (wanted && coders.includes(wanted[1])) return begin(wanted[1]);
+      if (notebook && notebook.coder && coders.includes(notebook.coder)) return begin(notebook.coder);
+      if (coders.length === 1) return begin(coders[0]);
+      const last = store.get(lastKey);
+      put(ui.main, el("section", { class: "card narrow", "aria-labelledby": "coder-h" },
+        el("h2", { id: "coder-h", text: "Who is coding?" }),
+        el("p", { class: "muted", text: "Choose the coder ID you were given. Use the same ID to continue later." }),
+        el("div", { class: "row coders" }, coders.map((id) => el("button", { type: "button", "data-coder": id,
+          class: id === last ? "primary" : null, onclick: () => begin(id), text: id })))));
+      const first = $(".coders button.primary") || $(".coders button");
+      if (first) first.focus();
+    }
+
+    async function begin(id) {
+      coder = id;
+      store.set(lastKey, id);
+      order = L.orderFor(task, id);
+      const saved = store.get(storeKey());
+      records = saved && Array.isArray(saved.records) ? saved.records : [];
+      if (api && api.load) {
+        try {
+          const fromR = (await postJson(api.load, { coder_id: id })).records || [];
+          // R has what was saved; anything only in this browser is sent again
+          const inR = new Set(fromR.map((r) => r.session_id + "#" + r.seq));
+          unsent = records.filter((r) => !inR.has(r.session_id + "#" + r.seq));
+          records = fromR.concat(unsent);
+          if (unsent.length) sync();
+        } catch (e) {
+          warn("Could not reach R: answers are kept in this browser for now. " + e.message);
+        }
+      }
+      persist();
+      pos = L.firstOpen(order, records);
+      put(ui.tools, settings.show_progress !== false && progress, settings.show_progress !== false && progressText,
+        el("span", { class: "chip", id: "coder-chip", text: "Coder " + id }),
+        coders.length > 1 && el("button", { type: "button", class: "small", onclick: chooseCoder, text: "Switch coder" }),
+        el("button", { type: "button", class: "small", id: "export-annotations", onclick: exportAll,
+          text: notebook ? "Copy R code" : "Export annotations" }));
+      const p = L.progressOf(order, records);
+      if (p.done) say(`Welcome back, ${id}: ${p.done} of ${p.total} done.`);
+      show();
+    }
+    function persist() {
+      const ok = store.set(storeKey(), { coder_id: coder, records });
+      if (!ok && !api) warn(notebook ? "This page cannot keep your progress. Copy R code before you leave the notebook."
+        : "This browser cannot keep your progress. Export your annotations before closing this tab.");
+    }
+    // Sends the records R has not confirmed yet, one batch at a time
+    function sync() {
+      if (!api || !api.save || !unsent.length) return saving;
+      saving = saving.then(async () => {
+        if (!unsent.length) return;
+        const batch = unsent.slice();
+        try {
+          await postJson(api.save, { records: batch });
+          unsent = unsent.filter((r) => !batch.includes(r));
+          if (!unsent.length) warn(null);
+        } catch (e) {
+          warn(`Not saved in R yet (${plural(unsent.length, "answer")}): ${e.message}. They are kept in this browser and sent with the next answer.`);
+        }
+      });
+      return saving;
+    }
+    function updateProgress() {
+      const p = L.progressOf(order, records);
+      progress.setAttribute("aria-valuemax", String(order.length));
+      progress.setAttribute("aria-valuenow", String(p.done));
+      progress.firstChild.style.width = pct(p.done, Math.max(1, order.length));
+      progressText.textContent = `${p.done} / ${order.length} done`;
+    }
+
+    function show() {
+      updateProgress();
+      if (pos >= order.length) return finish();
+      const item = byId.get(order[pos]), prev = L.latestRecord(records, item.item_id);
+      cur = { item, responses: {}, shownAt: nowIso(), t0: performance.now(), dirty: false };
+      if (prev) for (const [k, v] of Object.entries(prev.responses || {})) if (v != null) cur.responses[k] = v;
+      const W = item.width, H = item.height, b = item.box;
+      const target = { face_id: item.item_id, x: b.x, y: b.y, w: b.w, h: b.h };
+      const st = stage(item.media, W, H, "var(--ctx-h)", "Picture with the face to code outlined");
+      st.svg.append(el("svg:path", { class: "scrim", "fill-rule": "evenodd", d: `M0 0H${W}V${H}H0Z M${b.x} ${b.y}v${b.h}h${b.w}v${-b.h}Z` }));
+      drawBox(st, target, { colour: colour(1), title: "Face to code", badge: "" });
+      const zoom = crop(item.media, W, H, target, settings.context_padding);
+      zoom.setAttribute("role", "img");
+      zoom.setAttribute("aria-label", "Close-up of the face to code");
+      zoom.append(el("svg:rect", { class: "cropbox", x: b.x, y: b.y, width: b.w, height: b.h }));
+
+      const views = questions.map((q) => {
+        const opts = options.get(q.id), keys = Math.min(9, opts.length);
+        const buttons = opts.map((o, i) => el("button", { type: "button", class: "opt", "aria-pressed": "false",
+          "data-value": String(o.value),
+          "aria-label": q.type === "likert" && q.anchors ? `${o.label}${i === 0 ? ", " + q.anchors.min : i === opts.length - 1 ? ", " + q.anchors.max : ""}` : null,
+          onclick: (e) => answer(q, o.value, e) }, i < 9 && el("kbd", { "aria-hidden": "true", text: String(i + 1) }), el("span", { text: o.label })));
+        const fs = el("fieldset", { class: "q" + (q.type === "likert" ? " likert" : ""), "data-q": q.id },
+          el("legend", {}, q.prompt || L.nice(q.id), " ", el("span", { class: "keyhint", text: `keys 1–${keys}` })),
+          el("div", { class: "opts" }, buttons),
+          q.anchors && el("div", { class: "anchors", "aria-hidden": "true" }, el("span", { text: q.anchors.min }), el("span", { text: q.anchors.max })));
+        return { q, opts, buttons, fs };
+      });
+      const nextBtn = el("button", { type: "button", class: "primary", id: "next", onclick: next, text: "Next →" });
+      const panel = el("section", { class: "panel", tabindex: "-1", "aria-labelledby": "item-h" },
+        el("div", { class: "itemhead" }, el("h2", { id: "item-h", text: `Face ${pos + 1} of ${order.length}` }),
+          el("span", { class: "muted", text: item.media_type === "frame" ? `Video frame at ${fmt(item.timestamp_s, 1)} s` : "Still image" })),
+        views.map((v) => v.fs),
+        el("div", { class: "row nav" },
+          settings.allow_back && el("button", { type: "button", id: "back", disabled: pos === 0, onclick: back, text: "← Back" }),
+          settings.allow_skip && el("button", { type: "button", id: "skip", onclick: skip, text: "Skip" }), nextBtn),
+        el("p", { class: "keys muted", text: "Keys: 1–9 answer · Enter next · Backspace undo · ← back · S skip" }));
+      put(ui.main,
+        task.instructions && el("details", { class: "instructions", open: pos === 0 && !L.progressOf(order, records).done },
+          el("summary", { text: "Instructions" }), el("p", { text: task.instructions })),
+        el("div", { class: "item", "data-item": item.item_id },
+          el("div", { class: "views" }, el("figure", { class: "ctx" }, st.box),
+            el("figure", { class: "zoom" }, zoom, el("figcaption", { text: "Close-up" }))),
+          panel));
+
+      function update() {
+        for (const v of views) {
+          const shown = L.isShown(v.q, cur.responses);
+          v.fs.hidden = !shown;
+          if (!shown) delete cur.responses[v.q.id];
+          v.buttons.forEach((btn, i) => btn.setAttribute("aria-pressed", String(v.opts[i].value === cur.responses[v.q.id])));
+        }
+        const active = L.activeQuestion(questions, cur.responses);
+        views.forEach((v) => v.fs.classList.toggle("active", v.q === active));
+        nextBtn.disabled = !!L.missingQuestion(questions, cur.responses);
+      }
+      function answer(q, value, e) {
+        cur.responses[q.id] = value;
+        cur.dirty = true;
+        update();
+        if (e && e.detail > 0) panel.focus({ preventScroll: true }); // keys keep working after a click
+      }
+      cur.update = update;
+      cur.answer = answer;
+      update();
+      panel.focus({ preventScroll: true });
+      const nx = byId.get(order[pos + 1]);
+      if (nx) new Image().src = nx.media; // load the next picture early
+    }
+
+    function record(status) {
+      const rec = L.makeRecord(task, coder, sessionId, records, cur.item, status, cur.responses,
+        cur.shownAt, nowIso(), performance.now() - cur.t0);
+      records.push(rec); // append-only: the last record of an item is the answer
+      unsent.push(rec);
+      persist();
+      sync();
+    }
+    function next() { // an unchanged answer is not recorded again
+      if (!cur || L.missingQuestion(questions, cur.responses)) return;
+      if (cur.dirty || !L.latestRecord(records, cur.item.item_id)) record("answered");
+      pos++;
+      show();
+    }
+    function skip() {
+      if (!cur || !settings.allow_skip) return;
+      if (!L.latestRecord(records, cur.item.item_id)) record("skipped");
+      pos++;
+      show();
+    }
+    function back() {
+      if (settings.allow_back && pos > 0) {
+        pos--;
+        show();
+      }
+    }
+    function undo() {
+      const answered = questions.filter((q) => L.isShown(q, cur.responses) && cur.responses[q.id] != null);
+      if (!answered.length) return;
+      delete cur.responses[answered.pop().id];
+      cur.dirty = true;
+      cur.update();
+    }
+    function exportAll() {
+      if (notebook) {
+        return showCode(L.annotationsCode(task, coder, order, records, nowIso(), notebook.task), "R code for these answers",
+          "read_annotations()", `the answers given so far (${plural(L.progressOf(order, records).done, "face")} done); copy it again after more coding`);
+      }
+      deliver(`annotations-${task.task_id}-${coder}.json`, L.annotationsDocument(task, coder, order, records, nowIso()), {
+        title: "Exported annotations", before: "Put it in the task's results folder; in R, ",
+        code: "read_annotations(task)", after: " reads it." });
+    }
+    async function finish() {
+      cur = null;
+      const p = L.progressOf(order, records);
+      const card = el("section", { class: "card narrow", "aria-labelledby": "done-h" },
+        el("h2", { id: "done-h", text: "All faces done" }),
+        el("p", { text: `You answered ${p.answered} of ${p.total}${p.skipped ? ` and skipped ${p.skipped}` : ""}. Thank you!` }),
+        el("p", { class: "muted", id: "done-note", text: api ? "Saving your answers in R…"
+          : notebook ? "Copy R code and run the line in a new cell." : "Export your annotations and send the file to the researcher." }),
+        el("div", { class: "row" },
+          settings.allow_back && order.length > 0 && el("button", { type: "button", onclick: back, text: "← Review the last face" }),
+          el("button", { type: "button", class: api ? null : "primary", onclick: exportAll, text: notebook ? "Copy R code" : "Export annotations" })));
+      put(ui.main, card);
+      if (api) {
+        await sync();
+        const note = $("#done-note");
+        if (note) note.textContent = unsent.length ? `${plural(unsent.length, "answer")} could not be saved in R yet. Export your annotations to keep them.`
+          : "Your answers are saved in R. You can close this tab.";
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (!cur || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t.closest && t.closest("input, textarea, select, .sheet")) return;
+      if (/^[1-9]$/.test(e.key)) {
+        const q = L.activeQuestion(questions, cur.responses), o = q && options.get(q.id)[Number(e.key) - 1];
+        if (o) { e.preventDefault(); cur.answer(q, o.value); }
+      } else if (e.key === "Enter" && t.tagName !== "BUTTON") { e.preventDefault(); next(); }
+      else if (e.key === "Backspace") { e.preventDefault(); undo(); }
+      else if (e.key === "ArrowLeft" && t.tagName !== "BUTTON") { e.preventDefault(); back(); }
+      else if (e.key === "s" || e.key === "S") { e.preventDefault(); skip(); }
+    });
+    window.addEventListener("beforeunload", (e) => { // answers R has not confirmed
+      if (unsent.length) { e.preventDefault(); e.returnValue = ""; }
+    });
+    chooseCoder();
+  }
+
   const task = window.TE_TASK;
   const problem = L.checkTask(task);
   if (problem) {
@@ -354,9 +609,10 @@
   }
   document.body.setAttribute("data-mode", task.mode);
   ui.title.textContent = task.title || "Faces";
-  ui.chip.textContent = task.mode === "select" ? "Select" : "View";
+  ui.chip.textContent = L.nice(task.mode);
   document.title = `${task.title || "Faces"}: ${task.mode}`;
-  browser(task);
+  if (task.mode === "annotate") annotator(task);
+  else browser(task);
   // In a notebook the page is an iframe in the cell's output: tell the output
   // how tall the page is, so it needs no scroll bar of its own
   if (notebook && window.parent !== window) {

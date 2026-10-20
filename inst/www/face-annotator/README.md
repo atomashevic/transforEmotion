@@ -1,15 +1,18 @@
-# Face viewer
+# Face pages
 
-The web page that `view_faces()` writes. It shows the faces of a
-`detect_faces()` table (`view` mode) and lets the user choose faces to analyse
-(`select` mode). Plain JavaScript with no framework, no build step and no
+The web page that `view_faces()` and `annotation_task()` write. It shows the
+faces of a `detect_faces()` table (`view` mode), lets the user choose faces to
+analyse (`select` mode), and asks coders questions about one face at a time
+(`annotate` mode). Plain JavaScript with no framework, no build step and no
 network access: the files here are the source and are copied as they are.
+`inst/schema/face-task-v1.json` describes every file the page reads or
+writes, as JSON Schema.
 
 | File | Role |
 |---|---|
 | `index.html` | The page. Its Content-Security-Policy allows only files in its own folder and requests to the R session that serves it. |
 | `style.css` | Layout and colours (light and dark). |
-| `logic.js` | Pure functions: labels, colours, selection, the exported file. Tested in Node by `tests/js/`. |
+| `logic.js` | Pure functions: labels, colours, selection, questions, answer records, the exported files. Tested in Node by `tests/js/`. |
 | `app.js` | Builds the page from `window.TE_TASK` with `logic.js`. |
 
 `view_faces()` copies these files into a new folder, next to `data.js` and
@@ -71,6 +74,38 @@ selected_face_ids, selected_tracks: [{media_id, track_id}], selected_person_ids}
 `selected_face_ids`, after checking that `media` names the same files, by
 name and, where it can still read them, by content.
 `selected_person_ids` lists only people whose faces are all selected.
+
+## Annotate mode (`schema: "transforEmotion.annotation_task"`)
+
+`annotation_task()` writes the task folder: `page/` (these files, `data.js`
+and `media/p001.jpg` and so on), `task.json` (the same task as `data.js`),
+`items.csv` (which face each item is) and an empty `results/`. The page gets
+no file names: items carry only an opaque `item_id`, the picture, its size and
+the face box.
+
+- `questions`: `{id, type: "single" | "likert", prompt, options | options_from: "classes",
+  labels, min, max, anchors, show_if, required}`. A question with `show_if`
+  (for example `{"face_check": "ok"}`) is asked only after one of those answers.
+- `items`: `{item_id, media, media_type, frame_index, timestamp_s, width, height, box: {x, y, w, h}}`.
+- `assignments`: `{coder_id, items}`, each coder's items in their own order.
+
+Each answer is a record:
+`{task_id, item_id, coder_id, session_id, seq, revision, status: "answered" | "skipped",
+responses: {<question id>: value or null}, shown_at, submitted_at, rt_ms}`.
+`seq` counts a browser session's records; `revision` counts a coder's records
+for one item. Records are only ever added: `read_annotations()` keeps the
+last one per item and coder.
+
+`annotate_faces()` serves `page/` and adds
+`window.TE_API = {"save": "api/save", "load": "api/load"}` to `data.js`.
+The page POSTs `{coder_id}` to `api/load` to get the coder's earlier records,
+and `{records: [...]}` to `api/save` after every answer; R checks each record
+against the task and appends it to `results/<coder_id>.jsonl`. Records R has
+not confirmed stay in the browser (localStorage) and are sent again with the
+next answer, or when the coder comes back. Without `window.TE_API` the page
+keeps answers in the browser only and offers **Export annotations**, a
+`transforEmotion.annotations` file with the coder's records, which
+`read_annotations()` reads like the `.jsonl` files.
 
 ## Tests
 
