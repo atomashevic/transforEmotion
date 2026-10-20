@@ -573,7 +573,7 @@
       const parts = [row("Label", item.reference), row("Model", item.prediction),
         scores.length > 0 && el("div", { class: "bars", role: "list", "aria-label": "The model's scores" }, scores.map((sc) =>
           el("div", { class: "bar-row" + (sc.top ? " top" : ""), role: "listitem" }, el("span", { text: sc.cls }),
-            el("span", { class: "track" }, el("span", { class: "fill", style: { width: (100 * sc.p).toFixed(1) + "%" } })),
+            el("span", { class: "bar-track" }, el("span", { class: "fill", style: { width: (100 * sc.p).toFixed(1) + "%" } })),
             el("span", { class: "num", text: fmt(sc.p, 2) }))))].filter(Boolean);
       const waiting = el("p", { class: "muted reveal-wait", text: "The label and the model's answer appear once you have answered." });
       const panel = el("section", { class: "reveal", "aria-label": "Label and model" }, parts);
