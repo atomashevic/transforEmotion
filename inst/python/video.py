@@ -12,10 +12,10 @@ import time
 
 def yt_analyze(url, nframes, labels, side='largest', start=0, end=-1, uniform=False,
                ff=10, frame_dir='temp/', video_name='temp', model_name='oai-base', local_model_path=None,
-               model_architecture=None, face_detector='haar'):
+               model_architecture=None, face_detector='haar', youtube=False):
   start_time = time.time()
   detected_emotions = []
-  if "youtu" in url:
+  if youtube:  # decided in R by .te_is_youtube_url()
     video_path = te_faces.download_youtube(url, frame_dir, video_name)
   else:
     video_path = os.path.join(url)

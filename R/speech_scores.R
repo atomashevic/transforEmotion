@@ -170,13 +170,6 @@ speech_scores <- function(audio, classes, nsegments = 100, segment_length = 5,
 }
 
 #' @noRd
-# A YouTube video URL: http(s), host youtube.com (any subdomain) or youtu.be.
-# A local path that contains "youtube" is not one.
-.te_is_youtube_url <- function(x) {
-  grepl("^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)(/|$)", x, ignore.case = TRUE)
-}
-
-#' @noRd
 .te_audio_py <- function() {
   reticulate::import_from_path("te_audio", system.file("python", package = "transforEmotion"))
 }

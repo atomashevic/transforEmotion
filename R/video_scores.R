@@ -76,7 +76,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          face_detector = c("yunet", "haar")) {
   # Declare Python requirements; pytubefix is only needed for YouTube URLs
   ensure_te_py_env()
-  if (is.character(video) && length(video) == 1 && grepl("youtu", video, fixed = TRUE)) {
+  is_youtube <- is.character(video) && length(video) == 1 && .te_is_youtube_url(video)
+  if (is_youtube) {
     .te_require("youtube")
   }
   if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
@@ -156,7 +157,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     if(!file.exists(video)){
       stop("Video file does not exist. If path is an URL make sure it includes http:// or https://")
     }}
-  else { if(!grepl("youtu", video)){
+  else { if(!is_youtube){
     stop("You need to provide a YouTube video URL.")
   }
   }
@@ -164,7 +165,7 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
   # Remove the frames (and the downloaded video) this call creates, also when
   # processing fails or is interrupted
   cleanup <- .te_video_cleanup_plan(save_dir, video_name, nframes, save_frames,
-                                    save_video || !grepl("youtu", video))
+                                    save_video || !is_youtube)
   on.exit(cleanup(), add = TRUE)
 
   # All faces or a faces table: one row per face
@@ -202,7 +203,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
       model_name = actual_model_id,
       model_architecture = model_architecture,
       local_model_path = local_model_path,
-      face_detector = face_detector
+      face_detector = face_detector,
+      youtube = is_youtube
     )
   })
 

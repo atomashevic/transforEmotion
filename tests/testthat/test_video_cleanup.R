@@ -89,6 +89,15 @@ test_that("a downloaded video is removed unless save_video = TRUE", {
   expect_true(file.exists(file.path(dir2, "temp.mp4")))
 })
 
+test_that("a local video in a folder named youtube is read, not downloaded", {
+  dir <- file.path(withr::local_tempdir(), "youtube")
+  dir.create(dir)
+  video <- touch(file.path(dir, "youtube-clip.mp4"))
+  local_mocked_bindings(.te_require = function(...) stop("downloaded"))
+  expect_no_error(run_video_scores(withr::local_tempdir(), video = video))
+  expect_true(file.exists(video))
+})
+
 test_that("a local video in save_dir is never removed", {
   dir <- withr::local_tempdir()
   video <- touch(file.path(dir, "temp.mp4"))
