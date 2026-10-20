@@ -160,7 +160,7 @@ rect.itembox.scored { stroke: var(--c1); stroke-width: 3; stroke-dasharray: none
 .kv .muted { min-width: 56px; }
 .bars { display: grid; gap: 4px; }
 .bar-row { display: grid; grid-template-columns: 100px 1fr 44px; gap: 8px; align-items: center; font-size: .875rem; }
-.bar-row .track { height: 10px; background: var(--well); border-radius: 5px; overflow: hidden; }
+.bar-row .bar-track { height: 10px; background: var(--well); border-radius: 5px; overflow: hidden; }
 .bar-row .fill { display: block; height: 100%; background: var(--muted); }
 .bar-row.top .fill { background: var(--accent); }
 .bar-row .num { text-align: right; font-variant-numeric: tabular-nums; }
