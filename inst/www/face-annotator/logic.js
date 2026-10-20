@@ -1,8 +1,9 @@
 /* transforEmotion face viewer: the logic, without the page.
  *
- * Pure functions on the task that view_faces() writes to data.js (see
- * README.md in this folder). app.js draws the page with them; the tests in
- * the package's tests/js folder run them in Node. No DOM, no network.
+ * Pure functions on the task that view_faces() or annotation_task() writes
+ * to data.js (see README.md in this folder). app.js draws the page with
+ * them; the tests in the package's tests/js folder run them in Node. No DOM,
+ * no network.
  */
 (function (root) {
   "use strict";
@@ -134,15 +135,141 @@
       (facesName || "faces") + ")";
   }
 
+  /* Annotation: the task annotation_task() writes, and the coder's answers */
+
+  // "not_face" -> "Not face"
+  function nice(s) {
+    s = String(s).replace(/_/g, " ");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // The answers a question offers: [{value, label}]
+  function optionsOf(q, task) {
+    if (q.type === "likert") {
+      const out = [];
+      for (let v = q.min; v <= q.max; v++) out.push({ value: v, label: String(v) });
+      return out;
+    }
+    const raw = q.options_from ? (task && task[q.options_from]) || [] : q.options || [];
+    return raw.map((o) => ({ value: o, label: (q.labels && q.labels[o]) || nice(o) }));
+  }
+
+  // show_if {question: value, or [values]}: shown only after one of those answers
+  function isShown(q, responses) {
+    return !q.show_if || Object.entries(q.show_if).every(([k, v]) =>
+      (Array.isArray(v) ? v.includes(responses[k]) : responses[k] === v));
+  }
+
+  // The question that keys 1-9 answer: the first shown one without an answer
+  function activeQuestion(questions, responses) {
+    return questions.find((q) => isShown(q, responses) && responses[q.id] == null);
+  }
+
+  // A shown, required question without an answer (blocks Next), or undefined
+  function missingQuestion(questions, responses) {
+    return questions.find((q) => isShown(q, responses) && q.required !== false && responses[q.id] == null);
+  }
+
+  // Every question, with null for questions not shown, not answered, or skipped
+  function cleanResponses(questions, responses, answered) {
+    const out = {};
+    for (const q of questions) {
+      const v = responses[q.id];
+      out[q.id] = answered && isShown(q, responses) && v != null ? v : null;
+    }
+    return out;
+  }
+
+  // The items a coder codes, in the order annotation_task() chose for them
+  function orderFor(task, coderId) {
+    const known = new Set((task.items || []).map((it) => it.item_id));
+    const a = (task.assignments || []).find((x) => x.coder_id === coderId);
+    return a ? [].concat(a.items).filter((id) => known.has(id)) : [];
+  }
+
+  // Records are append-only: the last one for an item is the coder's answer
+  function latestRecord(records, itemId) {
+    for (let i = records.length - 1; i >= 0; i--) if (records[i].item_id === itemId) return records[i];
+    return undefined;
+  }
+
+  // Where a coder continues: the first item without a record
+  function firstOpen(order, records) {
+    const i = order.findIndex((id) => !latestRecord(records, id));
+    return i < 0 ? order.length : i;
+  }
+
+  function progressOf(order, records) {
+    let answered = 0, skipped = 0;
+    for (const id of order) {
+      const r = latestRecord(records, id);
+      if (r && r.status === "answered") answered++;
+      else if (r) skipped++;
+    }
+    return { total: order.length, done: answered + skipped, answered, skipped };
+  }
+
+  // One record: an answered or skipped item. rt_ms is the time the item was shown.
+  function makeRecord(task, coderId, sessionId, records, item, status, responses, shownAt, submittedAt, rtMs) {
+    return {
+      task_id: task.task_id, item_id: item.item_id, coder_id: coderId, session_id: sessionId,
+      seq: records.length + 1,
+      revision: records.filter((r) => r.item_id === item.item_id).length + 1,
+      status,
+      responses: cleanResponses(task.questions || [], responses, status === "answered"),
+      shown_at: shownAt, submitted_at: submittedAt, rt_ms: Math.max(0, Math.round(rtMs))
+    };
+  }
+
+  // The file read_annotations() reads
+  function annotationsDocument(task, coderId, order, records, exportedAt) {
+    return {
+      schema: "transforEmotion.annotations",
+      schema_version: task.schema_version,
+      task_id: task.task_id,
+      coder_id: coderId,
+      exported_at: exportedAt,
+      n_items: order.length,
+      records: records.slice()
+    };
+  }
+
+  // A message for an annotation task this page cannot run, or null
+  function checkAnnotationTask(task) {
+    if (task.mode !== "annotate") return "Unknown mode \"" + task.mode + "\" for an annotation task. Expected annotate.";
+    if (!Array.isArray(task.items) || !task.items.length) return "The task has no items to code.";
+    if (!Array.isArray(task.questions) || !task.questions.length) return "The task has no questions.";
+    if (!Array.isArray(task.assignments) || !task.assignments.length) return "The task names no coders.";
+    for (const q of task.questions) {
+      if (q.type === "likert") {
+        if (!Number.isInteger(q.min) || !Number.isInteger(q.max) || q.min >= q.max) {
+          return "Question " + q.id + " needs whole numbers min < max.";
+        }
+      } else if (q.type === "single") {
+        if (!optionsOf(q, task).length) return "Question " + q.id + " has no options.";
+      } else {
+        return "Question " + q.id + " has an unknown type \"" + q.type + "\".";
+      }
+    }
+    const known = new Set(task.items.map((it) => it.item_id));
+    for (const a of task.assignments) {
+      const stray = [].concat(a.items).find((id) => !known.has(id));
+      if (stray) return "Coder " + a.coder_id + " has an item that is not in the task: " + stray + ".";
+    }
+    return null;
+  }
+
   // A message for a task this page cannot show, or null
   function checkTask(task) {
     if (!task || typeof task !== "object") {
       return "No task data found. index.html needs data.js, which sets window.TE_TASK, in the same folder.";
     }
-    if (task.schema !== "transforEmotion.face_task") return "data.js does not hold a face task.";
+    const annotation = task.schema === "transforEmotion.annotation_task";
+    if (task.schema !== "transforEmotion.face_task" && !annotation) return "data.js does not hold a face task.";
     if (String(task.schema_version || "").split(".")[0] !== "1") {
       return "This task uses schema version " + task.schema_version + "; this page reads version 1.";
     }
+    if (annotation) return checkAnnotationTask(task);
     if (task.mode !== "view" && task.mode !== "select") {
       return "Unknown mode \"" + task.mode + "\". Expected view or select.";
     }
@@ -156,7 +283,9 @@
   const api = {
     faceNumber, byNumber, personsOf, tracksOf, trackLabel, personLabel,
     colourNumber, boxLabel, describe, toggleGroup, groupState, clickGroup,
-    selectedIds, selectionDocument, selectionCode, checkTask
+    selectedIds, selectionDocument, selectionCode, checkTask,
+    nice, optionsOf, isShown, activeQuestion, missingQuestion, cleanResponses, orderFor,
+    latestRecord, firstOpen, progressOf, makeRecord, annotationsDocument
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.TEFaceLogic = api;

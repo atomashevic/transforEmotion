@@ -6,9 +6,10 @@
 
 #' @noRd
 # Serves dir. handlers: named list of function(body) returning a list, sent
-# back as JSON; body is the request's JSON, parsed. Returns
-# list(url, port, stop).
-.te_serve_page <- function(dir, handlers = list(), port = NULL) {
+# back as JSON; body is the request's JSON, parsed. files: page-relative
+# names served from other files instead (a data.js that knows the server,
+# say). Returns list(url, port, stop).
+.te_serve_page <- function(dir, handlers = list(), port = NULL, files = list()) {
   token <- .te_random_token()
   if (is.null(port)) {
     port <- .te_without_rng(httpuv::randomPort(host = "127.0.0.1"))
@@ -27,6 +28,11 @@
     httpuv::staticPath(empty, indexhtml = FALSE, fallthrough = FALSE)
   )
   names(static) <- c(prefix, paste0(prefix, "/api"), "/")
+  for (name in names(files)) {
+    static[[paste0(prefix, "/", name)]] <- httpuv::staticPath(
+      files[[name]], headers = list("Cache-Control" = "no-store", "X-Content-Type-Options" = "nosniff")
+    )
+  }
   app <- list(
     call = function(req) .te_page_api(req, prefix, port, handlers),
     staticPaths = static
@@ -60,7 +66,8 @@
   reply <- function(status, body) {
     list(status = status,
          headers = list("Content-Type" = "application/json", "Cache-Control" = "no-store"),
-         body = as.character(jsonlite::toJSON(body, auto_unbox = TRUE)))
+         body = as.character(jsonlite::toJSON(body, auto_unbox = TRUE, null = "null",
+                                              na = "null", json_verbatim = TRUE)))
   }
   # Another site in the browser cannot reach the server through a name that
   # points at 127.0.0.1 (DNS rebinding): the Host must be the server itself
@@ -78,7 +85,9 @@
   }
   text <- rawToChar(req$rook.input$read())
   Encoding(text) <- "UTF-8"
-  body <- tryCatch(jsonlite::parse_json(text, simplifyVector = TRUE), error = function(e) NULL)
+  # A handler with attribute simplify = FALSE gets the JSON as nested lists
+  simplify <- !isFALSE(attr(handlers[[name]], "simplify"))
+  body <- tryCatch(jsonlite::parse_json(text, simplifyVector = simplify), error = function(e) NULL)
   if (!is.list(body)) return(reply(400L, list(error = "The request is not a JSON object.")))
   out <- tryCatch(handlers[[name]](body), error = function(e) list(error = conditionMessage(e)))
   if (!is.null(out$error)) return(reply(400L, out))

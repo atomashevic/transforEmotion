@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/atomashevic/transforEmotion/inst/schema/face-task-v1.json",
+  "title": "transforEmotion face pages, version 1",
+  "description": "The files exchanged between R and the face page (inst/www/face-annotator): the task view_faces() writes, the selection it gets back, the task annotation_task() writes, and the answers annotate_faces() saves. A document is one of the four, told apart by its schema field.",
+  "oneOf": [
+    { "$ref": "#/$defs/face_task" },
+    { "$ref": "#/$defs/face_selection" },
+    { "$ref": "#/$defs/annotation_task" },
+    { "$ref": "#/$defs/annotations" }
+  ],
+  "$defs": {
+    "version": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,80}$" },
+    "box": {
+      "type": "object",
+      "description": "A face box in the original image's pixels.",
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 }, "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+
+    "face_task": {
+      "type": "object",
+      "description": "data.js of view_faces(): window.TE_TASK.",
+      "required": ["schema", "schema_version", "task_id", "mode", "media", "faces"],
+      "properties": {
+        "schema": { "const": "transforEmotion.face_task" },
+        "schema_version": { "$ref": "#/$defs/version" },
+        "task_id": { "type": "string" },
+        "mode": { "enum": ["view", "select"] },
+        "title": { "type": "string" },
+        "instructions": { "type": "string" },
+        "media": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["media_id", "media_type", "label", "img_w", "img_h"],
+            "properties": {
+              "media_id": { "type": "string" },
+              "media_type": { "enum": ["image", "video"] },
+              "label": { "type": "string", "description": "The file name." },
+              "key": { "type": ["string", "null"], "description": "MD5 of the file; null for URLs." },
+              "src": { "type": "string", "description": "Images: the display copy under media/." },
+              "img_w": { "type": "integer" }, "img_h": { "type": "integer" },
+              "frames": {
+                "type": "array",
+                "description": "Videos: every sampled frame.",
+                "items": {
+                  "type": "object",
+                  "required": ["frame", "frame_index", "src"],
+                  "properties": {
+                    "frame": { "type": "integer" }, "frame_index": { "type": "integer" },
+                    "timestamp_s": { "type": ["number", "null"] }, "src": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "faces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["face_id", "media_id", "x", "y", "w", "h"],
+            "properties": {
+              "face_id": { "type": "string", "description": "<media_id>#<frame_index>#<face>, frame 0 for still images." },
+              "media_id": { "type": "string" },
+              "frame": { "type": ["integer", "null"] }, "frame_index": { "type": ["integer", "null"] },
+              "timestamp_s": { "type": ["number", "null"] },
+              "x": { "type": "number" }, "y": { "type": "number" }, "w": { "type": "number" }, "h": { "type": "number" },
+              "confidence": { "type": ["number", "null"] }, "detector": { "type": ["string", "null"] },
+              "track_id": { "type": ["integer", "null"] }, "person_id": { "type": ["string", "null"] },
+              "selected": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+
+    "face_selection": {
+      "type": "object",
+      "description": "What select mode sends to R, or exports for read_face_selection().",
+      "required": ["schema", "task_id", "selected_face_ids"],
+      "properties": {
+        "schema": { "const": "transforEmotion.face_selection" },
+        "schema_version": { "$ref": "#/$defs/version" },
+        "task_id": { "type": "string" },
+        "exported_at": { "type": "string", "format": "date-time" },
+        "media": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["media_id", "label"],
+            "properties": { "media_id": { "type": "string" }, "label": { "type": "string" }, "key": { "type": ["string", "null"] } }
+          }
+        },
+        "selected_face_ids": { "type": "array", "items": { "type": "string" } },
+        "selected_tracks": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "media_id": { "type": "string" }, "track_id": { "type": "integer" } } }
+        },
+        "selected_person_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "question": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$" },
+        "type": { "enum": ["single", "likert"] },
+        "prompt": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "options_from": { "const": "classes" },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+        "min": { "type": "integer" }, "max": { "type": "integer" },
+        "anchors": { "type": "object", "properties": { "min": { "type": "string" }, "max": { "type": "string" } } },
+        "show_if": {
+          "type": "object",
+          "description": "Asked only after one of these answers to an earlier question.",
+          "additionalProperties": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }
+        },
+        "required": { "type": "boolean" }
+      }
+    },
+
+    "annotation_task": {
+      "type": "object",
+      "description": "task.json of annotation_task(), and window.TE_TASK in its page/data.js. Holds no file names.",
+      "required": ["schema", "schema_version", "task_id", "mode", "questions", "items", "assignments"],
+      "properties": {
+        "schema": { "const": "transforEmotion.annotation_task" },
+        "schema_version": { "$ref": "#/$defs/version" },
+        "task_id": { "$ref": "#/$defs/id" },
+        "mode": { "const": "annotate" },
+        "unit": { "const": "face" },
+        "title": { "type": "string" },
+        "instructions": { "type": "string" },
+        "classes": { "type": "array", "items": { "type": "string" } },
+        "questions": { "type": "array", "items": { "$ref": "#/$defs/question" }, "minItems": 1 },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "allow_back": { "type": "boolean" }, "allow_skip": { "type": "boolean" },
+            "show_progress": { "type": "boolean" }, "context_padding": { "type": "number" }
+          }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["item_id", "media", "media_type", "width", "height", "box"],
+            "properties": {
+              "item_id": { "type": "string" },
+              "media": { "type": "string", "description": "The picture's copy under media/, named p001.jpg and so on." },
+              "media_type": { "enum": ["image", "frame"] },
+              "frame_index": { "type": ["integer", "null"] },
+              "timestamp_s": { "type": ["number", "null"] },
+              "width": { "type": "integer" }, "height": { "type": "integer" },
+              "box": { "$ref": "#/$defs/box" }
+            }
+          }
+        },
+        "assignments": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["coder_id", "items"],
+            "properties": {
+              "coder_id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,40}$" },
+              "items": { "type": "array", "items": { "type": "string" }, "description": "This coder's items, in their order." }
+            }
+          }
+        }
+      }
+    },
+
+    "record": {
+      "type": "object",
+      "description": "One answer: a line of results/<coder>.jsonl. The last record of an item is the coder's answer.",
+      "required": ["task_id", "item_id", "coder_id", "session_id", "seq", "revision", "status", "responses"],
+      "properties": {
+        "task_id": { "type": "string" }, "item_id": { "type": "string" }, "coder_id": { "type": "string" },
+        "session_id": { "type": "string" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "revision": { "type": "integer", "minimum": 1 },
+        "status": { "enum": ["answered", "skipped"] },
+        "responses": {
+          "type": "object",
+          "description": "Every question's answer; null when not asked or skipped.",
+          "additionalProperties": { "type": ["string", "integer", "null"] }
+        },
+        "shown_at": { "type": "string", "format": "date-time" },
+        "submitted_at": { "type": "string", "format": "date-time" },
+        "rt_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "annotations": {
+      "type": "object",
+      "description": "What Export annotations downloads.",
+      "required": ["schema", "task_id", "coder_id", "records"],
+      "properties": {
+        "schema": { "const": "transforEmotion.annotations" },
+        "schema_version": { "$ref": "#/$defs/version" },
+        "task_id": { "type": "string" },
+        "coder_id": { "type": "string" },
+        "exported_at": { "type": "string", "format": "date-time" },
+        "n_items": { "type": "integer" },
+        "records": { "type": "array", "items": { "$ref": "#/$defs/record" } }
+      }
+    }
+  }
+}

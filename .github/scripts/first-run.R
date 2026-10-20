@@ -135,6 +135,20 @@ if (phase == "first") {
     check(length(list.files(file.path(folder, "media"))) == 20, "frame copies missing")
   })
 
+  step("annotation_task and annotate_faces (served by R; no browser)", {
+    task <- annotation_task(clip, classes = emotions, coders = c("C01", "C02"),
+                            dir = file.path(tempdir(), "annotation-round-1"))
+    check(nrow(task$items) == nrow(clip), "expected one item per face")
+    check(all(file.exists(file.path(task$dir, "page", task$items$picture))), "pictures missing")
+    page <- annotate_faces(task, coder = "C01", open = FALSE)
+    data_js <- tryCatch(httr::content(httr::GET(sub("[?].*", "data.js", page$url), httr::timeout(10)),
+                                      as = "text", encoding = "UTF-8"),
+                        finally = page$stop())
+    check(grepl("api/save", data_js, fixed = TRUE), "coding page not served with its R connection")
+    progress <- annotation_progress(task)
+    check(all(progress$left == progress$assigned), "a new task has answers")
+  })
+
   step("vad_scores", {
     s <- vad_scores("We won the final! This is the best day of my life.",
                     input_type = "text")
