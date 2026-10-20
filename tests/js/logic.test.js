@@ -94,3 +94,19 @@ test("tasks the page cannot show are explained", () => {
   stray.faces.push(face("m09#0#1"));
   assert.match(L.checkTask(stray), /m09#0#1 belongs to no image/);
 });
+
+test("a notebook page gives the selection as a line of R code", () => {
+  const task = imageTask();
+  const chosen = new Set(["m01#0#2"]);
+  const code = L.selectionCode(task, chosen, "2026-10-20T10:00:00Z", "my_faces");
+  const m = code.match(/^chosen <- read_face_selection\("te-selection:([A-Za-z0-9+/=]+)", my_faces\)$/);
+  assert.ok(m, code);
+  const doc = JSON.parse(Buffer.from(m[1], "base64").toString("utf8"));
+  assert.deepEqual(doc, L.selectionDocument(task, chosen, "2026-10-20T10:00:00Z"));
+  // Non-ASCII file names survive the round trip
+  task.media[0].label = "čaša ☕.jpg";
+  const again = L.selectionCode(task, chosen, "t", null);
+  assert.match(again, /, faces\)$/);
+  const label = JSON.parse(Buffer.from(again.match(/te-selection:([^"]+)/)[1], "base64").toString("utf8")).media[0].label;
+  assert.equal(label, "čaša ☕.jpg");
+});

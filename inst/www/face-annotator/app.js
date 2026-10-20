@@ -46,6 +46,9 @@
 
   /* Talking to R, when R serves the page (window.TE_API, set in data.js) */
   const api = window.TE_API || null;
+  // In a notebook (window.TE_NOTEBOOK, set in data.js) the page lives in the
+  // cell's output and gives the selection as a line of R code
+  const notebook = window.TE_NOTEBOOK || null;
   async function postJson(url, data) {
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data), cache: "no-store" });
@@ -65,6 +68,17 @@
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (e) { /* ignore */ }
+  }
+  function showCode(code) {
+    $("#export-h").textContent = "R code for this selection";
+    $("#export-text").value = code;
+    $("#export-text").setAttribute("aria-label", "R code");
+    $("#export-text").rows = 4;
+    $("#export-copy").textContent = "Copy code";
+    put($("#export-note"), "Paste this line into a new cell and run it: ",
+      el("code", { text: "read_face_selection()" }), " returns the selected faces.");
+    $("#export").hidden = false;
+    $("#export-copy").focus();
   }
   function deliver(filename, data) {
     const text = JSON.stringify(data, null, 2);
@@ -292,6 +306,7 @@
       el("input", { type: "checkbox", id: "show-scores", onchange: (e) => { showScores = e.target.checked; render(); } }), "Show confidence"));
     const selection = () => L.selectionDocument(task, chosen, new Date().toISOString());
     const exportFile = () => deliver(`selection-${task.task_id}.json`, selection());
+    const copyCode = () => showCode(L.selectionCode(task, chosen, new Date().toISOString(), notebook.faces));
     // Served by R: the choice goes straight back to view_faces()
     async function sendToR(btn) {
       btn.disabled = true;
@@ -325,7 +340,8 @@
           el("button", { type: "button", onclick: () => { chosen.clear(); initial.forEach((id) => chosen.add(id)); sync(); }, text: "Reset" }),
           el("button", { type: "button", onclick: () => { chosen.clear(); sync(); }, text: "Clear" }),
           send ? [api.cancel && el("button", { type: "button", id: "cancel-selection", onclick: cancel, text: "Cancel" }), send]
-            : el("button", { type: "button", class: "primary", id: "export-selection", text: "Export selection", onclick: exportFile })));
+            : notebook ? el("button", { type: "button", class: "primary", id: "copy-code", text: "Copy R code", onclick: copyCode })
+              : el("button", { type: "button", class: "primary", id: "export-selection", text: "Export selection", onclick: exportFile })));
     }
     render();
   }
@@ -341,4 +357,12 @@
   ui.chip.textContent = task.mode === "select" ? "Select" : "View";
   document.title = `${task.title || "Faces"}: ${task.mode}`;
   browser(task);
+  // In a notebook the page is an iframe in the cell's output: tell the output
+  // how tall the page is, so it needs no scroll bar of its own
+  if (notebook && window.parent !== window) {
+    document.body.setAttribute("data-notebook", "");
+    const report = () => window.parent.postMessage({ teFacesHeight: document.documentElement.scrollHeight }, "*");
+    if (typeof ResizeObserver === "function") new ResizeObserver(report).observe(document.body);
+    report();
+  }
 })();

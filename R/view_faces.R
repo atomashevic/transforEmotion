@@ -17,6 +17,13 @@
 #' from a remote computer to yours. Its \strong{Export selection} button then
 #' downloads a file that \code{\link{read_face_selection}()} reads.
 #'
+#' In a Jupyter notebook, including Google Colab, the page is shown inside the
+#' notebook, below the cell (\code{inline = TRUE}, the default there). A page
+#' served from R cannot be reached from a notebook running on another
+#' computer, so in select mode the page gives a line of R code instead:
+#' click \strong{Copy R code}, paste the line into a new cell and run it, and
+#' \code{\link{read_face_selection}()} returns the chosen faces.
+#'
 #' @param faces A data frame returned by \code{\link{detect_faces}} or
 #'   \code{\link{select_faces}}.
 #' @param select Logical. Let the viewer choose faces and return them.
@@ -32,10 +39,15 @@
 #'   the temporary directory, which R deletes when the session ends.
 #' @param title Title shown at the top of the page.
 #' @param max_side Longest side, in pixels, of the image and frame copies in
-#'   the page. Boxes are drawn in the original pixels, whatever the size of
-#'   the copies.
+#'   the page. Default is 1280, or 640 inside a notebook, where the copies are
+#'   stored in the notebook itself. Boxes are drawn in the original pixels,
+#'   whatever the size of the copies.
 #' @param port Port of the local server. Default is a free port chosen at
 #'   random; set one to forward it over SSH when R runs on a remote computer.
+#' @param inline Logical. Show the page inside the notebook, below the cell,
+#'   instead of in a browser tab. Default is \code{TRUE} in a Jupyter
+#'   notebook (Google Colab, JupyterLab, VS Code) and \code{FALSE} elsewhere.
+#'   \code{live} and \code{open} are then ignored.
 #'
 #' @details
 #' Images without a face are shown too when \code{faces} is a complete
@@ -62,7 +74,10 @@
 #'   \strong{Cancel}. Otherwise, invisibly, the page: a list with its
 #'   \code{url}, its folder \code{dir}, and \code{stop()}, which stops the
 #'   server. With \code{live = FALSE}, the path of the page's
-#'   \code{index.html}, invisibly.
+#'   \code{index.html}, invisibly. With \code{inline = TRUE}, invisibly, the
+#'   path of the page as one self-contained file, \code{faces.html} in
+#'   \code{dir}; in select mode the chosen faces come from the copied line of
+#'   code.
 #'
 #' @seealso \code{\link{draw_faces}} for the same boxes as plots in R,
 #'   \code{\link{select_faces}} to choose faces by rule, number or person.
@@ -81,12 +96,20 @@
 #' # Without a server: a folder to copy, and a file to read back
 #' view_faces(faces, select = TRUE, live = FALSE, dir = "faces-page")
 #' chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
+#'
+#' # In a notebook (Colab): the page appears below the cell. Click the faces,
+#' # then Copy R code, and run the copied line in a new cell, for example
+#' view_faces(faces, select = TRUE)
+#' chosen <- read_face_selection("te-selection:eyJzY2hlbWEiOi...", faces)
 #' }
 #'
 #' @export
 view_faces <- function(faces, select = FALSE, selected = NULL, live = TRUE,
-                       open = interactive(), dir = NULL, title = NULL, max_side = 1280,
-                       port = NULL) {
+                       open = interactive(), dir = NULL, title = NULL, max_side = NULL,
+                       port = NULL, inline = .te_in_notebook()) {
+  # The name the copied line of code uses for the faces table
+  faces_name <- paste(deparse(substitute(faces)), collapse = " ")
+  if (!identical(make.names(faces_name), faces_name)) faces_name <- "faces"
   .te_check_faces_table(faces)
   if (!nrow(faces)) stop("faces has no rows to show.", call. = FALSE)
   if (!is.null(selected)) {
@@ -98,6 +121,21 @@ view_faces <- function(faces, select = FALSE, selected = NULL, live = TRUE,
     stop("dir must be a new or empty folder: ", dir, call. = FALSE)
   }
   mode <- if (isTRUE(select)) "select" else "view"
+
+  if (isTRUE(inline)) {
+    task <- .te_write_face_page(faces, dir, mode, title, if (is.null(max_side)) 640 else max_side,
+                                selected, notebook = faces_name)
+    page <- file.path(dir, "faces.html")
+    writeLines(.te_single_file_page(dir), page, useBytes = TRUE)
+    .te_show_in_notebook(page, task$task_id)
+    if (mode == "select") {
+      message("Click faces, video tracks or people below, then Copy R code. Paste the line ",
+              "into a new cell and run it: read_face_selection() returns the chosen faces.")
+    }
+    return(invisible(normalizePath(page)))
+  }
+
+  if (is.null(max_side)) max_side <- 1280
   api <- if (isTRUE(live) && mode == "select") c("selection", "cancel") else character()
   task <- .te_write_face_page(faces, dir, mode, title, max_side, selected, api)
 
@@ -157,9 +195,11 @@ print.te_face_page <- function(x, ...) {
 #' @noRd
 # Writes the page into dir: the app's files, data.js and the display copies.
 # api names the server's handlers the page may call (data.js sets
-# window.TE_API); none for a page opened from disk. Returns the task.
+# window.TE_API); none for a page opened from disk. notebook, the R name of
+# the faces table, writes a page for a notebook: the images go into data.js,
+# and window.TE_NOTEBOOK tells the page to give a line of code. Returns the task.
 .te_write_face_page <- function(faces, dir, mode, title, max_side, selected = NULL,
-                                api = character()) {
+                                api = character(), notebook = NULL) {
   dir.create(file.path(dir, "media"), recursive = TRUE, showWarnings = FALSE)
   settings <- attr(faces, "settings")
   is_video <- .te_is_video_faces(faces, settings)
@@ -185,16 +225,22 @@ print.te_face_page <- function(x, ...) {
                                    max_side = as.integer(max_side))
   shown$img_w <- vapply(sizes, function(s) as.integer(s[[1]]), integer(1))
   shown$img_h <- vapply(sizes, function(s) as.integer(s[[2]]), integer(1))
+  # A notebook shows the page from its own output, with no folder beside it
+  if (!is.null(notebook)) shown$file <- .te_data_uri(file.path(dir, shown$file))
 
   task <- .te_face_task(faces, shown, is_video, mode, title,
                         selected_ids = if (is.null(selected)) character() else .te_face_ids(selected),
-                        live = length(api) > 0)
+                        live = length(api) > 0, notebook = !is.null(notebook))
   json <- jsonlite::toJSON(task, auto_unbox = TRUE, null = "null", na = "null", digits = 4)
   js <- paste0("window.TE_TASK = ", json, ";")
   if (length(api)) {
     # Relative to the page, so the server's random prefix is not repeated here
     endpoints <- stats::setNames(as.list(paste0("api/", api)), api)
     js <- c(js, paste0("window.TE_API = ", jsonlite::toJSON(endpoints, auto_unbox = TRUE), ";"))
+  }
+  if (!is.null(notebook)) {
+    js <- c(js, paste0("window.TE_NOTEBOOK = ",
+                       jsonlite::toJSON(list(faces = notebook), auto_unbox = TRUE), ";"))
   }
   writeLines(js, file.path(dir, "data.js"), useBytes = TRUE)
   app <- system.file("www", "face-annotator", .te_face_app_files, package = "transforEmotion",
@@ -206,11 +252,13 @@ print.te_face_page <- function(x, ...) {
 #' Read faces chosen in the browser
 #'
 #' Reads the file that \strong{Export selection} in
-#' \code{\link{view_faces}}\code{(select = TRUE)} downloads, and returns the
+#' \code{\link{view_faces}}\code{(select = TRUE)} downloads, or the code in
+#' the line that \strong{Copy R code} gives in a notebook, and returns the
 #' chosen faces.
 #'
-#' @param file Path of the exported \code{selection-<task>.json} file, or its
-#'   text (as copied from the page).
+#' @param file Path of the exported \code{selection-<task>.json} file, its
+#'   text (as copied from the page), or the \code{"te-selection:..."} code in
+#'   the line that \strong{Copy R code} gives in a notebook.
 #' @param faces The same data frame that was passed to
 #'   \code{\link{view_faces}}, or the full \code{\link{detect_faces}} result
 #'   it was taken from.
@@ -233,6 +281,14 @@ read_face_selection <- function(file, faces) {
   .te_check_faces_table(faces)
   if (!is.character(file) || length(file) != 1 || is.na(file)) {
     stop("file must be one path or the exported text.", call. = FALSE)
+  }
+  # The code may come back wrapped over several lines
+  code <- regmatches(file, regexec("^[[:space:]]*te-selection:([A-Za-z0-9+/=[:space:]]+)$", file))[[1]]
+  if (length(code)) {
+    file <- tryCatch(rawToChar(jsonlite::base64_dec(gsub("[[:space:]]", "", code[2]))),
+                     error = function(e) stop("The selection code is cut off or changed; copy it again.",
+                                              call. = FALSE))
+    Encoding(file) <- "UTF-8"
   }
   is_text <- grepl("^\\s*\\{", file)
   if (!is_text && !file.exists(file)) stop("File does not exist: ", file, call. = FALSE)
@@ -347,7 +403,7 @@ read_face_selection <- function(file, faces) {
 #' @noRd
 # The task view_faces() writes to data.js (window.TE_TASK)
 .te_face_task <- function(faces, shown, is_video, mode, title, selected_ids = character(),
-                          live = FALSE) {
+                          live = FALSE, notebook = FALSE) {
   face_ids <- .te_face_ids(faces)
   column <- function(name, fill = NA) if (name %in% names(faces)) faces[[name]] else rep(fill, nrow(faces))
   media_id <- shown$media_id[match(faces$source, shown$source)]
@@ -389,6 +445,9 @@ read_face_selection <- function(file, faces) {
   )
   instructions <- if (mode == "select" && live) {
     "Click faces, video tracks or people to select them, then Send to R."
+  } else if (mode == "select" && notebook) {
+    paste("Click faces, video tracks or people to select them, then Copy R code,",
+          "and run the copied line in a new cell.")
   } else if (mode == "select") {
     paste("Click faces, video tracks or people to select them, then Export selection",
           "and read the file in R with read_face_selection().")

@@ -60,6 +60,8 @@ o ADD: `draw_faces()`, or `plot()` on a `detect_faces()` result, draws each face
 
 o ADD: `view_faces()` shows the faces of a `detect_faces()` table in the web browser, coloured by person, with a list of the people found. R serves the page itself (with httpuv, on 127.0.0.1 only). With `select = TRUE`, faces, video tracks or people can be clicked, and Send to R returns the chosen faces from `view_faces()`. With `live = FALSE`, the page is a folder that also works when opened from disk, and `read_face_selection()` reads its exported choice
 
+o ADD: in a Jupyter notebook, including Google Colab, `view_faces()` shows the page below the cell (`inline = TRUE`, the default there), as one self-contained page with smaller copies of the images (`max_side` 640). In select mode, **Copy R code** gives a line such as `chosen <- read_face_selection("te-selection:...", faces)` to run in a new cell, because a page served from R cannot be reached from a notebook running on another computer
+
 o ADD: example files `two-people.jpg` (two people side by side) and `two-people.mp4` (12 s: two people, a black gap, then one of them alone) in `inst/extdata`, for trying the face functions
 
 o ADD: `face_selection` in `image_scores()`, `image_scores_dir()` and `video_scores()` also takes `"all"` (one row per face), face numbers (`image_scores()`), or a data frame from `detect_faces()` or `select_faces()`, for example the faces of one person in a video
