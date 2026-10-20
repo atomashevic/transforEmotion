@@ -118,6 +118,22 @@
     };
   }
 
+  // Base64 of the UTF-8 bytes of text, in the browser and in Node
+  function base64(text) {
+    let bin = "";
+    new TextEncoder().encode(text).forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+
+  // The line of R code a page in a notebook gives instead of a file: the
+  // selection document, base64-encoded so it needs no quoting.
+  // read_face_selection() reads the "te-selection:" code.
+  function selectionCode(task, chosen, exportedAt, facesName) {
+    const doc = selectionDocument(task, chosen, exportedAt);
+    return 'chosen <- read_face_selection("te-selection:' + base64(JSON.stringify(doc)) + '", ' +
+      (facesName || "faces") + ")";
+  }
+
   // A message for a task this page cannot show, or null
   function checkTask(task) {
     if (!task || typeof task !== "object") {
@@ -140,7 +156,7 @@
   const api = {
     faceNumber, byNumber, personsOf, tracksOf, trackLabel, personLabel,
     colourNumber, boxLabel, describe, toggleGroup, groupState, clickGroup,
-    selectedIds, selectionDocument, checkTask
+    selectedIds, selectionDocument, selectionCode, checkTask
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.TEFaceLogic = api;

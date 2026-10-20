@@ -18,7 +18,7 @@ License: GPL (>= 3.0)
 Copyright: See file inst/COPYRIGHTS
 Encoding: UTF-8
 Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, remotes, reticulate (>= 1.45.0), textdata, jsonlite, ggplot2, reshape2, httr, httpuv (>= 1.6.0)
-Suggests: knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0), withr
+Suggests: IRdisplay, knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0), withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

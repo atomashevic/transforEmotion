@@ -8,6 +8,7 @@ mock_display_copies <- function(env = parent.frame()) {
   calls <- new.env()
   display_copies <- function(images, out_paths, max_side) {
     calls$images <- unlist(images)
+    calls$max_side <- max_side
     file.create(unlist(out_paths))
     lapply(images, function(i) list(400L, 300L))
   }
@@ -173,6 +174,103 @@ test_that("read_face_selection returns the chosen faces", {
   expect_equal(.te_media_key(c(file.path(dirs[2], "b.jpg"), "https://example.org/x.jpg", dirs[2]))[-1],
                c(NA_character_, NA_character_))
   expect_error(read_face_selection(file.path(tempdir(), "no-such.json"), faces), "does not exist")
+})
+
+test_that("read_face_selection reads the code a notebook page gives", {
+  faces <- fake_faces()
+  doc <- jsonlite::toJSON(list(
+    schema = "transforEmotion.face_selection", schema_version = "1.0.0", task_id = "t",
+    media = data.frame(media_id = c("m01", "m02"), label = c("a.jpg", "b.jpg")),
+    selected_face_ids = I(c("m01#0#2", "m02#0#1"))
+  ), auto_unbox = TRUE)
+  code <- paste0("te-selection:", jsonlite::base64_enc(charToRaw(as.character(doc))))
+  chosen <- read_face_selection(code, faces)
+  expect_equal(chosen$x, c(200, 50))
+  # Surrounding spaces from copying are fine; a cut-off code is not
+  expect_equal(nrow(read_face_selection(paste0("  ", code, "\n"), faces)), 2)
+  expect_error(read_face_selection(substr(code, 1, 40), faces), "cut off|selection")
+})
+
+test_that("view_faces in a notebook shows one self-contained page below the cell", {
+  dir <- file.path(withr::local_tempdir(), "page")
+  calls <- mock_display_copies()
+  shown <- new.env()
+  local_mocked_bindings(.te_display_html = function(html, page) {
+    shown$html <- html
+    shown$page <- page
+    invisible(TRUE)
+  })
+  my_faces <- fake_faces()
+  expect_message(page <- view_faces(my_faces, select = TRUE, inline = TRUE, dir = dir,
+                                    selected = my_faces[1, ]),
+                 "Copy R code")
+  expect_equal(basename(page), "faces.html")
+  html <- paste(readLines(page, warn = FALSE), collapse = "\n")
+  # Nothing outside the page: styles, scripts and images are inside it
+  expect_false(grepl("<script src=|<link rel=\"stylesheet\"|src=\"media/", html))
+  expect_match(html, "data:image/jpeg;base64,", fixed = TRUE)
+  expect_match(html, "window.TE_NOTEBOOK = {\"faces\":\"my_faces\"};", fixed = TRUE)
+  expect_match(html, "script-src 'unsafe-inline'", fixed = TRUE)
+  expect_false(grepl("window.TE_API = ", html, fixed = TRUE))
+  task <- jsonlite::fromJSON(sub(";$", "", regmatches(html, regexpr("(?<=window\\.TE_TASK = ).*?;(?=\n)", html, perl = TRUE))))
+  expect_match(task$instructions, "Copy R code")
+  expect_equal(task$faces$selected, c(TRUE, FALSE, FALSE))
+  expect_match(task$media$src, "^data:image/jpeg;base64,")
+  # The notebook gets an iframe holding the page, escaped as an attribute
+  expect_match(shown$html, "<iframe id=\"te-faces-", fixed = TRUE)
+  expect_match(shown$html, "srcdoc=\"&lt;!doctype html&gt;|srcdoc=\"<!doctype html>")
+  expect_false(grepl("srcdoc=\"[^\"]*\"[^>]*window.TE_TASK", shown$html))
+  expect_equal(normalizePath(shown$page), normalizePath(page))
+  # Smaller copies by default
+  expect_equal(calls$max_side, 640L)
+})
+
+test_that("view_faces shows the page in the notebook by default in Jupyter", {
+  calls <- mock_display_copies()
+  shown <- new.env()
+  local_mocked_bindings(.te_display_html = function(html, page) {
+    shown$n <- c(shown$n, 1)
+    invisible(TRUE)
+  })
+  withr::local_options(jupyter.in_kernel = TRUE)
+  page <- view_faces(fake_faces(), dir = file.path(withr::local_tempdir(), "page"))
+  expect_equal(length(shown$n), 1)
+  expect_equal(basename(page), "faces.html")
+  # A table that is not a plain name: the code uses faces
+  dir <- file.path(withr::local_tempdir(), "page2")
+  page <- suppressMessages(view_faces(fake_faces()[1:2, ], select = TRUE, dir = dir))
+  expect_match(paste(readLines(page, warn = FALSE), collapse = "\n"),
+               "window.TE_NOTEBOOK = {\"faces\":\"faces\"};", fixed = TRUE)
+})
+
+test_that("scripts inlined into the notebook page cannot end early", {
+  dir <- withr::local_tempdir()
+  file.copy(system.file("www", "face-annotator", .te_face_app_files, package = "transforEmotion"), dir)
+  writeLines('window.TE_TASK = {"title": "a </script><b>"};', file.path(dir, "data.js"))
+  page <- .te_single_file_page(dir)
+  expect_false(grepl("a </script>", page, fixed = TRUE))
+  expect_match(page, "a <\\/script><b>", fixed = TRUE)
+  expect_equal(lengths(regmatches(page, gregexpr("<script>", page, fixed = TRUE))), 3)
+})
+
+test_that("the notebook page keeps UTF-8 text in any locale", {
+  dir <- withr::local_tempdir()
+  file.copy(system.file("www", "face-annotator", .te_face_app_files, package = "transforEmotion"), dir)
+  writeLines(enc2utf8('window.TE_TASK = {"title": "čaša · ☕"};'), file.path(dir, "data.js"),
+             useBytes = TRUE)
+  withr::local_locale(c(LC_CTYPE = "C"))
+  page <- .te_single_file_page(dir)
+  bytes <- function(x) paste(as.character(charToRaw(x)), collapse = " ")
+  expect_match(bytes(page), bytes(enc2utf8("čaša · ☕")), fixed = TRUE)
+  # app.js labels such as "P1 · T2" stay intact
+  expect_false(grepl("<U+00B7>", page, fixed = TRUE))
+  html <- NULL
+  local_mocked_bindings(.te_display_html = function(h, page) html <<- h)
+  file <- file.path(dir, "faces.html")
+  writeLines(page, file, useBytes = TRUE)
+  .te_show_in_notebook(file, "faces-1")
+  expect_match(bytes(html), bytes(enc2utf8("·")), fixed = TRUE)
+  expect_false(grepl("<U+00B7>", html, fixed = TRUE))
 })
 
 # A request as httpuv hands it to the server's call function

@@ -31,6 +31,22 @@ the selection as a file instead. Without `window.TE_API` the page shows
 with the server's own address as the `Host`; any other address outside the
 page is a 404 that never reaches R.
 
+## In a notebook
+
+In a Jupyter notebook (Google Colab, JupyterLab, VS Code), `view_faces()`
+shows the page in the cell's output (`R/face_notebook.R`). It writes the
+folder as usual, then makes one self-contained `faces.html` from it: the
+stylesheet and scripts inline, the images as `data:` URIs in `data.js`, and a
+Content-Security-Policy that allows only those. The notebook gets an iframe
+whose `srcdoc` is that page; the page posts its height to the iframe's parent
+so the output needs no scroll bar of its own.
+
+`data.js` then also sets `window.TE_NOTEBOOK = {"faces": "<R name>"}`. In
+select mode the page shows **Copy R code** instead of Export selection: a
+line `chosen <- read_face_selection("te-selection:<base64>", <R name>)`,
+where the base64 is the exported selection below (UTF-8 JSON), so it needs no
+quoting. R reads the code like the file.
+
 ## data.js (`schema: "transforEmotion.face_task"`, version 1.0.0)
 
 - `task_id`, `mode` (`"view"` or `"select"`), `title`, `instructions`.

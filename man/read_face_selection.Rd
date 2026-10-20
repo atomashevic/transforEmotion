@@ -7,8 +7,9 @@
 read_face_selection(file, faces)
 }
 \arguments{
-\item{file}{Path of the exported \code{selection-<task>.json} file, or its
-text (as copied from the page).}
+\item{file}{Path of the exported \code{selection-<task>.json} file, its
+text (as copied from the page), or the \code{"te-selection:..."} code in
+the line that \strong{Copy R code} gives in a notebook.}
 
 \item{faces}{The same data frame that was passed to
 \code{\link{view_faces}}, or the full \code{\link{detect_faces}} result
@@ -21,7 +22,8 @@ The chosen rows of \code{faces}, which \code{\link{face_scores}}
 }
 \description{
 Reads the file that \strong{Export selection} in
-\code{\link{view_faces}}\code{(select = TRUE)} downloads, and returns the
+\code{\link{view_faces}}\code{(select = TRUE)} downloads, or the code in
+the line that \strong{Copy R code} gives in a notebook, and returns the
 chosen faces.
 }
 \examples{

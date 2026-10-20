@@ -12,8 +12,9 @@ view_faces(
   open = interactive(),
   dir = NULL,
   title = NULL,
-  max_side = 1280,
-  port = NULL
+  max_side = NULL,
+  port = NULL,
+  inline = .te_in_notebook()
 )
 }
 \arguments{
@@ -39,11 +40,17 @@ the temporary directory, which R deletes when the session ends.}
 \item{title}{Title shown at the top of the page.}
 
 \item{max_side}{Longest side, in pixels, of the image and frame copies in
-the page. Boxes are drawn in the original pixels, whatever the size of
-the copies.}
+the page. Default is 1280, or 640 inside a notebook, where the copies are
+stored in the notebook itself. Boxes are drawn in the original pixels,
+whatever the size of the copies.}
 
 \item{port}{Port of the local server. Default is a free port chosen at
 random; set one to forward it over SSH when R runs on a remote computer.}
+
+\item{inline}{Logical. Show the page inside the notebook, below the cell,
+instead of in a browser tab. Default is \code{TRUE} in a Jupyter
+notebook (Google Colab, JupyterLab, VS Code) and \code{FALSE} elsewhere.
+\code{live} and \code{open} are then ignored.}
 }
 \value{
 With \code{select = TRUE}: the chosen rows of \code{faces}, which
@@ -53,7 +60,10 @@ With \code{select = TRUE}: the chosen rows of \code{faces}, which
   \strong{Cancel}. Otherwise, invisibly, the page: a list with its
   \code{url}, its folder \code{dir}, and \code{stop()}, which stops the
   server. With \code{live = FALSE}, the path of the page's
-  \code{index.html}, invisibly.
+  \code{index.html}, invisibly. With \code{inline = TRUE}, invisibly, the
+  path of the page as one self-contained file, \code{faces.html} in
+  \code{dir}; in select mode the chosen faces come from the copied line of
+  code.
 }
 \description{
 Starts a small web page from R that shows every image, or every sampled
@@ -73,6 +83,13 @@ With \code{live = FALSE}, no server is started: the page is written as a
 folder that also works when opened from disk, for example after copying it
 from a remote computer to yours. Its \strong{Export selection} button then
 downloads a file that \code{\link{read_face_selection}()} reads.
+
+In a Jupyter notebook, including Google Colab, the page is shown inside the
+notebook, below the cell (\code{inline = TRUE}, the default there). A page
+served from R cannot be reached from a notebook running on another
+computer, so in select mode the page gives a line of R code instead:
+click \strong{Copy R code}, paste the line into a new cell and run it, and
+\code{\link{read_face_selection}()} returns the chosen faces.
 
 
 Images without a face are shown too when \code{faces} is a complete
@@ -106,6 +123,11 @@ face_scores(chosen, classes = c("happy", "sad", "angry", "neutral"))
 # Without a server: a folder to copy, and a file to read back
 view_faces(faces, select = TRUE, live = FALSE, dir = "faces-page")
 chosen <- read_face_selection("~/Downloads/selection-faces-20261011-101500.json", faces)
+
+# In a notebook (Colab): the page appears below the cell. Click the faces,
+# then Copy R code, and run the copied line in a new cell, for example
+view_faces(faces, select = TRUE)
+chosen <- read_face_selection("te-selection:eyJzY2hlbWEiOi...", faces)
 }
 
 }
