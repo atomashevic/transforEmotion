@@ -5,9 +5,9 @@
 \title{Set up a face annotation task}
 \usage{
 annotation_task(
-  faces,
+  faces = NULL,
   classes = NULL,
-  questions = annotation_questions(),
+  questions = NULL,
   coders = "C01",
   overlap = 1,
   dir,
@@ -15,18 +15,26 @@ annotation_task(
   title = NULL,
   instructions = NULL,
   max_side = 1280,
-  task_id = NULL
+  task_id = NULL,
+  items = NULL,
+  frames = 4,
+  play = TRUE,
+  blind = TRUE
 )
 }
 \arguments{
 \item{faces}{A data frame returned by \code{\link{detect_faces}} or
-\code{\link{select_faces}}: one item per row.}
+\code{\link{select_faces}}: one item per row. Or \code{NULL}, with
+\code{items}.}
 
 \item{classes}{The emotions coders choose from, for example the classes
 passed to \code{\link{face_scores}}. Needed by the \code{"emotion"}
 question.}
 
-\item{questions}{The questions, from \code{\link{annotation_questions}}.}
+\item{questions}{The questions, from \code{\link{annotation_questions}}.
+Default: \code{annotation_questions()} for faces;
+\code{annotation_questions(c("emotion", "why"))} for items with a
+\code{label} and a \code{prediction}, else \code{"emotion"}.}
 
 \item{coders}{Coder ids: letters, digits, dots, dashes or underscores.}
 
@@ -47,6 +55,21 @@ order. Your own random numbers are left as they were.}
 
 \item{task_id}{An id for the task. Coders' progress in the browser is
 kept under it. Default is made from the time.}
+
+\item{items}{Instead of \code{faces}: a data frame with one row per item
+and the columns \code{media} (path of a video or image file) and/or
+\code{text}, and optionally \code{id}, \code{label} (the reference
+label, returned as \code{reference}), \code{prediction} (the model's top
+class) and one column of model scores per class.}
+
+\item{frames}{For items: the number of frames shown per video clip, spread
+over the clip as \code{video_scores(uniform = TRUE)} samples them.}
+
+\item{play}{For items: put the clips themselves in the page, with their
+sound, when a browser can play them (MP4, WebM, MOV).}
+
+\item{blind}{For items: show the label, prediction and scores only after
+the questions without \code{reveal} are answered.}
 }
 \value{
 The task, invisibly: a list with its folder (\code{dir}),
@@ -61,6 +84,16 @@ coding page with \code{\link{annotate_faces}}, then read the answers with
 \code{\link{read_annotations}}.
 }
 \details{
+With \code{items} instead of \code{faces}, each item is a video clip, an
+image or a text, for example the clips a model got wrong. Coders see
+sampled frames of the clip with its face boxes (the largest face, the one
+\code{\link{video_scores}} scores by default, drawn solid), the clip itself
+with its sound, and the item's text. When the items have a reference
+\code{label} and a model \code{prediction}, the page shows them with the
+model's scores once the coder has answered (\code{blind = TRUE}), then
+asks what explains the result (\code{annotation_questions("why")}). Unlike
+a face task, such a page holds the texts, labels and scores.
+
 The task is a folder:
 \describe{
   \item{\code{page/}}{The coding page: small copies of the images or video
@@ -79,6 +112,15 @@ faces <- detect_faces(system.file("extdata", "two-people.mp4", package = "transf
 task <- annotation_task(faces, classes = c("happy", "sad", "angry", "neutral"),
                         coders = c("C01", "C02"), dir = "annotation-round-1")
 annotate_faces(task)
+
+# A model's errors on video clips, with their descriptions
+emotions <- c("angry", "fearful", "happy", "sad")
+items <- data.frame(id = errors$clip, media = errors$path, text = errors$description,
+                    label = errors$label, prediction = errors$predicted, errors[, emotions])
+review <- annotation_task(items = items, classes = emotions, dir = "error-review")
+annotate_faces(review)
+answers <- read_annotations(review)
+table(answers$value[answers$question == "why"])
 }
 
 }

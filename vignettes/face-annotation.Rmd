@@ -122,6 +122,37 @@ evaluate_emotions(both, id_col = "item_id", truth_col = "label", pred_col = "pre
                   probs_cols = emotions, classes = emotions)
 ```
 
+## Review a model's errors
+
+A task can also hold video clips, images or texts instead of single faces.
+That is the way to look at a model's errors: which clips it gets wrong, and why.
+Give `annotation_task()` the items as a data frame: the clip (`media`), its text, the dataset's `label`, the model's `prediction` and its scores, one column per class.
+
+```{r}
+emotions <- c("angry", "fearful", "happy", "sad")
+items <- data.frame(id = errors$clip, media = errors$path, text = errors$description,
+                    label = errors$label, prediction = errors$predicted, errors[, emotions])
+review <- annotation_task(items = items, classes = emotions, coders = c("C01", "C02"),
+                          dir = "error-review")
+annotate_faces(review, coder = "C01")
+```
+
+Each item shows four frames of the clip with the faces found in them (the solid box is the largest face, the one `video_scores()` scores by default), the clip itself with its sound, and its text.
+The coder first says which emotion they see; only then are the dataset's label, the model's answer and its scores shown (`blind = TRUE`), with a second question: what explains the result?
+The model is wrong, the label is debatable, the wrong face was scored, no face is visible, or the model and the label agree.
+
+```{r}
+answers <- read_annotations(review)
+table(answers$value[answers$question == "why"])
+
+# The coders' label for each clip, against the dataset's label and against the model
+consensus <- consensus_labels(answers)
+evaluate_emotions(consensus, truth_col = "reference", pred_col = "label")
+evaluate_emotions(consensus, truth_col = "label", pred_col = "prediction")
+```
+
+Unlike a face task, this page holds the texts, labels and scores, so share it only with people who may see them.
+
 ## Privacy
 
 Faces are personal data, and grouping them by person is biometric processing.

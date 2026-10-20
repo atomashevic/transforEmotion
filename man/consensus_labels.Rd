@@ -27,7 +27,10 @@ A data frame with one row per item: \code{item_id}, \code{label}
   \code{n_coders}, \code{agreement} (the share of coders who gave the
   majority answer; \code{NA} for the mean or median), \code{tie}, and the
   item's face (\code{source}, \code{frame}, \code{frame_index},
-  \code{time}, \code{face}, \code{track_id}, \code{person_id}).
+  \code{time}, \code{face}, \code{track_id}, \code{person_id}), or, for
+  a task made from \code{items}, its \code{id}, \code{reference},
+  \code{prediction} and scores: compare the coders with the reference by
+  \code{evaluate_emotions(consensus, truth_col = "reference", pred_col = "label")}.
 }
 \description{
 Combines the coders' answers to one question into one value per item: the

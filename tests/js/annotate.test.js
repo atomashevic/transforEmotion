@@ -95,3 +95,32 @@ test("a notebook coding page gives the answers as a line of R code", () => {
     L.annotationsDocument(t, "C01", ["i3", "i1", "i2"], records, "2026-10-20T10:00:00Z"));
   assert.match(L.annotationsCode(t, "C01", [], [], "x", null), /^answers <- read_annotations\(task, /);
 });
+
+test("questions with reveal wait for the coder's own answer in a blind item task", () => {
+  const t = {
+    schema: "transforEmotion.annotation_task", schema_version: "1.0.0", task_id: "r1", mode: "annotate", unit: "item",
+    classes: ["angry", "sad"], score_classes: ["angry", "sad"], settings: { blind: true },
+    questions: [
+      { id: "emotion", type: "single", options_from: "classes", required: true },
+      { id: "why", type: "single", options: ["model", "label"], reveal: true, required: true }
+    ],
+    items: [{ item_id: "i1", kind: "text", text: "x", reference: "sad", prediction: "angry", scores: { angry: 0.6, sad: 0.4 } }],
+    assignments: [{ coder_id: "C01", items: ["i1"] }]
+  };
+  const [emotion, why] = t.questions;
+  assert.equal(L.isRevealed(t, {}), false);
+  assert.equal(L.isShown(why, {}, false), false);
+  assert.equal(L.isShown(why, {}, undefined), true);
+  assert.equal(L.missingQuestion(t.questions, {}, false), emotion);
+  assert.equal(L.isRevealed(t, { emotion: "sad" }), true);
+  assert.equal(L.activeQuestion(t.questions, { emotion: "sad" }, true), why);
+  assert.equal(L.missingQuestion(t.questions, { emotion: "sad", why: "label" }, true), undefined);
+  // A why given before the reveal is not kept; after it, it is
+  const rec = (responses) => L.makeRecord(t, "C01", "s", [], t.items[0], "answered", responses, "a", "b", 1).responses;
+  assert.deepEqual(rec({ why: "model" }), { emotion: null, why: null });
+  assert.deepEqual(rec({ emotion: "sad", why: "model" }), { emotion: "sad", why: "model" });
+  // Not blind: shown at once
+  assert.equal(L.isRevealed(Object.assign({}, t, { settings: { blind: false } }), {}), true);
+  assert.deepEqual(L.scoreList(t, t.items[0]), [{ cls: "angry", p: 0.6, top: true }, { cls: "sad", p: 0.4, top: false }]);
+  assert.equal(L.checkTask(t), null);
+});
