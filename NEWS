@@ -58,6 +58,8 @@ o ADD: `detect_faces()` finds every face in images or in the frames sampled from
 
 o ADD: `draw_faces()`, or `plot()` on a `detect_faces()` result, draws each face's box with its face or track number and person on the image or video frame, in one colour per person, and shows the drawn images in the plot window or below a notebook cell
 
+o ADD: `view_faces()` shows the faces of a `detect_faces()` table in the web browser, coloured by person, with a list of the people found. R serves the page itself (with httpuv, on 127.0.0.1 only). With `select = TRUE`, faces, video tracks or people can be clicked, and Send to R returns the chosen faces from `view_faces()`. With `live = FALSE`, the page is a folder that also works when opened from disk, and `read_face_selection()` reads its exported choice
+
 o ADD: example files `two-people.jpg` (two people side by side) and `two-people.mp4` (12 s: two people, a black gap, then one of them alone) in `inst/extdata`, for trying the face functions
 
 o ADD: `face_selection` in `image_scores()`, `image_scores_dir()` and `video_scores()` also takes `"all"` (one row per face), face numbers (`image_scores()`), or a data frame from `detect_faces()` or `select_faces()`, for example the faces of one person in a video
