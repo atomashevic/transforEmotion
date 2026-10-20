@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Only files in this folder, and the R session that serves it: no outside requests -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file:; img-src 'self' file: data: blob:; media-src 'self' file:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Annotate emotions</title>
+<link rel="icon" href="data:,"><!-- no favicon request -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><strong id="title">Annotate emotions</strong></div>
+  <div id="tools" class="tools"></div>
+</header>
+<main id="main"><p class="muted">Loading&hellip;</p></main>
+<footer id="foot" class="foot" hidden></footer>
+
+<dialog id="viewer" aria-labelledby="viewer-title">
+  <div class="dlg-head"><h2 id="viewer-title"></h2><button type="button" id="viewer-close">Close</button></div>
+  <div id="viewer-body"></div>
+</dialog>
+
+<section id="export" class="sheet" hidden aria-labelledby="export-h">
+  <div class="dlg-head"><h2 id="export-h">Exported answers</h2><button type="button" id="export-close">Close</button></div>
+  <p id="export-note" class="muted"></p>
+  <textarea id="export-text" readonly rows="6" spellcheck="false" aria-label="Exported answers"></textarea>
+  <div class="row"><button type="button" id="export-copy" class="primary">Copy</button></div>
+</section>
+<p id="status" class="status" role="status" aria-live="polite"></p>
+
+<!-- data.js sets window.TE_TASK. A plain script, not fetch(): browsers block
+     fetch() on pages opened from disk. -->
+<script src="data.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -383,6 +383,23 @@ LAION CLAP is a general audio model and separates speech emotions poorly. On RAV
 
 Most clips were predicted as neutral. Use the scores for exploration only, and validate them on a labelled sample from your own data (see `evaluate_emotions()`).
 
+## Human Annotation
+
+`annotate_emotions()` opens a page where people label the emotions in images, video clips (frames, the clip with its sound, and the face boxes) or texts, one item at a time. It is meant for collecting human labels for a sample, and for reviewing a model's errors: with the reference `label`, the model's `prediction` and its scores in the items, the page shows them only after the coder has given their own answer, then asks what explains a disagreement (the model, a debatable label, the wrong face, no visible face).
+
+```R
+emotions <- c("angry", "fearful", "happy", "sad")
+items <- data.frame(id = errors$clip, media = errors$path, text = errors$description,
+                    label = errors$label, prediction = errors$predicted, errors[, emotions])
+answers <- annotate_emotions(items, emotions, coder = "AT")
+
+table(answers$why)
+evaluate_emotions(answers, truth_col = "label", pred_col = "emotion")      # coder vs label
+evaluate_emotions(answers, truth_col = "emotion", pred_col = "prediction") # model vs coder
+```
+
+As with `view_faces()`, R serves the page on your own computer and saves every answer as the coder goes (to `save`), and **Finish** returns them. In a Jupyter notebook such as Google Colab the page appears below the cell, and **Copy R code** gives a line, `answers <- read_annotations("te-annotations:...", items)`, to run in a new cell. With `live = FALSE` the page is a folder you can send to a coder; its **Export answers** file is read with `read_annotations()`. `annotation_questions()` changes the questions.
+
 ## Vision Model Registry (experimental)
 
 Register custom/experimental vision models and list them for use in `image_scores()` and `video_scores()`:

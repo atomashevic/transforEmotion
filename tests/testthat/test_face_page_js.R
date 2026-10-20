@@ -1,5 +1,6 @@
-# The face viewer's JavaScript (inst/www/face-annotator). Runs the Node tests
-# in tests/js against the installed page, so R CMD check runs them too. Needs
+# The pages' JavaScript (inst/www/face-annotator, inst/www/emotion-annotator).
+# Runs the Node tests in tests/js against the installed pages, so R CMD check
+# runs them too. Needs
 # Node 18 or later on the PATH; skipped without it.
 
 skip_without_node <- function() {
@@ -19,22 +20,23 @@ run_node <- function(node, args, env = character()) {
   list(ok = is.null(attr(out, "status")) || attr(out, "status") == 0, out = out)
 }
 
-test_that("the face viewer's scripts parse", {
+test_that("the pages' scripts parse", {
   node <- skip_without_node()
-  page <- system.file("www", "face-annotator", package = "transforEmotion", mustWork = TRUE)
-  for (script in list.files(page, pattern = "\\.js$", full.names = TRUE)) {
+  pages <- system.file("www", c("face-annotator", "emotion-annotator"), package = "transforEmotion",
+                       mustWork = TRUE)
+  for (script in list.files(pages, pattern = "\\.js$", full.names = TRUE)) {
     run <- run_node(node, c("--check", shQuote(script)))
     expect(run$ok, paste(c(basename(script), run$out), collapse = "\n"))
   }
 })
 
-test_that("the face viewer's logic passes its Node tests", {
+test_that("the pages' logic passes its Node tests", {
   node <- skip_without_node()
   tests <- list.files(test_path("..", "js"), pattern = "\\.test\\.js$", full.names = TRUE)
   skip_if(!length(tests), "tests/js is not available")
-  logic <- system.file("www", "face-annotator", "logic.js", package = "transforEmotion",
-                       mustWork = TRUE)
+  logic <- system.file("www", c("face-annotator", "emotion-annotator"), "logic.js",
+                       package = "transforEmotion", mustWork = TRUE)
   run <- run_node(node, c("--test", shQuote(normalizePath(tests))),
-                  env = c(TE_FACE_LOGIC = normalizePath(logic)))
+                  env = c(TE_FACE_LOGIC = normalizePath(logic[1]), TE_ANNOTATE_LOGIC = normalizePath(logic[2])))
   expect(run$ok, paste(c("node --test failed:", run$out), collapse = "\n"))
 })
