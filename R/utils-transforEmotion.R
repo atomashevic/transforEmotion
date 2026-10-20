@@ -631,3 +631,9 @@ textsymbol <- function(symbol = c("alpha", "beta", "chi", "delta",
   return(sym)
 }
 
+#' @noRd
+# A YouTube video URL: http(s), host youtube.com (any subdomain) or youtu.be.
+# A local path that contains "youtube" is not one.
+.te_is_youtube_url <- function(x) {
+  grepl("^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)(/|$)", x, ignore.case = TRUE)
+}

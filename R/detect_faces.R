@@ -388,7 +388,7 @@ face_scores <- function(faces, classes, model = "oai-base", local_model_path = N
     stop("x must be image paths or URLs, a directory, or one video.", call. = FALSE)
   }
   video_ext <- "\\.(mp4|avi|mov|mkv|webm|m4v|mpg|mpeg|wmv)$"
-  if (length(x) == 1 && grepl("youtu", x, fixed = TRUE)) {
+  if (length(x) == 1 && .te_is_youtube_url(x)) {
     return(list(type = "youtube", paths = x))
   }
   if (length(x) == 1 && grepl(video_ext, x, ignore.case = TRUE)) {
@@ -557,7 +557,7 @@ face_scores <- function(faces, classes, model = "oai-base", local_model_path = N
   on.exit(if (!ok) cleanup(), add = TRUE)
   te_faces <- .te_faces_py()
   video <- sources
-  if (grepl("youtu", video, fixed = TRUE)) {
+  if (.te_is_youtube_url(video)) {
     .te_require("youtube")
     video <- te_faces$download_youtube(video, dir, "video")
   }

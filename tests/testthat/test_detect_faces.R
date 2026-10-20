@@ -49,6 +49,15 @@ test_that("face_selection accepts rules, all, face numbers and faces tables", {
   expect_error(.te_face_selection(data.frame(source = "a.jpg")), "detect_faces")
 })
 
+test_that("only YouTube URLs count as YouTube inputs to detect_faces", {
+  dir <- file.path(withr::local_tempdir(), "youtube")
+  dir.create(dir)
+  video <- file.path(dir, "clip.mp4")
+  file.create(video)
+  expect_equal(.te_face_inputs(video, "", FALSE)$type, "video")
+  expect_equal(.te_face_inputs("https://youtu.be/abc", "", FALSE)$type, "youtube")
+})
+
 test_that("select_faces picks one face per image by rule", {
   faces <- fake_faces()
   expect_equal(select_faces(faces, "largest")$face, c(2L, 1L))
