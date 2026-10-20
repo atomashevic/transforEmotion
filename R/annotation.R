@@ -14,6 +14,12 @@
 #'     \item{\code{"intensity"}}{How intense it is, 1 to 7.}
 #'     \item{\code{"valence"}}{How negative or positive the face is, -3 to 3.}
 #'     \item{\code{"arousal"}}{How calm or excited the face is, 0 to 6.}
+#'     \item{\code{"why"}}{For items with a reference label and a model
+#'       prediction (\code{annotation_task(items = ...)}): what explains the
+#'       result, compared with the label and the model. The model is wrong, the
+#'       label is debatable, the wrong face was scored, no face is visible, the
+#'       model and the label agree, or something else. Asked after the label,
+#'       the prediction and the scores are shown (\code{reveal = TRUE}).}
 #'   }
 #'
 #' @details
@@ -30,6 +36,10 @@
 #'     \code{anchors = list(min = "...", max = "...")}.}
 #'   \item{\code{show_if}}{Optional: ask only after another question got one
 #'     of these answers, as in \code{list(face_check = "ok")}.}
+#'   \item{\code{reveal}}{Optional, for items with a reference label and a
+#'     model prediction: \code{TRUE} asks the question only once they are
+#'     shown, which with \code{blind = TRUE} is after the other questions are
+#'     answered.}
 #'   \item{\code{required}}{\code{FALSE} lets coders leave it unanswered.}
 #' }
 #'
@@ -69,6 +79,16 @@ annotation_questions <- function(which = c("face_check", "emotion", "intensity")
 #' coding page with \code{\link{annotate_faces}}, then read the answers with
 #' \code{\link{read_annotations}}.
 #'
+#' With \code{items} instead of \code{faces}, each item is a video clip, an
+#' image or a text, for example the clips a model got wrong. Coders see
+#' sampled frames of the clip with its face boxes (the largest face, the one
+#' \code{\link{video_scores}} scores by default, drawn solid), the clip itself
+#' with its sound, and the item's text. When the items have a reference
+#' \code{label} and a model \code{prediction}, the page shows them with the
+#' model's scores once the coder has answered (\code{blind = TRUE}), then
+#' asks what explains the result (\code{annotation_questions("why")}). Unlike
+#' a face task, such a page holds the texts, labels and scores.
+#'
 #' The task is a folder:
 #' \describe{
 #'   \item{\code{page/}}{The coding page: small copies of the images or video
@@ -81,11 +101,15 @@ annotation_questions <- function(which = c("face_check", "emotion", "intensity")
 #' }
 #'
 #' @param faces A data frame returned by \code{\link{detect_faces}} or
-#'   \code{\link{select_faces}}: one item per row.
+#'   \code{\link{select_faces}}: one item per row. Or \code{NULL}, with
+#'   \code{items}.
 #' @param classes The emotions coders choose from, for example the classes
 #'   passed to \code{\link{face_scores}}. Needed by the \code{"emotion"}
 #'   question.
 #' @param questions The questions, from \code{\link{annotation_questions}}.
+#'   Default: \code{annotation_questions()} for faces;
+#'   \code{annotation_questions(c("emotion", "why"))} for items with a
+#'   \code{label} and a \code{prediction}, else \code{"emotion"}.
 #' @param coders Coder ids: letters, digits, dots, dashes or underscores.
 #' @param overlap Share of the items that every coder codes, for agreement.
 #'   The rest are split between the coders. Default is 1: every coder codes
@@ -98,6 +122,17 @@ annotation_questions <- function(which = c("face_check", "emotion", "intensity")
 #' @param max_side Longest side, in pixels, of the picture copies.
 #' @param task_id An id for the task. Coders' progress in the browser is
 #'   kept under it. Default is made from the time.
+#' @param items Instead of \code{faces}: a data frame with one row per item
+#'   and the columns \code{media} (path of a video or image file) and/or
+#'   \code{text}, and optionally \code{id}, \code{label} (the reference
+#'   label, returned as \code{reference}), \code{prediction} (the model's top
+#'   class) and one column of model scores per class.
+#' @param frames For items: the number of frames shown per video clip, spread
+#'   over the clip as \code{video_scores(uniform = TRUE)} samples them.
+#' @param play For items: put the clips themselves in the page, with their
+#'   sound, when a browser can play them (MP4, WebM, MOV).
+#' @param blind For items: show the label, prediction and scores only after
+#'   the questions without \code{reveal} are answered.
 #'
 #' @return The task, invisibly: a list with its folder (\code{dir}),
 #'   \code{task_id}, \code{questions}, \code{coders} and \code{items} (the
@@ -113,14 +148,33 @@ annotation_questions <- function(which = c("face_check", "emotion", "intensity")
 #' task <- annotation_task(faces, classes = c("happy", "sad", "angry", "neutral"),
 #'                         coders = c("C01", "C02"), dir = "annotation-round-1")
 #' annotate_faces(task)
+#'
+#' # A model's errors on video clips, with their descriptions
+#' emotions <- c("angry", "fearful", "happy", "sad")
+#' items <- data.frame(id = errors$clip, media = errors$path, text = errors$description,
+#'                     label = errors$label, prediction = errors$predicted, errors[, emotions])
+#' review <- annotation_task(items = items, classes = emotions, dir = "error-review")
+#' annotate_faces(review)
+#' answers <- read_annotations(review)
+#' table(answers$value[answers$question == "why"])
 #' }
 #'
 #' @export
-annotation_task <- function(faces, classes = NULL, questions = annotation_questions(), coders = "C01",
+annotation_task <- function(faces = NULL, classes = NULL, questions = NULL, coders = "C01",
                             overlap = 1, dir, seed = 1, title = NULL, instructions = NULL,
-                            max_side = 1280, task_id = NULL) {
-  .te_check_faces_table(faces)
-  if (!nrow(faces)) stop("faces has no rows to code.", call. = FALSE)
+                            max_side = 1280, task_id = NULL, items = NULL, frames = 4,
+                            play = TRUE, blind = TRUE) {
+  if (!is.null(items)) {
+    if (!is.null(faces)) stop("Give faces or items, not both.", call. = FALSE)
+    items <- .te_check_review_items(items, classes)
+  } else {
+    if (is.null(faces)) stop("Give faces from detect_faces(), or items.", call. = FALSE)
+    .te_check_faces_table(faces)
+    if (!nrow(faces)) stop("faces has no rows to code.", call. = FALSE)
+  }
+  if (is.null(questions)) {
+    questions <- if (is.null(items)) annotation_questions() else .te_review_questions(items)
+  }
   if (missing(dir) || !is.character(dir) || length(dir) != 1) {
     stop("dir must be the folder for the task.", call. = FALSE)
   }
@@ -139,6 +193,10 @@ annotation_task <- function(faces, classes = NULL, questions = annotation_questi
   if (is.null(task_id)) task_id <- format(Sys.time(), "annotation-%Y%m%d-%H%M%S")
   if (!grepl("^[A-Za-z0-9_.-]{1,80}$", task_id)) {
     stop("task_id must be letters, digits, dots, dashes or underscores.", call. = FALSE)
+  }
+  if (!is.null(items)) {
+    return(.te_item_annotation_task(items, classes, questions, coders, overlap, dir, seed, title,
+                                    instructions, max_side, task_id, frames, play, blind))
   }
 
   settings <- attr(faces, "settings")
@@ -369,7 +427,10 @@ annotate_faces <- function(task, coder = NULL, open = interactive(), port = NULL
 #'   \code{revision}, \code{rt_ms} (time on the item), \code{shown_at},
 #'   \code{submitted_at} and \code{session_id}, followed by the item's face:
 #'   \code{source}, \code{frame}, \code{frame_index}, \code{time},
-#'   \code{face}, \code{track_id} and \code{person_id}.
+#'   \code{face}, \code{track_id} and \code{person_id}. For a task made from
+#'   \code{items}: the item's \code{id}, \code{kind}, \code{media},
+#'   \code{reference} (its \code{label}), \code{prediction} and score
+#'   columns.
 #'
 #' @seealso \code{\link{annotation_agreement}}, \code{\link{consensus_labels}}
 #'
@@ -408,7 +469,7 @@ read_annotations <- function(task, files = NULL, revisions = c("last", "all")) {
     }
   }
   long <- .te_long_answers(out, task$questions)
-  item_cols <- c("source", "frame", "frame_index", "time", "face", "track_id", "person_id")
+  item_cols <- .te_item_columns(task)
   long <- cbind(long, task$items[match(long$item_id, task$items$item_id), item_cols, drop = FALSE])
   rownames(long) <- NULL
   attr(long, "questions") <- task$questions
@@ -537,7 +598,10 @@ annotation_agreement <- function(annotations, questions = NULL, level = NULL) {
 #'   \code{n_coders}, \code{agreement} (the share of coders who gave the
 #'   majority answer; \code{NA} for the mean or median), \code{tie}, and the
 #'   item's face (\code{source}, \code{frame}, \code{frame_index},
-#'   \code{time}, \code{face}, \code{track_id}, \code{person_id}).
+#'   \code{time}, \code{face}, \code{track_id}, \code{person_id}), or, for
+#'   a task made from \code{items}, its \code{id}, \code{reference},
+#'   \code{prediction} and scores: compare the coders with the reference by
+#'   \code{evaluate_emotions(consensus, truth_col = "reference", pred_col = "label")}.
 #'
 #' @seealso \code{\link{annotation_agreement}}
 #'
@@ -573,14 +637,15 @@ consensus_labels <- function(annotations, question = "emotion",
                stringsAsFactors = FALSE)
   })
   out <- do.call(rbind, rows)
-  item_cols <- intersect(c("source", "frame", "frame_index", "time", "face", "track_id", "person_id"),
-                         names(a))
+  item_cols <- setdiff(names(a), c("item_id", "coder_id", "question", "value", "value_num", "status",
+                                   "revision", "rt_ms", "shown_at", "submitted_at", "session_id"))
   cbind(out, a[match(out$item_id, a$item_id), item_cols, drop = FALSE], row.names = NULL)
 }
 
 #' @export
 print.te_annotation_task <- function(x, ...) {
-  cat("Face annotation task ", x$task_id, "\n", "Folder: ", x$dir, "\n",
+  cat(if (identical(x$unit, "item")) "Annotation task " else "Face annotation task ", x$task_id, "\n",
+      "Folder: ", x$dir, "\n",
       nrow(x$items), " items; coders: ", paste(x$coders, collapse = ", "), "\n",
       "Questions: ", paste(vapply(x$questions, function(q) q$id, character(1)), collapse = ", "), "\n",
       sep = "")
@@ -612,7 +677,14 @@ print.te_annotation_task <- function(x, ...) {
                    show_if = shown, required = TRUE),
     arousal = list(id = "arousal", type = "likert", prompt = "How calm or excited is the face?",
                    min = 0L, max = 6L, anchors = list(min = "very calm", max = "very excited"),
-                   show_if = shown, required = TRUE)
+                   show_if = shown, required = TRUE),
+    why = list(id = "why", type = "single",
+               prompt = "Compare with the label and the model. What explains the result?",
+               options = c("model", "label", "face", "no_face", "agree", "other"),
+               labels = list(model = "The model is wrong", label = "The label is debatable",
+                             face = "The wrong face was scored", no_face = "No face is visible",
+                             agree = "The model and the label agree", other = "Something else"),
+               reveal = TRUE, required = TRUE)
   )
 }
 
@@ -661,6 +733,7 @@ print.te_annotation_task <- function(x, ...) {
       q$show_if <- lapply(q$show_if, function(v) if (length(v) > 1) I(v) else v)
     }
     q$required <- !isFALSE(q$required)
+    q$reveal <- if (isTRUE(q$reveal)) TRUE else NULL
     attr(q, "answers") <- options
     seen <<- c(seen, q$id)
     q
@@ -714,6 +787,7 @@ print.te_annotation_task <- function(x, ...) {
 .te_annotation_task <- function(dir, manifest, items) {
   structure(list(
     dir = dir, task_id = manifest$task_id, title = manifest$title,
+    unit = if (is.null(manifest$unit)) "face" else manifest$unit,
     questions = lapply(manifest$questions, function(q) {
       q$options <- if (is.null(q$options)) NULL else as.character(unlist(q$options))
       q
@@ -735,9 +809,14 @@ print.te_annotation_task <- function(x, ...) {
   if (!identical(manifest$schema, "transforEmotion.annotation_task")) {
     stop("task.json in ", task, " is not an annotation task.", call. = FALSE)
   }
-  items <- utils::read.csv(file.path(task, "items.csv"), stringsAsFactors = FALSE,
-                           na.strings = "", colClasses = c(item_id = "character", source = "character",
-                                                           person_id = "character", picture = "character"))
+  file <- file.path(task, "items.csv")
+  text_cols <- c("item_id", "source", "person_id", "picture", "id", "kind", "media", "reference",
+                 "prediction", "text", "video")
+  header <- names(utils::read.csv(file, nrows = 0, check.names = FALSE))
+  classes <- stats::setNames(rep("character", length(intersect(text_cols, header))),
+                             intersect(text_cols, header))
+  items <- utils::read.csv(file, stringsAsFactors = FALSE, na.strings = "", colClasses = classes,
+                           check.names = FALSE)
   .te_annotation_task(normalizePath(task), manifest, items)
 }
 

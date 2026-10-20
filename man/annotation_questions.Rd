@@ -18,6 +18,12 @@ asked:
   \item{\code{"intensity"}}{How intense it is, 1 to 7.}
   \item{\code{"valence"}}{How negative or positive the face is, -3 to 3.}
   \item{\code{"arousal"}}{How calm or excited the face is, 0 to 6.}
+  \item{\code{"why"}}{For items with a reference label and a model
+    prediction (\code{annotation_task(items = ...)}): what explains the
+    result, compared with the label and the model. The model is wrong, the
+    label is debatable, the wrong face was scored, no face is visible, the
+    model and the label agree, or something else. Asked after the label,
+    the prediction and the scores are shown (\code{reveal = TRUE}).}
 }}
 }
 \value{
@@ -41,6 +47,10 @@ A question is a list with
     \code{anchors = list(min = "...", max = "...")}.}
   \item{\code{show_if}}{Optional: ask only after another question got one
     of these answers, as in \code{list(face_check = "ok")}.}
+  \item{\code{reveal}}{Optional, for items with a reference label and a
+    model prediction: \code{TRUE} asks the question only once they are
+    shown, which with \code{blind = TRUE} is after the other questions are
+    answered.}
   \item{\code{required}}{\code{FALSE} lets coders leave it unanswered.}
 }
 }

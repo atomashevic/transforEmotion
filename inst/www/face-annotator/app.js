@@ -457,15 +457,8 @@
       const item = byId.get(order[pos]), prev = L.latestRecord(records, item.item_id);
       cur = { item, responses: {}, shownAt: nowIso(), t0: performance.now(), dirty: false };
       if (prev) for (const [k, v] of Object.entries(prev.responses || {})) if (v != null) cur.responses[k] = v;
-      const W = item.width, H = item.height, b = item.box;
-      const target = { face_id: item.item_id, x: b.x, y: b.y, w: b.w, h: b.h };
-      const st = stage(item.media, W, H, "var(--ctx-h)", "Picture with the face to code outlined");
-      st.svg.append(el("svg:path", { class: "scrim", "fill-rule": "evenodd", d: `M0 0H${W}V${H}H0Z M${b.x} ${b.y}v${b.h}h${b.w}v${-b.h}Z` }));
-      drawBox(st, target, { colour: colour(1), title: "Face to code", badge: "" });
-      const zoom = crop(item.media, W, H, target, settings.context_padding);
-      zoom.setAttribute("role", "img");
-      zoom.setAttribute("aria-label", "Close-up of the face to code");
-      zoom.append(el("svg:rect", { class: "cropbox", x: b.x, y: b.y, width: b.w, height: b.h }));
+      const isItem = task.unit === "item";
+      const media = isItem ? itemMedia(item) : faceMedia(item);
 
       const views = questions.map((q) => {
         const opts = options.get(q.id), keys = Math.min(9, opts.length);
@@ -480,10 +473,15 @@
         return { q, opts, buttons, fs };
       });
       const nextBtn = el("button", { type: "button", class: "primary", id: "next", onclick: next, text: "Next →" });
+      const reveal = isItem ? revealBlock(item) : null;
       const panel = el("section", { class: "panel", tabindex: "-1", "aria-labelledby": "item-h" },
-        el("div", { class: "itemhead" }, el("h2", { id: "item-h", text: `Face ${pos + 1} of ${order.length}` }),
-          el("span", { class: "muted", text: item.media_type === "frame" ? `Video frame at ${fmt(item.timestamp_s, 1)} s` : "Still image" })),
-        views.map((v) => v.fs),
+        el("div", { class: "itemhead" }, el("h2", { id: "item-h", text: `${isItem ? "Item" : "Face"} ${pos + 1} of ${order.length}` }),
+          el("span", { class: "muted", text: isItem ? { clip: "Video clip", image: "Image", text: "Text" }[item.kind] || ""
+            : item.media_type === "frame" ? `Video frame at ${fmt(item.timestamp_s, 1)} s` : "Still image" })),
+        isItem && item.text && el("blockquote", { class: "itemtext", text: item.text }),
+        views.filter((v) => !v.q.reveal).map((v) => v.fs),
+        reveal && reveal.node,
+        views.filter((v) => v.q.reveal).map((v) => v.fs),
         el("div", { class: "row nav" },
           settings.allow_back && el("button", { type: "button", id: "back", disabled: pos === 0, onclick: back, text: "← Back" }),
           settings.allow_skip && el("button", { type: "button", id: "skip", onclick: skip, text: "Skip" }), nextBtn),
@@ -491,21 +489,23 @@
       put(ui.main,
         task.instructions && el("details", { class: "instructions", open: pos === 0 && !L.progressOf(order, records).done },
           el("summary", { text: "Instructions" }), el("p", { text: task.instructions })),
-        el("div", { class: "item", "data-item": item.item_id },
-          el("div", { class: "views" }, el("figure", { class: "ctx" }, st.box),
-            el("figure", { class: "zoom" }, zoom, el("figcaption", { text: "Close-up" }))),
-          panel));
+        el("div", { class: "item" + (isItem ? " review" : ""), "data-item": item.item_id }, media, panel));
 
       function update() {
+        const revealed = L.isRevealed(task, cur.responses);
+        if (reveal) {
+          reveal.panel.hidden = !revealed || !reveal.any;
+          reveal.waiting.hidden = revealed || !reveal.any;
+        }
         for (const v of views) {
-          const shown = L.isShown(v.q, cur.responses);
+          const shown = L.isShown(v.q, cur.responses, revealed);
           v.fs.hidden = !shown;
           if (!shown) delete cur.responses[v.q.id];
           v.buttons.forEach((btn, i) => btn.setAttribute("aria-pressed", String(v.opts[i].value === cur.responses[v.q.id])));
         }
-        const active = L.activeQuestion(questions, cur.responses);
+        const active = L.activeQuestion(questions, cur.responses, revealed);
         views.forEach((v) => v.fs.classList.toggle("active", v.q === active));
-        nextBtn.disabled = !!L.missingQuestion(questions, cur.responses);
+        nextBtn.disabled = !!L.missingQuestion(questions, cur.responses, revealed);
       }
       function answer(q, value, e) {
         cur.responses[q.id] = value;
@@ -518,7 +518,66 @@
       update();
       panel.focus({ preventScroll: true });
       const nx = byId.get(order[pos + 1]);
-      if (nx) new Image().src = nx.media; // load the next picture early
+      if (nx) [].concat(nx.media || [], (nx.frames || []).map((f) => f.src)).forEach((src) => { new Image().src = src; }); // load the next pictures early
+    }
+
+    // A face item: the face outlined in its picture, and a close-up
+    function faceMedia(item) {
+      const W = item.width, H = item.height, b = item.box;
+      const target = { face_id: item.item_id, x: b.x, y: b.y, w: b.w, h: b.h };
+      const st = stage(item.media, W, H, "var(--ctx-h)", "Picture with the face to code outlined");
+      st.svg.append(el("svg:path", { class: "scrim", "fill-rule": "evenodd", d: `M0 0H${W}V${H}H0Z M${b.x} ${b.y}v${b.h}h${b.w}v${-b.h}Z` }));
+      drawBox(st, target, { colour: colour(1), title: "Face to code", badge: "" });
+      const zoom = crop(item.media, W, H, target, settings.context_padding);
+      zoom.setAttribute("role", "img");
+      zoom.setAttribute("aria-label", "Close-up of the face to code");
+      zoom.append(el("svg:rect", { class: "cropbox", x: b.x, y: b.y, width: b.w, height: b.h }));
+      return el("div", { class: "views" }, el("figure", { class: "ctx" }, st.box),
+        el("figure", { class: "zoom" }, zoom, el("figcaption", { text: "Close-up" })));
+    }
+    // A clip, image or text item: the clip, its frames with face boxes (the
+    // scored face solid), nothing for a text
+    function framePicture(fr, maxh) {
+      const st = stage(fr.src, fr.width, fr.height, maxh, fr.time != null ? `Frame at ${fmt(fr.time, 1)} s` : "Image");
+      (fr.faces || []).forEach((f) => st.svg.append(el("svg:rect", { class: "itembox" + (f.scored ? " scored" : ""),
+        x: f.x, y: f.y, width: f.w, height: f.h })));
+      return st.box;
+    }
+    function enlargeFrame(item, k) {
+      const fr = item.frames[k];
+      $("#viewer-title").textContent = fr.time != null ? `Frame at ${fmt(fr.time, 1)} s` : "Image";
+      put($("#viewer-body"), el("div", { class: "big" }, framePicture(fr, "min(64vh, 900px)")),
+        item.frames.length > 1 && el("div", { class: "row" },
+          el("button", { type: "button", disabled: k === 0, onclick: () => enlargeFrame(item, k - 1), text: "← Previous frame" }),
+          el("span", { class: "muted", text: `${k + 1} / ${item.frames.length}` }),
+          el("button", { type: "button", disabled: k === item.frames.length - 1, onclick: () => enlargeFrame(item, k + 1), text: "Next frame →" })));
+      if (!$("#viewer").open) $("#viewer").showModal();
+    }
+    function itemMedia(item) {
+      const frames = item.frames || [];
+      if (!item.video && !frames.length) return el("div", { class: "views itemmedia empty" });
+      return el("div", { class: "views itemmedia" },
+        item.video && el("video", { class: "clip", src: item.video, controls: true, preload: "metadata" }),
+        frames.length > 0 && el("div", { class: "strip", role: "list", "aria-label": item.kind === "clip" ? "Frames of the clip" : "Image" },
+          frames.map((fr, k) => el("button", { type: "button", class: "frame", role: "listitem", onclick: () => enlargeFrame(item, k),
+            "aria-label": fr.time != null ? `Enlarge the frame at ${fmt(fr.time, 1)} s` : "Enlarge the image" },
+          framePicture(fr, frames.length > 1 ? "var(--frame-h)" : "var(--ctx-h)"),
+          fr.time != null && el("span", { class: "muted", text: `${fmt(fr.time, 1)} s` })))),
+        frames.some((fr) => fr.faces && fr.faces.length) &&
+          el("p", { class: "muted small", text: "Solid box: the face the model scores (the largest). Dashed: other faces found." }));
+    }
+    // The item's label, the model's answer and its scores, shown once revealed
+    function revealBlock(item) {
+      const row = (k, v) => v != null && el("div", { class: "kv" }, el("span", { class: "muted", text: k }), el("strong", { text: v }));
+      const scores = L.scoreList(task, item);
+      const parts = [row("Label", item.reference), row("Model", item.prediction),
+        scores.length > 0 && el("div", { class: "bars", role: "list", "aria-label": "The model's scores" }, scores.map((sc) =>
+          el("div", { class: "bar-row" + (sc.top ? " top" : ""), role: "listitem" }, el("span", { text: sc.cls }),
+            el("span", { class: "track" }, el("span", { class: "fill", style: { width: (100 * sc.p).toFixed(1) + "%" } })),
+            el("span", { class: "num", text: fmt(sc.p, 2) }))))].filter(Boolean);
+      const waiting = el("p", { class: "muted reveal-wait", text: "The label and the model's answer appear once you have answered." });
+      const panel = el("section", { class: "reveal", "aria-label": "Label and model" }, parts);
+      return { node: el("div", { class: "reveal-slot" }, waiting, panel), panel, waiting, any: parts.length > 0 };
     }
 
     function record(status) {
@@ -530,7 +589,7 @@
       sync();
     }
     function next() { // an unchanged answer is not recorded again
-      if (!cur || L.missingQuestion(questions, cur.responses)) return;
+      if (!cur || L.missingQuestion(questions, cur.responses, L.isRevealed(task, cur.responses))) return;
       if (cur.dirty || !L.latestRecord(records, cur.item.item_id)) record("answered");
       pos++;
       show();
@@ -548,7 +607,8 @@
       }
     }
     function undo() {
-      const answered = questions.filter((q) => L.isShown(q, cur.responses) && cur.responses[q.id] != null);
+      const revealed = L.isRevealed(task, cur.responses);
+      const answered = questions.filter((q) => L.isShown(q, cur.responses, revealed) && cur.responses[q.id] != null);
       if (!answered.length) return;
       delete cur.responses[answered.pop().id];
       cur.dirty = true;
@@ -588,7 +648,8 @@
       const t = e.target;
       if (t.closest && t.closest("input, textarea, select, .sheet")) return;
       if (/^[1-9]$/.test(e.key)) {
-        const q = L.activeQuestion(questions, cur.responses), o = q && options.get(q.id)[Number(e.key) - 1];
+        const q = L.activeQuestion(questions, cur.responses, L.isRevealed(task, cur.responses));
+        const o = q && options.get(q.id)[Number(e.key) - 1];
         if (o) { e.preventDefault(); cur.answer(q, o.value); }
       } else if (e.key === "Enter" && t.tagName !== "BUTTON") { e.preventDefault(); next(); }
       else if (e.key === "Backspace") { e.preventDefault(); undo(); }

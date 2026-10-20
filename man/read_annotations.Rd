@@ -26,7 +26,10 @@ A data frame with one row per item, coder and question:
   \code{revision}, \code{rt_ms} (time on the item), \code{shown_at},
   \code{submitted_at} and \code{session_id}, followed by the item's face:
   \code{source}, \code{frame}, \code{frame_index}, \code{time},
-  \code{face}, \code{track_id} and \code{person_id}.
+  \code{face}, \code{track_id} and \code{person_id}. For a task made from
+  \code{items}: the item's \code{id}, \code{kind}, \code{media},
+  \code{reference} (its \code{label}), \code{prediction} and score
+  columns.
 }
 \description{
 Reads what coders answered in \code{\link{annotate_faces}}: the files in

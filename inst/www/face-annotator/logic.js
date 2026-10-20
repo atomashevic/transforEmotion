@@ -154,30 +154,51 @@
     return raw.map((o) => ({ value: o, label: (q.labels && q.labels[o]) || nice(o) }));
   }
 
-  // show_if {question: value, or [values]}: shown only after one of those answers
-  function isShown(q, responses) {
+  // show_if {question: value, or [values]}: shown only after one of those
+  // answers. reveal: shown only once the item's label and model answer are
+  // (revealed false hides it; undefined shows it)
+  function isShown(q, responses, revealed) {
+    if (q.reveal && revealed === false) return false;
     return !q.show_if || Object.entries(q.show_if).every(([k, v]) =>
       (Array.isArray(v) ? v.includes(responses[k]) : responses[k] === v));
   }
 
+  // Whether an item's label, model answer and scores are shown: at once
+  // unless the task is blind, else once every shown, required question
+  // without reveal is answered
+  function isRevealed(task, responses) {
+    if (!task.settings || task.settings.blind === false) return true;
+    return (task.questions || []).filter((q) => !q.reveal && q.required !== false && isShown(q, responses))
+      .every((q) => responses[q.id] != null);
+  }
+
   // The question that keys 1-9 answer: the first shown one without an answer
-  function activeQuestion(questions, responses) {
-    return questions.find((q) => isShown(q, responses) && responses[q.id] == null);
+  function activeQuestion(questions, responses, revealed) {
+    return questions.find((q) => isShown(q, responses, revealed) && responses[q.id] == null);
   }
 
   // A shown, required question without an answer (blocks Next), or undefined
-  function missingQuestion(questions, responses) {
-    return questions.find((q) => isShown(q, responses) && q.required !== false && responses[q.id] == null);
+  function missingQuestion(questions, responses, revealed) {
+    return questions.find((q) => isShown(q, responses, revealed) && q.required !== false && responses[q.id] == null);
   }
 
   // Every question, with null for questions not shown, not answered, or skipped
-  function cleanResponses(questions, responses, answered) {
+  function cleanResponses(questions, responses, answered, revealed) {
     const out = {};
     for (const q of questions) {
       const v = responses[q.id];
-      out[q.id] = answered && isShown(q, responses) && v != null ? v : null;
+      out[q.id] = answered && isShown(q, responses, revealed) && v != null ? v : null;
     }
     return out;
+  }
+
+  // An item's model scores in the order of the task's classes, the top one marked
+  function scoreList(task, item) {
+    if (!item || !item.scores) return [];
+    const rows = (task.score_classes || []).filter((c) => item.scores[c] != null)
+      .map((c) => ({ cls: c, p: Number(item.scores[c]) }));
+    const top = rows.reduce((a, b) => (b.p > a.p ? b : a), rows[0] || null);
+    return rows.map((r) => Object.assign(r, { top: top != null && r.cls === top.cls }));
   }
 
   // The items a coder codes, in the order annotation_task() chose for them
@@ -216,7 +237,7 @@
       seq: records.length + 1,
       revision: records.filter((r) => r.item_id === item.item_id).length + 1,
       status,
-      responses: cleanResponses(task.questions || [], responses, status === "answered"),
+      responses: cleanResponses(task.questions || [], responses, status === "answered", isRevealed(task, responses)),
       shown_at: shownAt, submitted_at: submittedAt, rt_ms: Math.max(0, Math.round(rtMs))
     };
   }
@@ -291,7 +312,7 @@
     faceNumber, byNumber, personsOf, tracksOf, trackLabel, personLabel,
     colourNumber, boxLabel, describe, toggleGroup, groupState, clickGroup,
     selectedIds, selectionDocument, selectionCode, checkTask,
-    nice, optionsOf, isShown, activeQuestion, missingQuestion, cleanResponses, orderFor,
+    nice, optionsOf, isShown, isRevealed, activeQuestion, missingQuestion, cleanResponses, scoreList, orderFor,
     latestRecord, firstOpen, progressOf, makeRecord, annotationsDocument, annotationsCode
   };
   if (typeof module === "object" && module.exports) module.exports = api;

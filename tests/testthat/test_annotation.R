@@ -171,7 +171,8 @@ test_that("the task and the saved answers follow the schema file", {
   manifest <- jsonlite::read_json(file.path(task$dir, "task.json"))
   has_required(manifest, "annotation_task")
   expect_equal(manifest$schema, schema$`$defs`$annotation_task$properties$schema$const)
-  item_def <- schema$`$defs`$annotation_task$properties$items$items
+  item_def <- schema$`$defs`$face_item
+  expect_length(item_def$required, 6)
   expect_true(all(unlist(item_def$required) %in% names(manifest$items[[1]])))
   for (q in manifest$questions) has_required(q, "question")
 
@@ -372,4 +373,144 @@ test_that("read_annotations reads the code a notebook coding page gives", {
   expect_error(read_annotations(task, substr(code, 1, 40)), "cut off")
   other <- paste0("te-annotations:", jsonlite::base64_enc(charToRaw('{"schema": "x"}')))
   expect_error(read_annotations(task, other), "does not hold annotations")
+})
+
+
+# ---------------------------------------------------------------------------
+# Item tasks: clips, images and texts, for example a model's errors
+# ---------------------------------------------------------------------------
+
+review_classes <- c("angry", "happy", "sad")
+text_items <- function() {
+  data.frame(id = c("c1", "c2", "c3"), text = c("He shouts.", "She laughs.", "He cries."),
+             label = c("angry", "happy", "sad"), prediction = c("sad", "happy", "sad"),
+             angry = c(0.2, 0.1, 0.1), happy = c(0.1, 0.8, 0.1), sad = c(0.7, 0.1, 0.8),
+             stringsAsFactors = FALSE)
+}
+make_review <- function(items = text_items(), ...) {
+  dir <- file.path(withr::local_tempdir(.local_envir = parent.frame()), "review")
+  suppressMessages(annotation_task(items = items, classes = review_classes, dir = dir, task_id = "r1", ...))
+}
+
+test_that("annotation_task(items = ...) writes an item task without Python for texts", {
+  local_mocked_bindings(ensure_te_py_env = function() stop("no Python needed for texts"))
+  task <- make_review()
+  expect_equal(task$unit, "item")
+  manifest <- jsonlite::read_json(file.path(task$dir, "task.json"))
+  expect_equal(manifest$unit, "item")
+  expect_true(manifest$settings$blind)
+  expect_equal(unlist(manifest$score_classes), review_classes)
+  expect_equal(vapply(manifest$questions, `[[`, "", "id"), c("emotion", "why"))
+  expect_true(manifest$questions[[2]]$reveal)
+  expect_null(manifest$questions[[1]]$reveal)
+  it <- manifest$items[[match("c1", task$items$id[match(vapply(manifest$items, `[[`, "", "item_id"), task$items$item_id)])]]
+  expect_equal(it$kind, "text")
+  expect_equal(it$text, "He shouts.")
+  expect_equal(it$reference, "angry")
+  expect_equal(it$prediction, "sad")
+  expect_equal(it$scores, list(angry = 0.2, happy = 0.1, sad = 0.7))
+  # The key: the user's id, label as reference, prediction and scores
+  expect_setequal(task$items$id, c("c1", "c2", "c3"))
+  expect_true(all(c("item_id", "id", "kind", "reference", "prediction", review_classes, "text") %in% names(task$items)))
+  # It follows the schema, and loads back from its folder
+  schema <- jsonlite::read_json(system.file("schema", "face-task-v1.json", package = "transforEmotion"))
+  expect_true(all(unlist(schema$`$defs`$review_item$required) %in% names(it)))
+  again <- .te_load_annotation_task(task$dir)
+  expect_equal(again$unit, "item")
+  expect_type(again$items$id, "character")
+  expect_equal(again$items$reference, task$items$reference)
+  # Without a label and prediction, only the emotion is asked
+  plain <- make_review(data.frame(text = c("a", "b")))
+  expect_equal(vapply(plain$questions, `[[`, "", "id"), "emotion")
+  expect_error(annotation_task(fake_faces(), items = text_items(), dir = tempfile()), "not both")
+  expect_error(annotation_task(dir = tempfile()), "faces from detect_faces\\(\\), or items")
+  expect_error(annotation_task(items = data.frame(media = "no-such.mp4"), dir = tempfile()), "not found")
+  expect_warning(make_review(transform(text_items(), label = c("furious", "happy", "sad"))), "furious")
+})
+
+test_that("item tasks show clip frames with face boxes, and copy the clip", {
+  root <- withr::local_tempdir()
+  clip <- file.path(root, "clip.mp4")
+  writeLines("not really a video", clip)
+  calls <- new.env()
+  local_mocked_bindings(
+    ensure_te_py_env = function() invisible(TRUE),
+    .te_faces_py = function() list(
+      extract_frames = function(path, nframes, uniform, frame_dir, video_name) {
+        calls$extract <- c(nframes = nframes, uniform = uniform)
+        lapply(seq_len(nframes), function(k) {
+          p <- file.path(frame_dir, sprintf("%s-%d.jpg", video_name, k))
+          file.create(p)
+          list(path = p, time = k - 0.5, frame_index = k * 10L)
+        })
+      },
+      display_copies = function(images, out_paths, max_side) {
+        file.create(unlist(out_paths))
+        lapply(images, function(i) list(640L, 360L))
+      }),
+    .te_item_faces = function(te_faces, paths, frames) {
+      data.frame(source = paths[c(1, 1, 2)], x = c(10, 300, 20), y = 5, width = c(50, 120, 60),
+                 height = c(50, 120, 60), scored = c(FALSE, TRUE, TRUE))
+    }
+  )
+  items <- data.frame(id = "v1", media = clip, text = "A clip.", label = "sad", prediction = "angry")
+  task <- make_review(items, frames = 3)
+  it <- jsonlite::read_json(file.path(task$dir, "task.json"))$items[[1]]
+  expect_equal(it$kind, "clip")
+  expect_length(it$frames, 3)
+  expect_equal(unname(calls$extract), c(3, 1))
+  expect_equal(it$frames[[1]]$src, "media/c0001-01.jpg")
+  expect_equal(c(it$frames[[1]]$width, it$frames[[1]]$height), c(640, 360))
+  expect_equal(vapply(it$frames[[1]]$faces, `[[`, TRUE, "scored"), c(FALSE, TRUE))
+  expect_equal(it$frames[[2]]$time, 1.5)
+  expect_equal(it$video, "media/c0001.mp4")
+  expect_true(file.exists(file.path(task$dir, "page", "media", "c0001.mp4")))
+  # The page may play its own clips
+  expect_match(paste(readLines(file.path(task$dir, "page", "index.html")), collapse = ""), "media-src 'self'", fixed = TRUE)
+  expect_equal(task$items$n_frames, 3)
+  # Without play, no clip in the page
+  quiet <- make_review(items, play = FALSE)
+  expect_null(jsonlite::read_json(file.path(quiet$dir, "task.json"))$items[[1]]$video)
+
+  # In a notebook: frames inside the page, no clip
+  local_mocked_bindings(.te_display_html = function(html, page) invisible(TRUE))
+  page <- suppressMessages(annotate_faces(task, inline = TRUE))
+  html <- paste(readLines(page, warn = FALSE), collapse = "\n")
+  expect_false(grepl("media/c0001", html, fixed = TRUE))
+  expect_match(html, "data:image/jpeg;base64,", fixed = TRUE)
+})
+
+test_that("answers to an item task carry the item's reference and the model's answer", {
+  local_mocked_bindings(ensure_te_py_env = function() stop("no Python needed for texts"))
+  task <- make_review(coders = c("C01", "C02"))
+  id_of <- stats::setNames(task$items$item_id, task$items$id)
+  item_rec <- function(id, coder, emotion, why) {
+    r <- rec(id_of[[id]], coder = coder, task = "r1", seq = match(id, c("c1", "c2", "c3")))
+    r$responses <- list(emotion = emotion, why = why)
+    r
+  }
+  dir.create(file.path(task$dir, "results"), showWarnings = FALSE)
+  write_jsonl(list(item_rec("c1", "C01", "angry", "model"), item_rec("c2", "C01", "happy", "agree"),
+                   item_rec("c3", "C01", "sad", "agree")), file.path(task$dir, "results", "C01.jsonl"))
+  write_jsonl(list(item_rec("c1", "C02", "angry", "model"), item_rec("c2", "C02", "happy", "agree"),
+                   item_rec("c3", "C02", "angry", "label")), file.path(task$dir, "results", "C02.jsonl"))
+  ann <- read_annotations(task)
+  expect_true(all(c("id", "reference", "prediction", review_classes) %in% names(ann)))
+  why <- ann[ann$question == "why" & ann$coder_id == "C01", ]
+  expect_equal(why$value[match(c("c1", "c2", "c3"), why$id)], c("model", "agree", "agree"))
+  cons <- consensus_labels(ann)
+  cons <- cons[match(c("c1", "c2", "c3"), cons$id), ]
+  expect_equal(cons$label, c("angry", "happy", NA))
+  expect_true(cons$tie[3])
+  expect_equal(cons$reference, c("angry", "happy", "sad"))
+  ok <- cons[!is.na(cons$label), ]
+  coders_vs_label <- evaluate_emotions(ok, truth_col = "reference", pred_col = "label",
+                                       classes = review_classes, metrics = "accuracy")
+  expect_equal(coders_vs_label$accuracy, 1)
+  model_vs_coders <- evaluate_emotions(ok, truth_col = "label", pred_col = "prediction",
+                                       classes = review_classes, metrics = "accuracy")
+  expect_equal(model_vs_coders$accuracy, 0.5)
+  agree <- annotation_agreement(ann)
+  expect_equal(agree$question, c("emotion", "why"))
+  expect_output(print(task), "Annotation task r1")
 })

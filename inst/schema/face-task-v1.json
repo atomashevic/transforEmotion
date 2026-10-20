@@ -123,47 +123,82 @@
           "description": "Asked only after one of these answers to an earlier question.",
           "additionalProperties": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }
         },
-        "required": { "type": "boolean" }
+        "required": { "type": "boolean" },
+        "reveal": { "type": "boolean", "description": "Item tasks: asked only once the label, prediction and scores are shown." }
+      }
+    },
+
+    "face_item": {
+      "type": "object",
+      "description": "An item of a face task: one face in its picture.",
+      "required": ["item_id", "media", "media_type", "width", "height", "box"],
+      "properties": {
+        "item_id": { "type": "string" },
+        "media": { "type": "string", "description": "The picture's copy under media/, named p001.jpg and so on." },
+        "media_type": { "enum": ["image", "frame"] },
+        "frame_index": { "type": ["integer", "null"] },
+        "timestamp_s": { "type": ["number", "null"] },
+        "width": { "type": "integer" }, "height": { "type": "integer" },
+        "box": { "$ref": "#/$defs/box" }
+      }
+    },
+
+    "review_item": {
+      "type": "object",
+      "description": "An item of an item task: a video clip, an image or a text.",
+      "required": ["item_id", "kind"],
+      "properties": {
+        "item_id": { "type": "string" },
+        "kind": { "enum": ["clip", "image", "text"] },
+        "text": { "type": ["string", "null"] },
+        "reference": { "type": ["string", "null"], "description": "The item's label." },
+        "prediction": { "type": ["string", "null"], "description": "The model's top class." },
+        "scores": { "type": ["object", "null"], "additionalProperties": { "type": "number" } },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["src", "width", "height"],
+            "properties": {
+              "src": { "type": "string", "description": "The frame's copy under media/, named c0001-01.jpg and so on." },
+              "width": { "type": "integer" }, "height": { "type": "integer" },
+              "time": { "type": ["number", "null"] },
+              "faces": { "type": "array", "items": { "allOf": [{ "$ref": "#/$defs/box" },
+                { "properties": { "scored": { "type": "boolean", "description": "The largest face, the one the scoring functions use by default." } } }] } }
+            }
+          }
+        },
+        "video": { "type": ["string", "null"], "description": "The clip's copy under media/, when a browser can play it." }
       }
     },
 
     "annotation_task": {
       "type": "object",
-      "description": "task.json of annotation_task(), and window.TE_TASK in its page/data.js. Holds no file names.",
+      "description": "task.json of annotation_task(), and window.TE_TASK in its page/data.js. A face task (unit face) holds no file names; an item task (unit item, from annotation_task(items = ...)) holds the items' texts and, to show after answering, their labels, predictions and scores.",
       "required": ["schema", "schema_version", "task_id", "mode", "questions", "items", "assignments"],
       "properties": {
         "schema": { "const": "transforEmotion.annotation_task" },
         "schema_version": { "$ref": "#/$defs/version" },
         "task_id": { "$ref": "#/$defs/id" },
         "mode": { "const": "annotate" },
-        "unit": { "const": "face" },
+        "unit": { "enum": ["face", "item"] },
         "title": { "type": "string" },
         "instructions": { "type": "string" },
         "classes": { "type": "array", "items": { "type": "string" } },
+        "score_classes": { "type": "array", "items": { "type": "string" }, "description": "Item tasks: the classes the items have model scores for." },
         "questions": { "type": "array", "items": { "$ref": "#/$defs/question" }, "minItems": 1 },
         "settings": {
           "type": "object",
           "properties": {
             "allow_back": { "type": "boolean" }, "allow_skip": { "type": "boolean" },
-            "show_progress": { "type": "boolean" }, "context_padding": { "type": "number" }
+            "show_progress": { "type": "boolean" }, "context_padding": { "type": "number" },
+            "blind": { "type": "boolean", "description": "Item tasks: show the label, prediction and scores only after the questions without reveal are answered." }
           }
         },
         "items": {
           "type": "array",
           "minItems": 1,
-          "items": {
-            "type": "object",
-            "required": ["item_id", "media", "media_type", "width", "height", "box"],
-            "properties": {
-              "item_id": { "type": "string" },
-              "media": { "type": "string", "description": "The picture's copy under media/, named p001.jpg and so on." },
-              "media_type": { "enum": ["image", "frame"] },
-              "frame_index": { "type": ["integer", "null"] },
-              "timestamp_s": { "type": ["number", "null"] },
-              "width": { "type": "integer" }, "height": { "type": "integer" },
-              "box": { "$ref": "#/$defs/box" }
-            }
-          }
+          "items": { "oneOf": [{ "$ref": "#/$defs/face_item" }, { "$ref": "#/$defs/review_item" }] }
         },
         "assignments": {
           "type": "array",

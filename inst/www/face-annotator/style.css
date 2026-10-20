@@ -143,6 +143,28 @@ kbd { font: 600 .75rem/1 ui-monospace, monospace; padding: 3px 5px; border-radiu
 .progress { display: inline-block; width: 120px; height: 8px; border-radius: 99px; background: var(--well); overflow: hidden; }
 .progress > span { display: block; height: 100%; width: 0; background: var(--accent); }
 
+/* Items of an item task: a clip, its frames and text, and the label and model shown after answering */
+.item.review { --frame-h: 150px; }
+.views.itemmedia { grid-template-columns: minmax(0, 1fr); }
+.views.itemmedia.empty { display: none; }
+.item.review:has(.itemmedia.empty) { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+.clip { width: 100%; max-height: var(--ctx-h); background: #000; border-radius: 10px; }
+.strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.frame { display: grid; gap: 4px; justify-items: center; padding: 4px; background: var(--well); border-color: transparent; flex: none; }
+rect.itembox { fill: none; stroke: var(--box-muted); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 1px var(--halo)); }
+rect.itembox.scored { stroke: var(--c1); stroke-width: 3; stroke-dasharray: none; }
+.small { font-size: .8rem; }
+.itemtext { margin: 0; padding: 10px 14px; border-left: 4px solid var(--line); background: var(--well); border-radius: 0 8px 8px 0; font-size: 1.05rem; }
+.reveal { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 8px; }
+.kv { display: flex; gap: 10px; align-items: baseline; }
+.kv .muted { min-width: 56px; }
+.bars { display: grid; gap: 4px; }
+.bar-row { display: grid; grid-template-columns: 100px 1fr 44px; gap: 8px; align-items: center; font-size: .875rem; }
+.bar-row .track { height: 10px; background: var(--well); border-radius: 5px; overflow: hidden; }
+.bar-row .fill { display: block; height: 100%; background: var(--muted); }
+.bar-row.top .fill { background: var(--accent); }
+.bar-row .num { text-align: right; font-variant-numeric: tabular-nums; }
+
 @media (max-width: 760px) {
   .thumb { min-height: 200px; }
   .item { --ctx-h: 42vh; grid-template-columns: minmax(0, 1fr); }
