@@ -72,14 +72,14 @@
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (e) { /* ignore */ }
   }
-  function showCode(code) {
-    $("#export-h").textContent = "R code for this selection";
+  function showCode(code, heading, reader, what) {
+    $("#export-h").textContent = heading || "R code for this selection";
     $("#export-text").value = code;
     $("#export-text").setAttribute("aria-label", "R code");
     $("#export-text").rows = 4;
     $("#export-copy").textContent = "Copy code";
     put($("#export-note"), "Paste this line into a new cell and run it: ",
-      el("code", { text: "read_face_selection()" }), " returns the selected faces.");
+      el("code", { text: reader || "read_face_selection()" }), ` returns ${what || "the selected faces"}.`);
     $("#export").hidden = false;
     $("#export-copy").focus();
   }
@@ -381,6 +381,7 @@
       put(ui.tools);
       const wanted = /[?&]coder=([A-Za-z0-9_.-]{1,40})(?:&|$)/.exec(location.search);
       if (wanted && coders.includes(wanted[1])) return begin(wanted[1]);
+      if (notebook && notebook.coder && coders.includes(notebook.coder)) return begin(notebook.coder);
       if (coders.length === 1) return begin(coders[0]);
       const last = store.get(lastKey);
       put(ui.main, el("section", { class: "card narrow", "aria-labelledby": "coder-h" },
@@ -415,14 +416,16 @@
       put(ui.tools, settings.show_progress !== false && progress, settings.show_progress !== false && progressText,
         el("span", { class: "chip", id: "coder-chip", text: "Coder " + id }),
         coders.length > 1 && el("button", { type: "button", class: "small", onclick: chooseCoder, text: "Switch coder" }),
-        el("button", { type: "button", class: "small", id: "export-annotations", onclick: exportAll, text: "Export annotations" }));
+        el("button", { type: "button", class: "small", id: "export-annotations", onclick: exportAll,
+          text: notebook ? "Copy R code" : "Export annotations" }));
       const p = L.progressOf(order, records);
       if (p.done) say(`Welcome back, ${id}: ${p.done} of ${p.total} done.`);
       show();
     }
     function persist() {
       const ok = store.set(storeKey(), { coder_id: coder, records });
-      if (!ok && !api) warn("This browser cannot keep your progress. Export your annotations before closing this tab.");
+      if (!ok && !api) warn(notebook ? "This page cannot keep your progress. Copy R code before you leave the notebook."
+        : "This browser cannot keep your progress. Export your annotations before closing this tab.");
     }
     // Sends the records R has not confirmed yet, one batch at a time
     function sync() {
@@ -552,6 +555,10 @@
       cur.update();
     }
     function exportAll() {
+      if (notebook) {
+        return showCode(L.annotationsCode(task, coder, order, records, nowIso(), notebook.task), "R code for these answers",
+          "read_annotations()", `the answers given so far (${plural(L.progressOf(order, records).done, "face")} done); copy it again after more coding`);
+      }
       deliver(`annotations-${task.task_id}-${coder}.json`, L.annotationsDocument(task, coder, order, records, nowIso()), {
         title: "Exported annotations", before: "Put it in the task's results folder; in R, ",
         code: "read_annotations(task)", after: " reads it." });
@@ -562,10 +569,11 @@
       const card = el("section", { class: "card narrow", "aria-labelledby": "done-h" },
         el("h2", { id: "done-h", text: "All faces done" }),
         el("p", { text: `You answered ${p.answered} of ${p.total}${p.skipped ? ` and skipped ${p.skipped}` : ""}. Thank you!` }),
-        el("p", { class: "muted", id: "done-note", text: api ? "Saving your answers in R…" : "Export your annotations and send the file to the researcher." }),
+        el("p", { class: "muted", id: "done-note", text: api ? "Saving your answers in R…"
+          : notebook ? "Copy R code and run the line in a new cell." : "Export your annotations and send the file to the researcher." }),
         el("div", { class: "row" },
           settings.allow_back && order.length > 0 && el("button", { type: "button", onclick: back, text: "← Review the last face" }),
-          el("button", { type: "button", class: api ? null : "primary", onclick: exportAll, text: "Export annotations" })));
+          el("button", { type: "button", class: api ? null : "primary", onclick: exportAll, text: notebook ? "Copy R code" : "Export annotations" })));
       put(ui.main, card);
       if (api) {
         await sync();

@@ -87,6 +87,15 @@ coding$stop()
 For coders on other computers, send them a copy of the `page` folder.
 Opened from disk, the page keeps answers in their browser and ends with **Export annotations**; put the exported files into `results`.
 
+In a Jupyter notebook, such as Google Colab, `annotate_faces(task)` shows the coding page below the cell instead, because a page served from R cannot be reached from a notebook running on another computer.
+Code as above, then click **Copy R code** and run the copied line in a new cell:
+
+```{r}
+answers <- read_annotations(task, "te-annotations:eyJzY2hlbWEiOi...")
+```
+
+The line holds every answer given so far; copy it again after more coding and keep the last one, as these answers are not saved in `results`.
+
 ## Read the answers and check agreement
 
 ```{r}

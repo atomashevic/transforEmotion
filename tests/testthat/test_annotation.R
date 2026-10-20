@@ -327,3 +327,49 @@ test_that("consensus_labels gives one label per item", {
   expect_equal(consensus_labels(ann, "intensity", method = "median")$label, c(6, 2, 4, 1))
   expect_error(consensus_labels(ann, "valence"), "no question valence")
 })
+
+test_that("annotate_faces in a notebook shows the coding page below the cell", {
+  mock_annotation_python()
+  task <- make_task(coders = c("C01", "C02"))
+  shown <- new.env()
+  local_mocked_bindings(.te_display_html = function(html, page) {
+    shown$html <- html
+    invisible(TRUE)
+  })
+  expect_message(page <- annotate_faces(task, coder = "C02", inline = TRUE), "Copy R code")
+  expect_equal(basename(page), "annotate.html")
+  html <- paste(readLines(page, warn = FALSE), collapse = "\n")
+  # One file: no scripts, styles or pictures beside it, and no server
+  expect_false(grepl("<script src=|<link rel=\"stylesheet\"|\"media/p0", html))
+  expect_match(html, "data:image/jpeg;base64,", fixed = TRUE)
+  expect_match(html, "window.TE_NOTEBOOK = {\"task\":\"task\",\"coder\":\"C02\"};", fixed = TRUE)
+  expect_false(grepl("window.TE_API = ", html, fixed = TRUE))
+  expect_match(shown$html, "<iframe id=\"te-t1-", fixed = TRUE)
+  # The task's own page is left as it was
+  expect_match(paste(readLines(file.path(task$dir, "page", "data.js")), collapse = ""), "media/p0")
+
+  # A task given as its folder, written out, is named by the folder in the copied line
+  page <- suppressMessages(eval(bquote(annotate_faces(.(task$dir), inline = TRUE))))
+  expect_match(paste(readLines(page, warn = FALSE), collapse = "\n"),
+               paste0("window.TE_NOTEBOOK = ", jsonlite::toJSON(list(task = deparse(task$dir)), auto_unbox = TRUE), ";"),
+               fixed = TRUE)
+  expect_equal(.te_code_name(quote(round1), "task"), "round1")
+  expect_equal(.te_code_name("round-1", "task"), "\"round-1\"")
+  expect_equal(.te_code_name(quote(tasks[[1]]), "task"), "task")
+})
+
+test_that("read_annotations reads the code a notebook coding page gives", {
+  mock_annotation_python()
+  task <- make_task()
+  doc <- list(schema = "transforEmotion.annotations", schema_version = "1.0.0", task_id = "t1",
+              coder_id = "C01", records = list(rec(task$items$item_id[1]),
+                                               rec(task$items$item_id[2], emotion = "sad", seq = 2)))
+  json <- as.character(jsonlite::toJSON(doc, auto_unbox = TRUE, null = "null", na = "null"))
+  code <- paste0("te-annotations:", jsonlite::base64_enc(charToRaw(json)))
+  ann <- read_annotations(task, code)
+  emotion <- ann[ann$question == "emotion", ]
+  expect_equal(emotion$value[match(task$items$item_id[1:2], emotion$item_id)], c("happy", "sad"))
+  expect_error(read_annotations(task, substr(code, 1, 40)), "cut off")
+  other <- paste0("te-annotations:", jsonlite::base64_enc(charToRaw('{"schema": "x"}')))
+  expect_error(read_annotations(task, other), "does not hold annotations")
+})

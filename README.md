@@ -297,7 +297,7 @@ view_faces(faces, select = TRUE)
 chosen <- read_face_selection("te-selection:eyJzY2hlbWEiOi...", faces)
 ```
 
-To code faces by hand, for example to check the model against people, `annotation_task(faces, classes = emotions, coders = c("C01", "C02"), dir = "round-1")` sets up a coding task, `annotate_faces()` opens the coding page and saves each answer as it is given, and `read_annotations()`, `annotation_agreement()` and `consensus_labels()` read the answers, measure agreement between coders and give one label per face for `evaluate_emotions()`. The vignette "Checking faces and coding them by hand" walks through it.
+To code faces by hand, for example to check the model against people, `annotation_task(faces, classes = emotions, coders = c("C01", "C02"), dir = "round-1")` sets up a coding task, `annotate_faces()` opens the coding page and saves each answer as it is given, and `read_annotations()`, `annotation_agreement()` and `consensus_labels()` read the answers, measure agreement between coders and give one label per face for `evaluate_emotions()`. In a Jupyter notebook such as Google Colab, `annotate_faces()` shows the coding page below the cell, and **Copy R code** gives a line, `answers <- read_annotations(task, "te-annotations:...")`, to run in a new cell. The vignette "Checking faces and coding them by hand" walks through it.
 
 To try this, the package comes with a picture of two people (`system.file("extdata", "two-people.jpg", package = "transforEmotion")`) and a short clip in which both leave and one of them comes back alone (`"two-people.mp4"`).
 

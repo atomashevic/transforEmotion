@@ -234,6 +234,13 @@
     };
   }
 
+  // The line of R code a coding page in a notebook gives instead of a file
+  function annotationsCode(task, coderId, order, records, exportedAt, taskCode) {
+    const doc = annotationsDocument(task, coderId, order, records, exportedAt);
+    return 'answers <- read_annotations(' + (taskCode || "task") + ', "te-annotations:' +
+      base64(JSON.stringify(doc)) + '")';
+  }
+
   // A message for an annotation task this page cannot run, or null
   function checkAnnotationTask(task) {
     if (task.mode !== "annotate") return "Unknown mode \"" + task.mode + "\" for an annotation task. Expected annotate.";
@@ -285,7 +292,7 @@
     colourNumber, boxLabel, describe, toggleGroup, groupState, clickGroup,
     selectedIds, selectionDocument, selectionCode, checkTask,
     nice, optionsOf, isShown, activeQuestion, missingQuestion, cleanResponses, orderFor,
-    latestRecord, firstOpen, progressOf, makeRecord, annotationsDocument
+    latestRecord, firstOpen, progressOf, makeRecord, annotationsDocument, annotationsCode
   };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.TEFaceLogic = api;

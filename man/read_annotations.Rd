@@ -9,8 +9,10 @@ read_annotations(task, files = NULL, revisions = c("last", "all"))
 \arguments{
 \item{task}{An \code{\link{annotation_task}}, or its folder.}
 
-\item{files}{Answer files to read. Default: every \code{.jsonl} and
-\code{.json} file in the task's \code{results} folder.}
+\item{files}{Answer files to read, or \code{"te-annotations:..."} codes
+from the \strong{Copy R code} button of a coding page in a notebook.
+Default: every \code{.jsonl} and \code{.json} file in the task's
+\code{results} folder.}
 
 \item{revisions}{\code{"last"} (default) keeps each coder's last answer
 to each item; \code{"all"} keeps every change, for checking.}

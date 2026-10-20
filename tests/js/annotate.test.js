@@ -83,3 +83,15 @@ test("checkTask accepts annotation tasks and explains broken ones", () => {
   assert.match(L.checkTask(noOptions), /emotion has no options/);
   assert.match(L.checkTask(Object.assign(task(), { mode: "view" })), /Expected annotate/);
 });
+
+test("a notebook coding page gives the answers as a line of R code", () => {
+  const t = task();
+  const records = [L.makeRecord(t, "C01", "s", [], t.items[0], "answered", { face_check: "ok", emotion: "sad" },
+    "a", "b", 10)];
+  const code = L.annotationsCode(t, "C01", ["i3", "i1", "i2"], records, "2026-10-20T10:00:00Z", '"round-1"');
+  const m = code.match(/^answers <- read_annotations\("round-1", "te-annotations:([A-Za-z0-9+/=]+)"\)$/);
+  assert.ok(m, code);
+  assert.deepEqual(JSON.parse(Buffer.from(m[1], "base64").toString("utf8")),
+    L.annotationsDocument(t, "C01", ["i3", "i1", "i2"], records, "2026-10-20T10:00:00Z"));
+  assert.match(L.annotationsCode(t, "C01", [], [], "x", null), /^answers <- read_annotations\(task, /);
+});

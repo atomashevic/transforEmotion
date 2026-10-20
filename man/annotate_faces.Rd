@@ -4,7 +4,14 @@
 \alias{annotate_faces}
 \title{Code faces in the browser}
 \usage{
-annotate_faces(task, coder = NULL, open = interactive(), port = NULL)
+annotate_faces(
+  task,
+  coder = NULL,
+  open = interactive(),
+  port = NULL,
+  inline = .te_in_notebook(),
+  max_side = 640
+)
 }
 \arguments{
 \item{task}{An \code{\link{annotation_task}}, or its folder.}
@@ -16,10 +23,18 @@ annotate_faces(task, coder = NULL, open = interactive(), port = NULL)
 
 \item{port}{Port of the local server. Default is a free port chosen at
 random.}
+
+\item{inline}{Logical. Show the coding page inside the notebook, below the
+cell. Default is \code{TRUE} in a Jupyter notebook (Google Colab,
+JupyterLab, VS Code) and \code{FALSE} elsewhere.}
+
+\item{max_side}{Longest side, in pixels, of the pictures in a notebook
+page, which stores them in the notebook. Default 640.}
 }
 \value{
 Invisibly, the page: a list with its \code{url} and
-  \code{stop()}, which stops the server.
+  \code{stop()}, which stops the server. With \code{inline = TRUE},
+  invisibly, the path of the page as one self-contained file.
 }
 \description{
 Starts the coding page of an \code{\link{annotation_task}} from R and
@@ -38,6 +53,15 @@ Coders on other computers can open \code{page/index.html} of the task
 from a copy of the folder instead. Their page keeps answers in that
 browser and ends with \strong{Export annotations}; put the exported files
 in the task's \code{results} folder.
+
+In a Jupyter notebook, including Google Colab, the coding page is shown
+below the cell instead (\code{inline = TRUE}, the default there), because
+a page served from R cannot be reached from a notebook running on another
+computer. Its \strong{Copy R code} button gives a line such as
+\code{answers <- read_annotations(task, "te-annotations:...")} to run in
+a new cell. The line holds every answer given so far, so copy it again
+after more coding; keep the last one, as the answers are not saved in the
+task's \code{results} folder.
 }
 \examples{
 \dontrun{

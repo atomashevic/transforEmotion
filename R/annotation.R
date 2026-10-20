@@ -244,15 +244,30 @@ annotation_task <- function(faces, classes = NULL, questions = annotation_questi
 #' browser and ends with \strong{Export annotations}; put the exported files
 #' in the task's \code{results} folder.
 #'
+#' In a Jupyter notebook, including Google Colab, the coding page is shown
+#' below the cell instead (\code{inline = TRUE}, the default there), because
+#' a page served from R cannot be reached from a notebook running on another
+#' computer. Its \strong{Copy R code} button gives a line such as
+#' \code{answers <- read_annotations(task, "te-annotations:...")} to run in
+#' a new cell. The line holds every answer given so far, so copy it again
+#' after more coding; keep the last one, as the answers are not saved in the
+#' task's \code{results} folder.
+#'
 #' @param task An \code{\link{annotation_task}}, or its folder.
 #' @param coder The coder id to start with. Default: the page asks.
 #' @param open Logical. Open the page in the web browser. Default is
 #'   \code{TRUE} in an interactive session.
 #' @param port Port of the local server. Default is a free port chosen at
 #'   random.
+#' @param inline Logical. Show the coding page inside the notebook, below the
+#'   cell. Default is \code{TRUE} in a Jupyter notebook (Google Colab,
+#'   JupyterLab, VS Code) and \code{FALSE} elsewhere.
+#' @param max_side Longest side, in pixels, of the pictures in a notebook
+#'   page, which stores them in the notebook. Default 640.
 #'
 #' @return Invisibly, the page: a list with its \code{url} and
-#'   \code{stop()}, which stops the server.
+#'   \code{stop()}, which stops the server. With \code{inline = TRUE},
+#'   invisibly, the path of the page as one self-contained file.
 #'
 #' @seealso \code{\link{read_annotations}}, \code{\link{annotation_progress}}
 #'
@@ -264,11 +279,14 @@ annotation_task <- function(faces, classes = NULL, questions = annotation_questi
 #' }
 #'
 #' @export
-annotate_faces <- function(task, coder = NULL, open = interactive(), port = NULL) {
+annotate_faces <- function(task, coder = NULL, open = interactive(), port = NULL,
+                           inline = .te_in_notebook(), max_side = 640) {
+  task_code <- .te_code_name(substitute(task), "task")
   task <- .te_load_annotation_task(task)
   if (!is.null(coder) && !coder %in% task$coders) {
     stop("coder must be one of the task's coders: ", paste(task$coders, collapse = ", "), call. = FALSE)
   }
+  if (isTRUE(inline)) return(.te_annotate_in_notebook(task, coder, task_code, max_side))
   results <- file.path(task$dir, "results")
   dir.create(results, showWarnings = FALSE)
   assigned <- stats::setNames(lapply(task$assignments, function(a) as.character(unlist(a$items))),
@@ -336,8 +354,10 @@ annotate_faces <- function(task, coder = NULL, open = interactive(), port = NULL
 #' the task's \code{results} folder, and any exported files you add.
 #'
 #' @param task An \code{\link{annotation_task}}, or its folder.
-#' @param files Answer files to read. Default: every \code{.jsonl} and
-#'   \code{.json} file in the task's \code{results} folder.
+#' @param files Answer files to read, or \code{"te-annotations:..."} codes
+#'   from the \strong{Copy R code} button of a coding page in a notebook.
+#'   Default: every \code{.jsonl} and \code{.json} file in the task's
+#'   \code{results} folder.
 #' @param revisions \code{"last"} (default) keeps each coder's last answer
 #'   to each item; \code{"all"} keeps every change, for checking.
 #'
@@ -361,9 +381,12 @@ read_annotations <- function(task, files = NULL, revisions = c("last", "all")) {
     files <- list.files(file.path(task$dir, "results"), pattern = "\\.(jsonl|json)$",
                         full.names = TRUE)
   }
-  missing_files <- files[!file.exists(files)]
+  is_code <- grepl("^[[:space:]]*te-annotations:", files)
+  missing_files <- files[!is_code & !file.exists(files)]
   if (length(missing_files)) stop("File does not exist: ", missing_files[1], call. = FALSE)
-  records <- unlist(lapply(files, .te_read_record_file), recursive = FALSE)
+  records <- unlist(lapply(seq_along(files), function(i) {
+    if (is_code[i]) .te_read_record_code(files[i]) else .te_read_record_file(files[i])
+  }), recursive = FALSE)
   qids <- vapply(task$questions, function(q) q$id, character(1))
   if (length(records)) {
     other <- vapply(records, function(r) !identical(r$task_id, task$task_id), logical(1))
@@ -748,6 +771,82 @@ print.te_annotation_task <- function(x, ...) {
     return(list())
   }
   doc$records
+}
+
+#' @noRd
+# Records from the code a coding page in a notebook gives: the exported file,
+# base64-encoded
+.te_read_record_code <- function(code) {
+  b64 <- sub("^[[:space:]]*te-annotations:", "", code)
+  if (!grepl("^[A-Za-z0-9+/=[:space:]]+$", b64)) {
+    stop("The annotations code is cut off or changed; copy it again.", call. = FALSE)
+  }
+  text <- tryCatch(rawToChar(jsonlite::base64_dec(gsub("[[:space:]]", "", b64))),
+                   error = function(e) stop("The annotations code is cut off or changed; copy it again.",
+                                            call. = FALSE))
+  Encoding(text) <- "UTF-8"
+  doc <- tryCatch(jsonlite::parse_json(text, simplifyVector = FALSE),
+                  error = function(e) stop("The annotations code is cut off or changed; copy it again.",
+                                           call. = FALSE))
+  if (!identical(doc$schema, "transforEmotion.annotations")) {
+    stop("This code does not hold annotations.", call. = FALSE)
+  }
+  doc$records
+}
+
+#' @noRd
+# How the copied line of code names an argument: its name, a quoted folder,
+# or the default
+.te_code_name <- function(expr, default) {
+  if (is.name(expr)) {
+    name <- as.character(expr)
+    if (identical(make.names(name), name)) return(name)
+  }
+  if (is.character(expr) && length(expr) == 1 && !is.na(expr)) return(deparse(expr))
+  default
+}
+
+#' @noRd
+# annotate_faces() in a notebook: the task's page as one self-contained file,
+# with smaller copies of the pictures inside it, shown below the cell
+.te_annotate_in_notebook <- function(task, coder, task_code, max_side) {
+  page <- file.path(task$dir, "page")
+  tmp <- tempfile("te-annotate-nb-")
+  dir.create(file.path(tmp, "media"), recursive = TRUE)
+  file.copy(file.path(page, .te_face_app_files), tmp)
+  manifest <- jsonlite::read_json(file.path(task$dir, "task.json"), simplifyVector = FALSE)
+  pictures <- unique(unlist(lapply(manifest$items, function(it) c(it$media, unlist(lapply(it$frames, `[[`, "src"))))))
+  pictures <- pictures[!is.na(pictures) & nzchar(pictures)]
+  if (length(pictures)) {
+    ensure_te_py_env()
+    small <- file.path(tmp, pictures)
+    .te_faces_py()$display_copies(as.list(file.path(page, pictures)), as.list(small),
+                                  max_side = as.integer(max_side))
+    uri <- stats::setNames(.te_data_uri(small), pictures)
+    manifest$items <- lapply(manifest$items, function(it) {
+      if (!is.null(it$media) && it$media %in% names(uri)) it$media <- unname(uri[it$media])
+      if (!is.null(it$frames)) {
+        it$frames <- lapply(it$frames, function(fr) {
+          fr$src <- unname(uri[fr$src])
+          fr
+        })
+      }
+      it$video <- NULL # a clip would have to be stored in the notebook
+      it
+    })
+  }
+  json <- jsonlite::toJSON(manifest, auto_unbox = TRUE, null = "null", na = "null", digits = 4)
+  notebook <- list(task = task_code)
+  if (!is.null(coder)) notebook$coder <- coder
+  writeLines(c(paste0("window.TE_TASK = ", json, ";"),
+               paste0("window.TE_NOTEBOOK = ", jsonlite::toJSON(notebook, auto_unbox = TRUE), ";")),
+             file.path(tmp, "data.js"), useBytes = TRUE)
+  out <- file.path(tmp, "annotate.html")
+  writeLines(.te_single_file_page(tmp), out, useBytes = TRUE)
+  .te_show_in_notebook(out, task$task_id)
+  message("Code below, then Copy R code. Paste the line into a new cell and run it: ",
+          "read_annotations() returns the answers.")
+  invisible(normalizePath(out))
 }
 
 #' @noRd
