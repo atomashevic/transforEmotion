@@ -118,7 +118,7 @@ The main input of this function is the path to image. It can be a local filepath
 
 ```{r image_scores, eval = FALSE, echo = TRUE, comment = NA, warning = FALSE, message = FALSE}
 
-image <- ""https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
+image <- "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg"
 
 emotions <- c("excitement", "happiness", "pride", "anger", "fear", "sadness", "neutral")
 
