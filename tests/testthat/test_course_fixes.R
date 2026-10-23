@@ -81,14 +81,16 @@ test_that("validate_rag_json accepts evidence_chunks as jsonlite makes them", {
   expect_false(validate_rag_json(simplified, error = FALSE))
 })
 
-test_that("emoxicon_scores returns a data frame tidyr and dplyr accept", {
+test_that("emoxicon_scores returns a data frame dplyr (vctrs) accepts", {
   data("emotions", package = "transforEmotion", envir = environment())
   expect_equal(class(emotions), c("emoxicon", "data.frame"))
   scores <- emoxicon_scores(c("I am so happy today", "This makes me sad and angry"), lexicon = emotions)
   expect_equal(class(scores), c("emoxicon", "emotions", "data.frame"))
-  long <- tidyr::pivot_longer(scores, -c(doc_id, text), names_to = "emotion", values_to = "count")
-  expect_equal(nrow(long), 2 * (ncol(emotions) - 1))
-  expect_s3_class(dplyr::filter(scores, doc_id == "doc1"), "data.frame")
+  # With "data.frame" before the subclasses, vctrs rejected all three (and
+  # tidyr's pivot_longer())
+  expect_equal(nrow(dplyr::filter(scores, doc_id == "doc1")), 1)
+  expect_equal(nrow(dplyr::bind_rows(scores, scores)), 4)
+  expect_equal(nrow(dplyr::bind_rows(emotions[1:2, ], emotions[3, ])), 3)
 })
 
 test_that("emoxicon_scores does not install packages", {
