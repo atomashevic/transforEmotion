@@ -22,6 +22,6 @@ Installed package size is about 3.7 MB (was about 4.6 MB in 0.1.7), under the 5 
 
 ## This release
 
-Version 0.1.8. The Title and Description now cover speech, face finding, and the local coding task, in addition to text, image, and video. `googledrive`, `httpuv`, `LSAfun`, `pbapply`, and `remotes` were already in Imports and are now imported in the NAMESPACE.
+Version 0.1.8. The Title and Description now cover speech, face finding, and the local coding task, in addition to text, image, and video. `googledrive`, `httpuv`, `pbapply`, and `remotes` were already in Imports and are now imported in the NAMESPACE. `LSAfun` moved from Imports to Suggests: it depends on `rgl`, and importing it made `library(transforEmotion)` load OpenGL. `nlp_scores()` loads it when called.
 
 `emotions.rda` and `tinytrolls.rda` were already saved with xz compression; resaving did not shrink them, and the objects are unchanged. The README logo is no longer installed (no help page uses it). Two example PNGs were recompressed without changing the pixels.
