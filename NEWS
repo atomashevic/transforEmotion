@@ -1,5 +1,7 @@
 # Changes in version 0.1.8
 
+o FIX: `library(transforEmotion)` failed on machines without OpenGL (`libGLU.so.1`) and warned about a missing display during `R CMD check`, because importing `LSAfun` loaded `rgl` at startup. `LSAfun` is now suggested and is loaded only by `nlp_scores()`, which is the only function that uses it
+
 o FIX: the Krippendorff reference on `annotation_agreement()` pointed at a University of Pennsylvania repository URL that now redirects, and the SNLI project page linked from `transformer_scores()` no longer accepts HTTPS connections. The help pages use the current repository item and the Hugging Face copy of the SNLI corpus
 
 o FIX: `map_discrete_to_vad(cache_lexicon = TRUE)` (the default) failed after loading the NRC VAD lexicon, because it tried to store the lexicon in the locked package namespace. An empty list, as from `transformer_scores()` with no texts, failed with "arguments imply differing number of rows"

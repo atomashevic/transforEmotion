@@ -99,7 +99,6 @@ importFrom(jsonlite,
   fromJSON,
   toJSON
 )
-importFrom(LSAfun,costring)
 importFrom(methods,is)
 importFrom(pbapply,pblapply)
 importFrom(remotes,install_github)
