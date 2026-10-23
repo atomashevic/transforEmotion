@@ -74,7 +74,7 @@ jobs:
 
   # Face and speech tests skip unless TRANSFOREMOTION_PYTHON points at an
   # environment with OpenCV and PyAV. Those modules do not need PyTorch.
-  # The CLAP scoring test still skips until that model is cached.
+  # The CLAP scoring test skips unless huggingface_hub is installed and the model is cached.
   #
   # Install hard dependencies only. `dependencies: all` also installs
   # suggested LSAfun, which depends on rgl. rgl's system packages (TeX,
@@ -123,12 +123,7 @@ jobs:
       - name: Install and run face and speech tests
         shell: Rscript {0}
         run: |
-          install.packages(
-            ".",
-            repos = NULL,
-            type = "source",
-            INSTALL_opts = "--no-build-vignettes"
-          )
+          install.packages(".", repos = NULL, type = "source")
           results <- testthat::test_dir(
             "tests/testthat",
             package = "transforEmotion",
