@@ -117,8 +117,6 @@ importFrom(textdata,lexicon_nrc_vad)
 importFrom(utils,
   capture.output,
   data,
-  install.packages,
-  installed.packages,
   packageDescription,
   packageVersion
 )

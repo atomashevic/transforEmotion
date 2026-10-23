@@ -51,7 +51,9 @@
 #' @param response_mode Character (length = 1).
 #' Different responses generated from the model.
 #' See documentation
-#' \href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}
+#' \href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}.
+#' \code{"no_text"} only retrieves the texts closest to \code{query}
+#' (in \code{content}) and loads no LLM
 #'
 #' Defaults to \code{"tree_summarize"}
 #'
@@ -353,8 +355,25 @@ rag <- function(
     if(inherits(current_transformer, "try-error")) current_transformer <- NULL
   }
 
+  # response_mode = "no_text" only retrieves: no text is generated, so no
+  # decoder is loaded for it. A model loaded by an earlier call is kept.
+  if (identical(response_mode, "no_text")) {
+
+    use_retrieval_only_settings(llama_index, device)
+
   # Reconfigure Settings if transformer changed or not yet set
-  if(is.null(current_transformer) || current_transformer != transformer){
+  }else if(is.null(current_transformer) || current_transformer != transformer){
+
+    # Free the previous model before measuring memory and loading the next
+    # one. Settings is global to the Python session, so the old model stays
+    # resident until it is replaced: TinyLLAMA and Qwen2.5-3B together do not
+    # fit in 16 GB on a CPU. Until the new model has loaded, no transformer is
+    # recorded, so a failed load cannot leave the old name on a freed model.
+    release_llm(llama_index)
+    attr(llama_index, which = "transformer") <- NULL
+    if (isTRUE(keep_in_env) && exists("llama_index", envir = as.environment(envir))) {
+      assign(x = "llama_index", value = llama_index, envir = as.environment(envir))
+    }
 
     # Set device (only print when progress is requested)
     device <- auto_device(device, transformer, verbose = isTRUE(progress))
@@ -1451,6 +1470,68 @@ set_default_embedding <- function(llama_index, device = NULL, model_name = "BAAI
 }
 
 #' @noRd
+# Release the LLM that llama-index's global Settings holds, so its weights are
+# freed before another model loads. Settings keeps the model until it is
+# replaced, and assigning a new model only drops the old one after the new one
+# has loaded, so both were resident at once. The private `_llm` field is used
+# because reading `Settings.llm` when it is empty loads llama-index's default
+# (OpenAI). The no-op MockLLM keeps it from doing that later.
+release_llm <- function(llama_index)
+{
+  released <- tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import gc",
+      "from llama_index.core import Settings",
+      "from llama_index.core.llms.mock import MockLLM",
+      "llm = getattr(Settings, '_llm', None)",
+      "released = llm is not None and not isinstance(llm, MockLLM)",
+      "if released:",
+      "    for name in ('_model', '_tokenizer'):",
+      "        if getattr(llm, name, None) is not None:",
+      "            setattr(llm, name, None)",
+      "    Settings._llm = MockLLM()",
+      "del llm",
+      "gc.collect()",
+      "if released:",
+      "    try:",
+      "        import torch",
+      "        if torch.cuda.is_available():",
+      "            torch.cuda.empty_cache()",
+      "    except Exception:",
+      "        pass",
+      sep = "\n"
+    ))$released,
+    # Best effort: if the release fails, the memory check that follows still
+    # stops a load that does not fit
+    error = function(e) FALSE
+  )
+  gc(verbose = FALSE)
+  invisible(isTRUE(released))
+}
+
+#' @noRd
+# Settings for response_mode = "no_text": the embedding model only. If no
+# LLM is loaded, a no-op MockLLM stands in, because the query engine reads
+# Settings.llm and an empty one would load llama-index's default (OpenAI).
+use_retrieval_only_settings <- function(llama_index, device)
+{
+  if (identical(device, "auto")) {
+    torch <- reticulate::import("torch")
+    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
+  }
+  needs <- reticulate::py_run_string(local = TRUE, paste(
+    "from llama_index.core import Settings",
+    "from llama_index.core.llms.mock import MockLLM",
+    "if getattr(Settings, '_llm', None) is None:",
+    "    Settings._llm = MockLLM()",
+    "needs_embedding = getattr(Settings, '_embed_model', None) is None",
+    sep = "\n"
+  ))
+  if (isTRUE(needs$needs_embedding)) set_default_embedding(llama_index, device = device)
+  invisible(NULL)
+}
+
+#' @noRd
 # Setup Ollama-backed models (Gemma3, Ministral)
 # Tries to use llama_index llms.Ollama. Fails with a helpful message if unavailable.
 setup_ollama_model <- function(llama_index, prompt, device, model, context_window)
@@ -1884,7 +1965,6 @@ setup_tinyllama <- function(llama_index, prompt, device,
   if (!is.null(temperature))    gen$temperature    <- as.double(temperature)
   if (!is.null(do_sample))       gen$do_sample      <- isTRUE(do_sample)
   if (!is.null(top_p))           gen$top_p          <- as.double(top_p)
-  if (!is.null(max_new_tokens))  gen$max_new_tokens <- as.integer(max_new_tokens)
 
   # Import Settings from llama_index.core
   Settings <- llama_index$core$Settings
@@ -1893,8 +1973,10 @@ setup_tinyllama <- function(llama_index, prompt, device,
   HuggingFaceLLM <- get_huggingface_llm(llama_index)
   PromptTemplate <- get_prompt_template(llama_index)
 
-  # Configure global Settings instead of ServiceContext
-  Settings$llm <- HuggingFaceLLM(
+  # max_new_tokens is a constructor argument of HuggingFaceLLM, which passes
+  # it to generate() itself; in generate_kwargs as well it raised "got
+  # multiple values for keyword argument 'max_new_tokens'" (as in setup_hf_llm())
+  llm_args <- list(
     model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     query_wrapper_prompt = PromptTemplate(
@@ -1906,6 +1988,10 @@ setup_tinyllama <- function(llama_index, prompt, device,
     device_map = device,
     generate_kwargs = gen
   )
+  if (!is.null(max_new_tokens)) llm_args$max_new_tokens <- as.integer(max_new_tokens)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- do.call(HuggingFaceLLM, llm_args)
   Settings$context_window <- 2048L
   set_default_embedding(llama_index, device = device)
 
