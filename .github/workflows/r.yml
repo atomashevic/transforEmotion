@@ -75,10 +75,15 @@ jobs:
   # Face and speech tests skip unless TRANSFOREMOTION_PYTHON points at an
   # environment with OpenCV and PyAV. Those modules do not need PyTorch.
   # The CLAP scoring test still skips until that model is cached.
+  #
+  # Install hard dependencies only. `dependencies: all` also installs
+  # suggested LSAfun, which depends on rgl. rgl's system packages (TeX,
+  # MuPDF, GL) were still downloading when the 45 minute job was cancelled.
+  # These tests do not call nlp_scores().
   python-faces:
     name: ubuntu (release, face and speech)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -94,8 +99,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
-          needs: check
+          extra-packages: any::testthat
+          dependencies: '"hard"'
+          install-pandoc: false
+          install-quarto: false
 
       - uses: actions/setup-python@v5
         with:
