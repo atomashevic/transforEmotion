@@ -1,10 +1,15 @@
 #' transforEmotion--package
 #' 
-#' @description Implements sentiment and emotion analysis using \href{https://huggingface.co}{huggingface} transformer
-#' zero-shot classification model pipelines on text and image data. The default text pipeline is
-#' \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's DistilRoBERTa} and default image/video pipeline
-#' is \href{https://huggingface.co/openai/clip-vit-base-patch32}{Open AI's CLIP}. All other zero-shot classification model pipelines can be implemented using
-#' their model name from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{https://huggingface.co/models?pipeline_tag=zero-shot-classification}.
+#' @description Zero-shot emotion classification for text, images, video and speech, and
+#' tools to find faces and code them by hand. Text is scored with
+#' \href{https://huggingface.co}{Hugging Face} transformer pipelines (default
+#' \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{cross-encoder/nli-distilroberta-base}).
+#' Images and video are scored with \href{https://huggingface.co/openai/clip-vit-base-patch32}{OpenAI CLIP};
+#' faces can be limited to those found by OpenCV YuNet. Speech segments are scored
+#' with LAION CLAP. Frame scores can be calibrated and combined into posteriors, and
+#' detected faces or other items can be turned into a local coding task served from R.
+#' Any other zero-shot model can be selected by its name on
+#' \href{https://huggingface.co/models}{Hugging Face}.
 #' 
 #' @references
 #' Tomašević, A., Golino, H., & Christensen, A. P. (2026).
@@ -20,6 +25,11 @@
 #' 
 #' @seealso \code{citation("transforEmotion")}
 #'
+#' @importFrom googledrive as_id drive_auth drive_download
+#' @importFrom httpuv excludeStaticPath randomPort service startServer staticPath stopServer
+#' @importFrom LSAfun costring
+#' @importFrom pbapply pblapply
+#' @importFrom remotes install_github
 #' @importFrom utils packageDescription
 #'
 "_PACKAGE"

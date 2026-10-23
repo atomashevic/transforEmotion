@@ -211,10 +211,14 @@ test_that("prepare_findingemo_evaluation handles missing truth column", {
     stringsAsFactors = FALSE
   )
   
-  # Should find and use the emotion column
-  expect_message(
-    result <- prepare_findingemo_evaluation(annotations, predictions),
-    "Using.*as truth column"
+  # The requested column is missing, so the function warns and then says
+  # which column it used instead
+  expect_warning(
+    expect_message(
+      result <- prepare_findingemo_evaluation(annotations, predictions),
+      "Using 'some_emotion_col' as truth column"
+    ),
+    "Truth column 'emotion_label' not found"
   )
   
   expect_s3_class(result, "data.frame")

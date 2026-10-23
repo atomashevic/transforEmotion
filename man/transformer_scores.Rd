@@ -37,13 +37,13 @@ to be used. Default options:
 
 \item{\code{"cross-encoder-roberta"}}{Uses \href{https://huggingface.co/cross-encoder/nli-roberta-base}{Cross-Encoder's Natural Language Interface RoBERTa Base}
 zero-shot classification model trained on the
-\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+\href{https://huggingface.co/datasets/stanfordnlp/snli}{Stanford Natural Language Inference}
 (SNLI) corpus and
 \href{https://huggingface.co/datasets/nyu-mll/multi_nli}{MultiNLI} datasets}
 
 \item{\code{"cross-encoder-distilroberta"}}{Uses \href{https://huggingface.co/cross-encoder/nli-distilroberta-base}{Cross-Encoder's Natural Language Interface DistilRoBERTa Base}
 zero-shot classification model trained on the
-\href{https://nlp.stanford.edu/projects/snli/}{Stanford Natural Language Inference}
+\href{https://huggingface.co/datasets/stanfordnlp/snli}{Stanford Natural Language Inference}
 (SNLI) corpus and
 \href{https://huggingface.co/datasets/nyu-mll/multi_nli}{MultiNLI} datasets. The DistilRoBERTa
 is intended to be a smaller, more lightweight version of \code{"cross-encoder-roberta"},

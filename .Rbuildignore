@@ -53,3 +53,19 @@ transforEmotion\.Rproj
 
 # Scripts that build files in inst/extdata
 ^data-raw$
+
+# Python bytecode. Do not ignore inst/doc: R CMD build copies vignette
+# output there and then applies .Rbuildignore, so ignoring it strips the
+# vignettes from the tarball and install fails.
+^inst/python/__pycache__/
+\.pyc$
+
+# Knitted from vignettes/*.Rmd by a local knit
+^vignettes/.*\.R$
+
+# README logo. No help page uses it, and installing it under help/figures
+# pushed the package over CRAN's 5 MB installed-size note.
+^man/figures/logo\.png$
+
+# Notes for the CRAN submission form
+^cran-comments\.md$

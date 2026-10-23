@@ -1,5 +1,20 @@
 skip_on_cran()
 
+# The scoring tests need a prepared environment. py_module_available() on its
+# own starts Python and would download the default stack during R CMD check.
+skip_without_vad_python <- function() {
+  skip_if_offline()
+  skip_if(
+    !nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")),
+    "TRANSFOREMOTION_PYTHON is not set"
+  )
+  skip_if_not_installed("reticulate")
+  skip_if_not(
+    reticulate::py_module_available("transformers"),
+    "transformers is not available"
+  )
+}
+
 test_that("vad_scores validates input arguments", {
   
   # Test missing input
@@ -127,23 +142,23 @@ test_that("VAD label validation works", {
     "must be a single character string"
   )
   
-  # Test short labels (should warn)
+  # Test short labels (should warn). "small" has 5 characters, so only the
+  # other five poles warn.
   short_labels <- list(
     valence = list(positive = "good", negative = "bad"),
     arousal = list(high = "up", low = "down"),
     dominance = list(high = "big", low = "small")
   )
-  expect_warning(
-    transforEmotion:::validate_vad_labels(short_labels),
-    "very short"
+  warned <- capture_warnings(
+    expect_true(transforEmotion:::validate_vad_labels(short_labels))
   )
+  expect_length(warned, 5)
+  expect_match(warned, "very short")
+  expect_false(any(grepl("dominance$low", warned, fixed = TRUE)))
 })
 
 test_that("vad_scores works with text input", {
-  skip_on_cran()
-  skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test requires manual execution with transformer setup")
+  skip_without_vad_python()
   
   # Test single text
   text <- "I am absolutely thrilled and excited!"
@@ -165,10 +180,7 @@ test_that("vad_scores works with text input", {
 })
 
 test_that("vad_scores works with different label types", {
-  skip_on_cran()
-  skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test requires manual execution with transformer setup")
+  skip_without_vad_python()
   
   text <- "I'm feeling great today!"
   
@@ -185,10 +197,19 @@ test_that("vad_scores works with different label types", {
   expect_true(is.numeric(result_simple$valence))
   
   # Test custom labels
+  # validate_vad_labels() requires every dimension, even if only one is scored
   custom_labels <- list(
     valence = list(
       positive = "Positive customer sentiment and satisfaction with our brand",
       negative = "Negative customer sentiment and dissatisfaction with our brand"
+    ),
+    arousal = list(
+      high = "High energy and intense activation",
+      low = "Calm and low activation"
+    ),
+    dominance = list(
+      high = "Feeling in control of the situation",
+      low = "Feeling powerless in the situation"
     )
   )
   
@@ -201,10 +222,7 @@ test_that("vad_scores works with different label types", {
 })
 
 test_that("vad_scores handles different dimensions correctly", {
-  skip_on_cran()
-  skip_if_not_installed("reticulate")
-  skip_if_not(reticulate::py_module_available("transformers"))
-  skip("This test requires manual execution with transformer setup")
+  skip_without_vad_python()
   
   text <- "I'm energetically excited but feel powerless"
   
@@ -234,9 +252,7 @@ test_that("vad_scores handles different dimensions correctly", {
 })
 
 test_that("vad_scores auto-detection works", {
-  skip_on_cran()
-  skip_if_not_installed("reticulate")
-  skip("This test requires manual execution and comprehensive setup")
+  skip_without_vad_python()
   
   # Text should be auto-detected
   text_result <- vad_scores("Happy text", input_type = "auto", dimensions = "valence")
@@ -249,31 +265,23 @@ test_that("vad_scores auto-detection works", {
     "Image file does not exist"  # Expected error from image_scores
   )
   
-  # URL should be detected as video
+  # A URL is a video. "test" is not a YouTube id, so pytubefix rejects it
+  # before any frames are scored.
   expect_error(
     vad_scores("https://youtube.com/watch?v=test", input_type = "auto"),
-    "Video file does not exist|You need to provide a YouTube video URL"
+    "could not find match|Video file does not exist|YouTube"
   )
 })
 
 test_that("vad_scores handles edge cases", {
-  
-  # Test empty input
-  expect_error(
-    vad_scores(""),
-    # Will likely fail at transformer level with empty text
-    NA
-  )
-  
-  # Test non-character input
+  # Empty text is scored as missing without starting Python
+  empty <- vad_scores("")
+  expect_s3_class(empty, "data.frame")
+  expect_equal(nrow(empty), 1)
+  expect_true(all(is.na(empty[, c("valence", "arousal", "dominance")])))
+
   expect_error(
     vad_scores(123),
     "Input must be character"
   )
-  
-  # Test with all dimensions requested
-  expect_no_error({
-    # This will fail without proper setup, but tests argument validation
-    try(vad_scores("test", dimensions = c("valence", "arousal", "dominance")), silent = TRUE)
-  })
 })

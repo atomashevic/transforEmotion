@@ -77,6 +77,8 @@ test_that("full checkpoints download only themselves", {
 
 test_that("a cached vision adapter is not reused for another architecture", {
   skip_on_cran()
+  # import() would build the default Python stack; run this only in a prepared environment
+  skip_if(!nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")), "TRANSFOREMOTION_PYTHON is not set")
   skip_if_not(reticulate::py_module_available("transformers"))
   image_py <- system.file("python", "image.py", package = "transforEmotion")
   # As in image_scores(): source into __main__, again on every call, so the

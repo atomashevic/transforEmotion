@@ -8,6 +8,8 @@ on:
 
 name: R-CMD-check
 
+permissions: read-all
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
@@ -18,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest,   r: 'release'}
+          - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
@@ -27,38 +29,105 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Run the test suite. skip_on_cran() treats a non-interactive session
+      # with NOT_CRAN unset as CRAN and skips those tests.
+      NOT_CRAN: true
 
     steps:
-        
-      - uses: actions/checkout@v2
-      - uses: r-lib/actions/setup-tinytex@v2
-      - run: tlmgr --version
+      - uses: actions/checkout@v6
 
       - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-tinytex@v2
 
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
-          install-ghostscript: true          
+
+      # qpdf and ghostscript compact the PDF vignette the way CRAN does.
+      # setup-r no longer accepts install-ghostscript.
+      - name: Install qpdf and ghostscript
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y qpdf ghostscript
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            brew install qpdf ghostscript
+          else
+            choco install qpdf ghostscript -y --no-progress
+          fi
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
 
-      # Ensure ~/.local/bin is on PATH across subsequent steps
-      - name: Add ~/.local/bin to PATH (Unix)
-        if: runner.os != 'Windows'
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - name: Add ~/.local/bin to PATH (Windows)
-        if: runner.os == 'Windows'
-        run: echo "$Env:USERPROFILE/.local/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        shell: powershell
-
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
+          args: 'c("--no-manual", "--as-cran")'
+          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+          error-on: '"warning"'
+
+  # Face and speech tests skip unless TRANSFOREMOTION_PYTHON points at an
+  # environment with OpenCV and PyAV. Those modules do not need PyTorch.
+  # The CLAP scoring test still skips until that model is cached.
+  python-faces:
+    name: ubuntu (release, face and speech)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python environment for face and speech tests
+        run: |
+          python -m venv "$RUNNER_TEMP/te-py"
+          "$RUNNER_TEMP/te-py/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/te-py/bin/python" -m pip install \
+            "numpy<2" "pillow" "opencv-python-headless<5" "av>=14,<20"
+          echo "TRANSFOREMOTION_PYTHON=$RUNNER_TEMP/te-py/bin/python" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/sface"
+          curl -fsSL -o "$RUNNER_TEMP/sface/face_recognition_sface_2021dec_int8.onnx" \
+            "https://media.githubusercontent.com/media/opencv/opencv_zoo/4.10.0/models/face_recognition_sface/face_recognition_sface_2021dec_int8.onnx"
+          echo "TRANSFOREMOTION_SFACE_MODEL=$RUNNER_TEMP/sface/face_recognition_sface_2021dec_int8.onnx" >> "$GITHUB_ENV"
+
+      - name: Install and run face and speech tests
+        shell: Rscript {0}
+        run: |
+          install.packages(
+            ".",
+            repos = NULL,
+            type = "source",
+            INSTALL_opts = "--no-build-vignettes"
+          )
+          results <- testthat::test_dir(
+            "tests/testthat",
+            package = "transforEmotion",
+            load_package = "installed",
+            filter = "detect_faces|speech_scores|view_faces",
+            reporter = "summary",
+            stop_on_failure = TRUE
+          )
+          print(as.data.frame(results))

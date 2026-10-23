@@ -4,6 +4,11 @@
 name: First run
 
 on:
+  # Monday 06:15 UTC. Catches Hugging Face, model, and Python-stack breakage
+  # between releases. rag() stays off here: TinyLLAMA is about 2 GB. Dispatch
+  # the workflow with rag=true to include it. This run does not call YouTube.
+  schedule:
+    - cron: "15 6 * * 1"
   workflow_dispatch:
     inputs:
       rag:
@@ -29,12 +34,14 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      SMOKE_RAG: ${{ github.event_name == 'pull_request' && 'false' || inputs.rag }}
+      # rag only when someone dispatches the workflow and turns it on.
+      # Pull requests and the weekly schedule leave it off.
+      SMOKE_RAG: ${{ (github.event_name == 'workflow_dispatch' && inputs.rag) && 'true' || 'false' }}
 
     steps:
       # Only the smoke script is used from the checkout; the package itself is
       # installed with remotes::install_github below
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: .github/scripts
 

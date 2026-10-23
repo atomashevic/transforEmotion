@@ -3,11 +3,22 @@ skip_on_cran()
 library(transforEmotion)
 library(testthat)
 
-test_that("map_discrete_to_vad works with data.frame input (image/video scores)", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
+# A small stand-in for the NRC VAD lexicon. These tests check the mapping,
+# not the downloaded lexicon.
+local_vad <- data.frame(
+  word = c("joy", "sadness", "anger", "happy", "sad", "fear"),
+  valence = c(0.95, 0.10, 0.15, 0.90, 0.20, 0.15),
+  arousal = c(0.70, 0.30, 0.85, 0.55, 0.40, 0.80),
+  dominance = c(0.65, 0.25, 0.55, 0.60, 0.30, 0.25),
+  stringsAsFactors = FALSE
+)
 
+clear_vad_cache <- function() {
+  cache <- transforEmotion:::.te_vad_cache
+  rm(list = ls(envir = cache), envir = cache)
+}
+
+test_that("map_discrete_to_vad works with data.frame input (image/video scores)", {
   # Create mock image/video scores data.frame
   mock_results <- data.frame(
     joy = c(0.8, 0.2, 0.1),
@@ -17,7 +28,7 @@ test_that("map_discrete_to_vad works with data.frame input (image/video scores)"
   )
 
   # Test weighted averaging (default)
-  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE)
+  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE, vad_lexicon = local_vad)
 
   expect_s3_class(vad_weighted, "data.frame")
   expect_equal(nrow(vad_weighted), 3)
@@ -25,7 +36,7 @@ test_that("map_discrete_to_vad works with data.frame input (image/video scores)"
   expect_true(all(sapply(vad_weighted, is.numeric)))
 
   # Test simple lookup (highest scoring emotion)
-  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE)
+  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE, vad_lexicon = local_vad)
 
   expect_s3_class(vad_simple, "data.frame")
   expect_equal(nrow(vad_simple), 3)
@@ -37,9 +48,6 @@ test_that("map_discrete_to_vad works with data.frame input (image/video scores)"
 })
 
 test_that("map_discrete_to_vad works with list input (transformer scores)", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
 
   # Create mock transformer scores list
   mock_results <- list(
@@ -49,7 +57,7 @@ test_that("map_discrete_to_vad works with list input (transformer scores)", {
   )
 
   # Test weighted averaging
-  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE)
+  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE, vad_lexicon = local_vad)
 
   expect_s3_class(vad_weighted, "data.frame")
   expect_equal(nrow(vad_weighted), 3)
@@ -57,7 +65,7 @@ test_that("map_discrete_to_vad works with list input (transformer scores)", {
   expect_equal(vad_weighted$text_id, names(mock_results))
 
   # Test simple lookup
-  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE)
+  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE, vad_lexicon = local_vad)
 
   expect_s3_class(vad_simple, "data.frame")
   expect_equal(nrow(vad_simple), 3)
@@ -65,9 +73,6 @@ test_that("map_discrete_to_vad works with list input (transformer scores)", {
 })
 
 test_that("map_discrete_to_vad handles missing values gracefully", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
 
   # Create data with missing values
   mock_results <- data.frame(
@@ -77,7 +82,7 @@ test_that("map_discrete_to_vad handles missing values gracefully", {
     stringsAsFactors = FALSE
   )
 
-  vad_results <- map_discrete_to_vad(mock_results)
+  vad_results <- map_discrete_to_vad(mock_results, vad_lexicon = local_vad)
 
   expect_s3_class(vad_results, "data.frame")
   expect_equal(nrow(vad_results), 3)
@@ -89,10 +94,6 @@ test_that("map_discrete_to_vad handles missing values gracefully", {
 })
 
 test_that("map_discrete_to_vad handles unknown emotions", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
-
   # Create data with unknown emotion labels
   mock_results <- data.frame(
     unknown_emotion1 = c(0.8, 0.2),
@@ -100,10 +101,12 @@ test_that("map_discrete_to_vad handles unknown emotions", {
     stringsAsFactors = FALSE
   )
 
-  expect_warning(
-    vad_results <- map_discrete_to_vad(mock_results),
-    "Could not find VAD values"
+  # Each unknown label warns once per row, then the row warns that nothing mapped
+  warned <- capture_warnings(
+    vad_results <- map_discrete_to_vad(mock_results, vad_lexicon = local_vad)
   )
+  expect_equal(sum(grepl("Could not find VAD values", warned)), 4)
+  expect_equal(sum(grepl("No emotions could be mapped", warned)), 2)
 
   expect_s3_class(vad_results, "data.frame")
   expect_equal(nrow(vad_results), 2)
@@ -129,81 +132,69 @@ test_that("map_discrete_to_vad validates input arguments", {
     "mapping must be 'nrc_vad'"
   )
 
-  # Test invalid input type - expect error about lexicon download since textdata won't be available
+  # A string is neither a data frame nor a list. Pass a lexicon so this
+  # does not try to download NRC VAD.
   expect_error(
-    map_discrete_to_vad("invalid_input"),
-    "Failed to load NRC VAD lexicon"
+    map_discrete_to_vad("invalid_input", vad_lexicon = local_vad),
+    "results must be a data.frame"
   )
 })
 
-test_that("map_discrete_to_vad requires pre-downloaded lexicon", {
-  skip_on_cran()
+test_that("map_discrete_to_vad loads and caches a lexicon from textdata", {
   skip_if_not_installed("textdata")
-  skip("This test requires NRC VAD lexicon to be pre-downloaded")
-  
-  mock_results <- data.frame(joy = 0.8, sadness = 0.2)
-  
-  # Test that function works when lexicon is available
-  expect_no_error(
-    vad_result <- map_discrete_to_vad(mock_results)
+  clear_vad_cache()
+  on.exit(clear_vad_cache(), add = TRUE)
+
+  local_mocked_bindings(
+    lexicon_nrc_vad = function() local_vad,
+    .package = "textdata"
   )
-  
-  expect_s3_class(vad_result, "data.frame")
-  expect_named(vad_result, c("valence", "arousal", "dominance"))
-})
-
-test_that("map_discrete_to_vad caching works", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
-
   mock_results <- data.frame(joy = 0.8, sadness = 0.2)
 
-  # First call should cache the lexicon
-  vad1 <- map_discrete_to_vad(mock_results, cache_lexicon = TRUE)
-
-  # Second call should use cached lexicon (faster)
-  vad2 <- map_discrete_to_vad(mock_results, cache_lexicon = TRUE)
-
-  # Results should be identical
+  # First call loads the lexicon and stores it. Second call reuses the store
+  # and does not ask textdata again.
+  expect_message(
+    vad1 <- map_discrete_to_vad(mock_results, cache_lexicon = TRUE),
+    "VAD lexicon cached"
+  )
+  expect_no_message(
+    vad2 <- map_discrete_to_vad(mock_results, cache_lexicon = TRUE)
+  )
   expect_identical(vad1, vad2)
 
-  # Test without caching
-  vad3 <- map_discrete_to_vad(mock_results, cache_lexicon = FALSE)
+  # Without caching, the lexicon is loaded again and the result matches
+  expect_message(
+    vad3 <- map_discrete_to_vad(mock_results, cache_lexicon = FALSE),
+    "Loading NRC VAD lexicon"
+  )
   expect_identical(vad1, vad3)
+  expect_named(vad1, c("valence", "arousal", "dominance"))
 })
 
 test_that("map_discrete_to_vad handles edge cases", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
-
   # Test with single emotion
   single_emotion <- data.frame(joy = 1.0)
-  vad_single <- map_discrete_to_vad(single_emotion)
+  vad_single <- map_discrete_to_vad(single_emotion, vad_lexicon = local_vad)
 
   expect_s3_class(vad_single, "data.frame")
   expect_equal(nrow(vad_single), 1)
 
-  # Test with all zeros
+  # Test with all zeros: every emotion is known, so the row is still numeric
   zero_scores <- data.frame(joy = 0, sadness = 0, anger = 0)
-  vad_zero <- map_discrete_to_vad(zero_scores)
+  vad_zero <- map_discrete_to_vad(zero_scores, vad_lexicon = local_vad)
 
   expect_s3_class(vad_zero, "data.frame")
   expect_equal(nrow(vad_zero), 1)
+  expect_true(all(is.numeric(unlist(vad_zero))))
 
   # Test with empty list
-  empty_list <- list()
-  expect_error(
-    map_discrete_to_vad(empty_list),
-    NA  # Should handle gracefully, not error
+  expect_no_error(
+    vad_empty <- map_discrete_to_vad(list(), vad_lexicon = local_vad)
   )
+  expect_equal(nrow(vad_empty), 0)
 })
 
 test_that("weighted vs non-weighted produces different results", {
-  skip_on_cran()
-  skip_if_not_installed("textdata")
-  skip("This test requires manual execution and textdata setup")
 
   # Create data where weighted average would differ from max
   mock_results <- data.frame(
@@ -213,8 +204,8 @@ test_that("weighted vs non-weighted produces different results", {
     stringsAsFactors = FALSE
   )
 
-  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE)
-  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE)
+  vad_weighted <- map_discrete_to_vad(mock_results, weighted = TRUE, vad_lexicon = local_vad)
+  vad_simple <- map_discrete_to_vad(mock_results, weighted = FALSE, vad_lexicon = local_vad)
 
   # Should produce different results since weighted considers all emotions
   # while simple only uses the highest (joy in this case)
