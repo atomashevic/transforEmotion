@@ -101,7 +101,6 @@ importFrom(jsonlite,
 )
 importFrom(methods,is)
 importFrom(pbapply,pblapply)
-importFrom(remotes,install_github)
 importFrom(reshape2,melt)
 importFrom(reticulate,
   py,

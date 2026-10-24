@@ -507,7 +507,7 @@ Tomašević, A., Golino, H., & Christensen, A. P. (2026). transforEmotion: An op
   volume  = {8},
   number  = {2},
   doi     = {10.5117/CCR2026.2.2.TOMA},
-  url     = {https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA}
+  url     = {https://doi.org/10.5117/CCR2026.2.2.TOMA}
 }
 ```
 

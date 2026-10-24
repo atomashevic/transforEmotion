@@ -5,23 +5,12 @@
 
 ## R CMD check results
 
-0 errors, 0 warnings.
-
-One NOTE is expected on CRAN:
-
-* checking CRAN incoming feasibility ... NOTE
-  Possibly invalid URL:
-  https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA
-  from inst/CITATION, status 403.
-
-  This is the publisher page for Tomašević, Golino, and Christensen (2026),
-  doi:10.5117/CCR2026.2.2.TOMA, which is also cited in DESCRIPTION. The site
-  returns 403 to the URL checker. The DOI is the canonical reference.
+0 errors, 0 warnings, 0 notes on the GitHub Actions `--as-cran` runs (those runs do not repeat the incoming URL fetch). The citation URL is `https://doi.org/10.5117/CCR2026.2.2.TOMA`. CRAN checks that DOI through the handle API, which returns 200, rather than the publisher page.
 
 Installed package size is about 3.7 MB (was about 4.6 MB in 0.1.7), under the 5 MB threshold. The source tarball is about 3.0 MB.
 
 ## This release
 
-Version 0.1.8. The Title and Description now cover speech, face finding, and the local coding task, in addition to text, image, and video. `googledrive`, `httpuv`, `pbapply`, and `remotes` were already in Imports and are now imported in the NAMESPACE. `LSAfun` moved from Imports to Suggests: it depends on `rgl`, and importing it made `library(transforEmotion)` load OpenGL. `nlp_scores()` loads it when called.
+Version 0.1.8. The Title and Description now cover speech, face finding, and the local coding task, in addition to text, image, and video. `googledrive`, `httpuv`, and `pbapply` were already in Imports and are now imported in the NAMESPACE. `LSAfun` and `remotes` are suggested and loaded only when `nlp_scores()` and `emoxicon_scores()` need them.
 
 `emotions.rda` and `tinytrolls.rda` were already saved with xz compression; resaving did not shrink them, and the objects are unchanged. The README logo is no longer installed (no help page uses it). Two example PNGs were recompressed without changing the pixels.
