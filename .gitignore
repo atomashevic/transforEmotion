@@ -115,3 +115,9 @@ issues-*.md
 # Test misc
 
 test.R
+
+# Built vignettes and Python bytecode (regenerated locally)
+inst/doc/
+inst/python/__pycache__/
+*.pyc
+vignettes/*.R

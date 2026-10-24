@@ -1,7 +1,7 @@
 Package: transforEmotion
-Title: Sentiment Analysis for Text, Image and Video using Transformer Models
-Version: 0.1.7
-Date: 2026-01-05
+Title: Transformer Emotion Analysis for Text, Image, Video, and Speech
+Version: 0.1.8
+Date: 2026-10-23
 Author: Alexander Christensen [aut] (<https://orcid.org/0000-0002-9798-7037>),
     Hudson Golino [aut] (<https://orcid.org/0000-0002-1601-1447>),
     Aleksandar Tomašević [aut, cre] (<https://orcid.org/0000-0003-4863-6051>)
@@ -12,13 +12,23 @@ Authors@R: c(person("Alexander", "Christensen", email = "alexpaulchristensen@gma
 	           person("Aleksandar", "Tomašević", email = "atomashevic@gmail.com", role = c("aut", "cre"),
 	           comment = c(ORCID = "0000-0003-4863-6051")))
 Maintainer: Aleksandar Tomašević <atomashevic@gmail.com>
-Description: Implements sentiment analysis using huggingface <https://huggingface.co> transformer zero-shot classification model pipelines for text and image data. The default text pipeline is Cross-Encoder's DistilRoBERTa <https://huggingface.co/cross-encoder/nli-distilroberta-base> and default image/video pipeline is Open AI's CLIP  <https://huggingface.co/openai/clip-vit-base-patch32>. All other zero-shot classification model pipelines can be implemented using their model name from <https://huggingface.co/models?pipeline_tag=zero-shot-classification>. For details see Tomašević, Golino, and Christensen (2026) <doi:10.5117/CCR2026.2.2.TOMA>.
+Description: Zero-shot emotion classification for text, images, video and
+    speech, and tools to find faces and code them by hand. Text is scored
+    with 'Hugging Face' transformer pipelines (default
+    'cross-encoder/nli-distilroberta-base'). Images and video are scored
+    with 'OpenAI CLIP'; faces can be limited to those found by 'OpenCV
+    YuNet'. Speech segments are scored with 'LAION CLAP'. Frame scores can
+    be calibrated and combined into posteriors, and detected faces or other
+    items can be turned into a local coding task served from R. Any other
+    zero-shot model can be selected by its name on
+    <https://huggingface.co/models>. For details see Tomašević, Golino, and
+    Christensen (2026) <doi:10.5117/CCR2026.2.2.TOMA>.
 Depends: R (>= 3.5.0)
 License: GPL (>= 3.0)
 Copyright: See file inst/COPYRIGHTS
 Encoding: UTF-8
-Imports: dplyr, googledrive, LSAfun, Matrix, methods, pbapply, remotes, reticulate (>= 1.45.0), textdata, jsonlite, ggplot2, reshape2, httr, httpuv (>= 1.6.0)
-Suggests: IRdisplay, knitr, markdown, rmarkdown, rstudioapi, testthat (>= 3.0.0), withr
+Imports: dplyr, googledrive, Matrix, methods, pbapply, reticulate (>= 1.45.0), textdata, jsonlite, ggplot2, reshape2, httr, httpuv (>= 1.6.0)
+Suggests: IRdisplay, knitr, LSAfun, markdown, remotes, rmarkdown, rstudioapi, testthat (>= 3.0.0), withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

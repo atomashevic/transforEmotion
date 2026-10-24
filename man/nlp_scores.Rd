@@ -82,7 +82,10 @@ Returns semantic distances for the text classes
 \description{
 Natural Language Processing using word embeddings to compute
 semantic similarities (cosine; see
-\code{\link[LSAfun]{costring}}) of text and specified classes
+\code{\link[LSAfun]{costring}}) of text and specified classes.
+The suggested package \pkg{LSAfun} is loaded on use. It is not attached
+with transforEmotion, because loading it also loads \pkg{rgl}, which
+needs the system OpenGL and GLU libraries.
 }
 \examples{
 # Load data

@@ -163,6 +163,12 @@ test_that("only the samples inside the windows are kept", {
 
 test_that("speech_scores scores each segment with LAION CLAP", {
   skip_without_audio_python()
+  # import() errors when the module is missing. The face and speech job
+  # has OpenCV and PyAV only, so this stays skipped until CLAP is cached.
+  skip_if_not(
+    reticulate::py_module_available("huggingface_hub"),
+    "huggingface_hub is not available"
+  )
   hub <- reticulate::import("huggingface_hub")
   cached <- hub$try_to_load_from_cache("laion/larger_clap_music_and_speech", "config.json")
   skip_if(!is.character(cached), "laion/larger_clap_music_and_speech is not downloaded")

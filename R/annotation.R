@@ -539,7 +539,7 @@ annotation_progress <- function(task) {
 #'
 #' @references
 #' Krippendorff, K. (2011). Computing Krippendorff's alpha-reliability.
-#' \url{https://repository.upenn.edu/asc_papers/43/}
+#' \url{https://repository.upenn.edu/items/034a6030-c584-4d14-9d3d-7b7e8d16df20}
 #'
 #' Fleiss, J. L. (1971). Measuring nominal scale agreement among many
 #' raters. \emph{Psychological Bulletin, 76}(5), 378-382.

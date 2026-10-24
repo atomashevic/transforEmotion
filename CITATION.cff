@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: "If you use transforEmotion, please cite the article below."
-title: "transforEmotion: Sentiment Analysis for Text, Image and Video using Transformer Models"
+title: "transforEmotion: Transformer Emotion Analysis for Text, Image, Video, and Speech"
 type: software
-version: 0.1.7
-date-released: 2026-01-05
+version: 0.1.8
+date-released: 2026-10-23
 url: "https://github.com/atomashevic/transforEmotion"
 repository-code: "https://github.com/atomashevic/transforEmotion"
 license: GPL-3.0-or-later
@@ -38,7 +38,7 @@ preferred-citation:
   issue: 2
   year: 2026
   doi: "10.5117/CCR2026.2.2.TOMA"
-  url: "https://www.aup-online.com/content/journals/10.5117/CCR2026.2.2.TOMA"
+  url: "https://doi.org/10.5117/CCR2026.2.2.TOMA"
   issn: "2665-9085"
   publisher:
     name: "Amsterdam University Press"

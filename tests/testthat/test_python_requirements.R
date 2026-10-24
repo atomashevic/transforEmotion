@@ -160,6 +160,8 @@ test_that("C compilers can find Python.h once Python starts (Triton on CUDA)", {
   # CPython's MSVC headers
   skip_if_not(Sys.info()[["sysname"]] == "Linux", "Linux only")
   skip_if(!nzchar(Sys.which("gcc")), "gcc not available")
+  # import() would build the default Python stack; run this only in a prepared environment
+  skip_if(!nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")), "TRANSFOREMOTION_PYTHON is not set")
   skip_if_not(reticulate::py_module_available("torch"))
   reticulate::py_run_string(local = FALSE, paste(
     "import os, subprocess, tempfile",

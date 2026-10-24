@@ -162,16 +162,18 @@ map_discrete_to_vad <- function(results,
   }
 }
 
+# The package namespace is locked after installation, so a new binding cannot
+# be added there. Keep the lexicon in this environment instead.
+.te_vad_cache <- new.env(parent = emptyenv())
+
 #' Get VAD lexicon data
 #' @noRd
 get_vad_lexicon <- function(mapping, cache_lexicon) {
 
-  # Check if lexicon is already cached in package environment
-  pkg_env <- asNamespace("transforEmotion")
   cache_name <- paste0("cached_", mapping)
 
-  if (cache_lexicon && exists(cache_name, envir = pkg_env)) {
-    return(get(cache_name, envir = pkg_env))
+  if (cache_lexicon && exists(cache_name, envir = .te_vad_cache, inherits = FALSE)) {
+    return(get(cache_name, envir = .te_vad_cache, inherits = FALSE))
   }
 
   # Load lexicon based on mapping type
@@ -211,7 +213,7 @@ get_vad_lexicon <- function(mapping, cache_lexicon) {
 
     # Cache the lexicon if requested
     if (cache_lexicon) {
-      assign(cache_name, vad_data, envir = pkg_env)
+      assign(cache_name, vad_data, envir = .te_vad_cache)
       message("VAD lexicon cached for future use")
     }
 
@@ -276,10 +278,11 @@ process_dataframe_input <- function(results, vad_data, weighted) {
 #' @noRd
 process_list_input <- function(results, vad_data, weighted) {
 
-  # Get text identifiers (names of the list)
+  # Get text identifiers (names of the list). paste0() drops a zero-length
+  # index, so an empty list needs an empty id vector of its own.
   text_ids <- names(results)
   if (is.null(text_ids)) {
-    text_ids <- paste0("text_", seq_along(results))
+    text_ids <- if (length(results)) paste0("text_", seq_along(results)) else character()
   }
 
   # Process each text

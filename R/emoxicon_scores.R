@@ -55,12 +55,19 @@ emoxicon_scores <- function(text, lexicon, exclude) {
   
   # Check for install packages
   installed_packages <- row.names(installed.packages())
-  
-  # Install 'remotes' package (if necessary)
-  if(!"remotes" %in% installed_packages){
+
+  # remotes is suggested. It is loaded here, not when the package is attached.
+  if (!requireNamespace("remotes", quietly = TRUE)) {
     install.packages("remotes")
   }
-  
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    stop(
+      "Package \"remotes\" is needed to install emoxicon from GitHub. ",
+      "Install it with install.packages(\"remotes\").",
+      call. = FALSE
+    )
+  }
+
   # Install 'emoxicon' package from GitHub
   if(!"emoxicon" %in% installed_packages){
     remotes::install_github("tvall/emoxicon")

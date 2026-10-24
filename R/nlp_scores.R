@@ -2,7 +2,10 @@
 #'
 #' @description Natural Language Processing using word embeddings to compute
 #' semantic similarities (cosine; see
-#' \code{\link[LSAfun]{costring}}) of text and specified classes
+#' \code{\link[LSAfun]{costring}}) of text and specified classes.
+#' The suggested package \pkg{LSAfun} is loaded on use. It is not attached
+#' with transforEmotion, because loading it also loads \pkg{rgl}, which
+#' needs the system OpenGL and GLU libraries.
 #' 
 #' @param text Character vector or list.
 #' Text in a vector or list data format
@@ -175,6 +178,22 @@ nlp_scores <- function(
   # Check for classes
   if(missing(classes)){
     stop("Classes to classify text must be specified using the 'classes' argument (e.g., `classes = c(\"positive\", \"negative\")`)\n")
+  }
+
+  # LSAfun depends on rgl, and rgl's shared library needs libGLU. Loading it
+  # from the package namespace made library(transforEmotion) fail on machines
+  # without those libraries, and warned about a missing display during checks.
+  # costring does not draw, so a null rgl device is enough when it does load.
+  if (!isNamespaceLoaded("rgl")) {
+    options(rgl.useNULL = TRUE)
+  }
+  if (!requireNamespace("LSAfun", quietly = TRUE)) {
+    stop(
+      "Package \"LSAfun\" is needed for nlp_scores(). ",
+      "Install it with install.packages(\"LSAfun\"). ",
+      "It also needs the system OpenGL and GLU libraries.",
+      call. = FALSE
+    )
   }
   
   # Check for semantic space

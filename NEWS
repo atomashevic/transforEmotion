@@ -1,4 +1,12 @@
-# Changes in version 0.1.8 (in development)
+# Changes in version 0.1.8
+
+o CHANGE: `remotes` moved from Imports to Suggests. Only `emoxicon_scores()` uses it, to install emoxicon from GitHub, and it is loaded then rather than when transforEmotion is attached
+
+o FIX: `library(transforEmotion)` failed on machines without OpenGL (`libGLU.so.1`) and warned about a missing display during `R CMD check`, because importing `LSAfun` loaded `rgl` at startup. `LSAfun` is now suggested and is loaded only by `nlp_scores()`, which is the only function that uses it
+
+o FIX: the Krippendorff reference on `annotation_agreement()` pointed at a University of Pennsylvania repository URL that now redirects, and the SNLI project page linked from `transformer_scores()` no longer accepts HTTPS connections. The help pages use the current repository item and the Hugging Face copy of the SNLI corpus
+
+o FIX: `map_discrete_to_vad(cache_lexicon = TRUE)` (the default) failed after loading the NRC VAD lexicon, because it tried to store the lexicon in the locked package namespace. An empty list, as from `transformer_scores()` with no texts, failed with "arguments imply differing number of rows"
 
 o ADD: `speech_scores()` scores segments of the audio track of an audio file, a video file or a YouTube video against user-defined classes with LAION CLAP (`laion/larger_clap_music_and_speech`, zero-shot), one row per segment with its start and end time. `nsegments`, `segment_length` (at most 10 s), `start`, `end` and `uniform` choose the segments, as `nframes`, `start`, `end` and `uniform` choose the frames in `video_scores()`. Audio is read with PyAV (`av`, which bundles FFmpeg), added on first use; prepare it with `setup_modules(extras = "audio")`. For YouTube URLs only the audio is downloaded
 
