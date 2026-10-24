@@ -1,3 +1,7 @@
+# Models that return structured outputs (json/table/csv) reliably: Gemma 3
+# and Qwen 2.5 Instruct. Compared in lowercase, as rag() stores the name.
+.te_structured_llms <- c("gemma3-1b", "gemma3-4b", "qwen2.5-1.5b", "qwen2.5-3b")
+
 #' Retrieval-augmented Generation (RAG)
 #'
 #' @description Performs retrieval-augmented generation \{llama-index\}
@@ -23,6 +27,11 @@
 #'   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
 #'   HuggingFace: \code{google/gemma-3-1b-it},
 #'   \code{google/gemma-3-4b-it}.}
+#'   \item{"Qwen2.5-1.5B / Qwen2.5-3B"}{Alibaba's Qwen 2.5 Instruct models via
+#'   HuggingFace: \code{Qwen/Qwen2.5-1.5B-Instruct},
+#'   \code{Qwen/Qwen2.5-3B-Instruct}. Not gated (no Hugging Face token needed)
+#'   and loadable with the transformers version the package installs.
+#'   Support structured outputs like Gemma 3.}
 #'   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
 #'   HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
 #'   \code{Qwen/Qwen3-1.7B-Instruct}.}
@@ -42,7 +51,9 @@
 #' @param response_mode Character (length = 1).
 #' Different responses generated from the model.
 #' See documentation
-#' \href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}
+#' \href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}.
+#' \code{"no_text"} only retrieves the texts closest to \code{query}
+#' (in \code{content}) and loads no LLM
 #'
 #' Defaults to \code{"tree_summarize"}
 #'
@@ -84,13 +95,14 @@
 #'   \item \code{"text"} (default): returns a free-text response
 #'   with retrieved content.
 #'   \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"})
-#'   are supported ONLY for Gemma3-1B and Gemma3-4B.
+#'   are supported ONLY for the instruction-tuned models Gemma3-1B,
+#'   Gemma3-4B, Qwen2.5-1.5B and Qwen2.5-3B.
 #'   For other models, requests for structured outputs
 #'   fall back to \code{"text"}.
-#'   \item For Gemma3-1B/4B and task = \code{"sentiment"} or
+#'   \item For these models and task = \code{"sentiment"} or
 #'   \code{"emotion"}, returns per-document dominant
 #'   \code{label} and \code{confidence}.
-#'   \item For Gemma3-1B/4B and task = \code{"general"},
+#'   \item For these models and task = \code{"general"},
 #'   returns the prior schema with \code{labels},
 #'   \code{confidences}, \code{intensity}, and
 #'   \code{evidence_chunks}.
@@ -186,9 +198,11 @@
 #'  similarity_top_k = 5
 #')
 #'
-#' # Structured outputs
-#' rag(text = text, query = "Extract emotions", output = "json")
-#' rag(text = text, query = "Extract emotions", output = "table")
+#' # Structured outputs (Gemma 3 or Qwen 2.5)
+#' rag(text = text, query = "Extract emotions", output = "json",
+#'     transformer = "Qwen2.5-3B")
+#' rag(text = text, query = "Extract emotions", output = "table",
+#'     transformer = "Qwen2.5-3B")
 #'}
 #'
 #' @section Data Privacy:
@@ -198,12 +212,13 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 17.02.2024
+# Updated 19.10.2026
 rag <- function(
     text = NULL, path = NULL,
     transformer = c(
       "TinyLLAMA",
       "Gemma3-1B", "Gemma3-4B",
+      "Qwen2.5-1.5B", "Qwen2.5-3B",
       "Qwen3-1.7B",
       "Ministral-3B"
     ),
@@ -249,10 +264,10 @@ rag <- function(
   # Set output mode (before the check below, which compares a single value)
   output <- match.arg(output)
 
-  # If a non-Gemma small model is requested with structured output, fallback to text with warning
-  if (!transformer %in% c("gemma3-1b", "gemma3-4b") && 
-      !identical(output, "text")) {
-    warning("Structured outputs (json/table/csv) are supported only for Gemma3-1B and Gemma3-4B. Falling back to output = 'text'.", call. = FALSE)
+  # Structured output needs an instruction-tuned model that follows a JSON
+  # instruction; other models fall back to text with a warning
+  if (!transformer %in% .te_structured_llms && !identical(output, "text")) {
+    warning("Structured outputs (json/table/csv) are supported only for Gemma3-1B, Gemma3-4B, Qwen2.5-1.5B and Qwen2.5-3B. Falling back to output = 'text'.", call. = FALSE)
     output <- "text"
   }
 
@@ -272,8 +287,6 @@ rag <- function(
   # Set retriever mode
   retriever <- match.arg(retriever)
 
-  # Enforce: structured outputs only for Gemma3-1B / Gemma3-4B
-  # transformer will be lowercased after match.arg below
 
   # Default label sets for emotion/sentiment tasks
   if (is.null(labels_set)) {
@@ -342,8 +355,25 @@ rag <- function(
     if(inherits(current_transformer, "try-error")) current_transformer <- NULL
   }
 
+  # response_mode = "no_text" only retrieves: no text is generated, so no
+  # decoder is loaded for it. A model loaded by an earlier call is kept.
+  if (identical(response_mode, "no_text")) {
+
+    use_retrieval_only_settings(llama_index, device)
+
   # Reconfigure Settings if transformer changed or not yet set
-  if(is.null(current_transformer) || current_transformer != transformer){
+  }else if(is.null(current_transformer) || current_transformer != transformer){
+
+    # Free the previous model before measuring memory and loading the next
+    # one. Settings is global to the Python session, so the old model stays
+    # resident until it is replaced: TinyLLAMA and Qwen2.5-3B together do not
+    # fit in 16 GB on a CPU. Until the new model has loaded, no transformer is
+    # recorded, so a failed load cannot leave the old name on a freed model.
+    release_llm(llama_index)
+    attr(llama_index, which = "transformer") <- NULL
+    if (isTRUE(keep_in_env) && exists("llama_index", envir = as.environment(envir))) {
+      assign(x = "llama_index", value = llama_index, envir = as.environment(envir))
+    }
 
     # Set device (only print when progress is requested)
     device <- auto_device(device, transformer, verbose = isTRUE(progress))
@@ -360,56 +390,37 @@ rag <- function(
         )
       }),
       # Gemma 3 (HuggingFace Instruct variants) — try without token, then prompt-if-needed
-      "gemma3-1b" = {
-        repo <- "google/gemma-3-1b-it"
-        load_settings <- function() setup_hf_llm(
+      "gemma3-1b" = setup_gemma3(
+        llama_index, prompt, device, repo = "google/gemma-3-1b-it",
+        context_window = 32000L, temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
+      ),
+      "gemma3-4b" = setup_gemma3(
+        llama_index, prompt, device, repo = "google/gemma-3-4b-it",
+        context_window = 128000L, temperature = temperature, do_sample = do_sample,
+        max_new_tokens = max_new_tokens, top_p = top_p
+      ),
+      # Qwen 2.5 Instruct (not gated): chat template applied by the tokenizer
+      "qwen2.5-1.5b" = without_hf_token({
+        setup_hf_llm(
           llama_index, prompt, device,
-          model_name = repo, tokenizer_name = repo,
-          context_window = 32000L,
+          model_name = "Qwen/Qwen2.5-1.5B-Instruct",
+          tokenizer_name = "Qwen/Qwen2.5-1.5B-Instruct",
+          context_window = 32768L, is_chat_model = TRUE,
           temperature = temperature, do_sample = do_sample,
           max_new_tokens = max_new_tokens, top_p = top_p
         )
-        settings_try <- try(load_settings(), silent = TRUE)
-        if (inherits(settings_try, "try-error") && .is_hf_auth_error(settings_try)) {
-          if (interactive()) {
-            tok <- .hf_prompt_token()
-            settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
-            if (inherits(settings_try, "try-error")) stop(settings_try)
-          } else {
-            stop(
-              paste0(
-                "Gemma 3 model download requires a token. Run interactively to be prompted, ",
-                "or wrap your call with with_hf_token('<token>', { rag(...) }) after accepting the model license."
-              ), call. = FALSE
-            )
-          }
-        }
-      },
-      "gemma3-4b" = {
-        repo <- "google/gemma-3-4b-it"
-        load_settings <- function() setup_hf_llm(
+      }),
+      "qwen2.5-3b" = without_hf_token({
+        setup_hf_llm(
           llama_index, prompt, device,
-          model_name = repo, tokenizer_name = repo,
-          context_window = 128000L,
+          model_name = "Qwen/Qwen2.5-3B-Instruct",
+          tokenizer_name = "Qwen/Qwen2.5-3B-Instruct",
+          context_window = 32768L, is_chat_model = TRUE,
           temperature = temperature, do_sample = do_sample,
           max_new_tokens = max_new_tokens, top_p = top_p
         )
-        settings_try <- try(load_settings(), silent = TRUE)
-        if (inherits(settings_try, "try-error") && .is_hf_auth_error(settings_try)) {
-          if (interactive()) {
-            tok <- .hf_prompt_token()
-            settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
-            if (inherits(settings_try, "try-error")) stop(settings_try)
-          } else {
-            stop(
-              paste0(
-                "Gemma 3 model download requires a token. Run interactively to be prompted, ",
-                "or wrap your call with with_hf_token('<token>', { rag(...) }) after accepting the model license."
-              ), call. = FALSE
-            )
-          }
-        }
-      },
+      }),
       # Non-gated: avoid sending any HF token during downloads
       "qwen3-1.7b" = without_hf_token({
         setup_hf_llm(
@@ -1144,6 +1155,8 @@ response_cleanup <- function(response, transformer)
       "gemma3-1b" = response,
       "gemma3-4b" = response,
       "qwen3-1.7b" = response,
+      "qwen2.5-1.5b" = response,
+      "qwen2.5-3b" = response,
       "pleias-rag-350m" = pleias_response_cleanup(response, debug = TRUE),
       "pleias-rag-1b" = pleias_response_cleanup(response, debug = TRUE),
       response
@@ -1172,9 +1185,14 @@ content_cleanup <- function(content)
   # Loop over content
   for(i in seq_len(n_documents)){
 
-    # Populate matrix
+    # Populate matrix. get_content() works for every node type; the .text
+    # property raises in llama-index >= 0.13 when the node is not a TextNode
+    node_text <- try(content[[i]]$get_content(), silent = TRUE)
+    if(inherits(node_text, "try-error")){
+      node_text <- content[[i]]$text
+    }
     content_df[i,] <- c(
-      content[[i]]$id_, content[[i]]$text, content[[i]]$score
+      content[[i]]$id_, node_text, content[[i]]$score
     )
 
   }
@@ -1452,6 +1470,68 @@ set_default_embedding <- function(llama_index, device = NULL, model_name = "BAAI
 }
 
 #' @noRd
+# Release the LLM that llama-index's global Settings holds, so its weights are
+# freed before another model loads. Settings keeps the model until it is
+# replaced, and assigning a new model only drops the old one after the new one
+# has loaded, so both were resident at once. The private `_llm` field is used
+# because reading `Settings.llm` when it is empty loads llama-index's default
+# (OpenAI). The no-op MockLLM keeps it from doing that later.
+release_llm <- function(llama_index)
+{
+  released <- tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import gc",
+      "from llama_index.core import Settings",
+      "from llama_index.core.llms.mock import MockLLM",
+      "llm = getattr(Settings, '_llm', None)",
+      "released = llm is not None and not isinstance(llm, MockLLM)",
+      "if released:",
+      "    for name in ('_model', '_tokenizer'):",
+      "        if getattr(llm, name, None) is not None:",
+      "            setattr(llm, name, None)",
+      "    Settings._llm = MockLLM()",
+      "del llm",
+      "gc.collect()",
+      "if released:",
+      "    try:",
+      "        import torch",
+      "        if torch.cuda.is_available():",
+      "            torch.cuda.empty_cache()",
+      "    except Exception:",
+      "        pass",
+      sep = "\n"
+    ))$released,
+    # Best effort: if the release fails, the memory check that follows still
+    # stops a load that does not fit
+    error = function(e) FALSE
+  )
+  gc(verbose = FALSE)
+  invisible(isTRUE(released))
+}
+
+#' @noRd
+# Settings for response_mode = "no_text": the embedding model only. If no
+# LLM is loaded, a no-op MockLLM stands in, because the query engine reads
+# Settings.llm and an empty one would load llama-index's default (OpenAI).
+use_retrieval_only_settings <- function(llama_index, device)
+{
+  if (identical(device, "auto")) {
+    torch <- reticulate::import("torch")
+    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
+  }
+  needs <- reticulate::py_run_string(local = TRUE, paste(
+    "from llama_index.core import Settings",
+    "from llama_index.core.llms.mock import MockLLM",
+    "if getattr(Settings, '_llm', None) is None:",
+    "    Settings._llm = MockLLM()",
+    "needs_embedding = getattr(Settings, '_embed_model', None) is None",
+    sep = "\n"
+  ))
+  if (isTRUE(needs$needs_embedding)) set_default_embedding(llama_index, device = device)
+  invisible(NULL)
+}
+
+#' @noRd
 # Setup Ollama-backed models (Gemma3, Ministral)
 # Tries to use llama_index llms.Ollama. Fails with a helpful message if unavailable.
 setup_ollama_model <- function(llama_index, prompt, device, model, context_window)
@@ -1493,7 +1573,8 @@ setup_ollama_model <- function(llama_index, prompt, device, model, context_windo
 # Generic HuggingFace LLM setup (Gemma3/Ministral)
 # Uses llama_index$llms$HuggingFaceLLM without Ollama.
 setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window,
-                          temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL)
+                          temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL,
+                          is_chat_model = FALSE)
 {
   # Models that don't support token_type_ids in generation
   models_without_token_type_ids <- c(
@@ -1528,7 +1609,29 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
   if (!is.null(temperature)) generate_kwargs$temperature <- as.double(temperature)
   if (!is.null(do_sample))    generate_kwargs$do_sample    <- isTRUE(do_sample)
   if (!is.null(top_p))        generate_kwargs$top_p        <- as.double(top_p)
-  if (!is.null(max_new_tokens)) generate_kwargs$max_new_tokens <- as.integer(max_new_tokens)
+  # Greedy decoding: sampling parameters are ignored and only cause warnings
+  if (isFALSE(generate_kwargs$do_sample)) {
+    generate_kwargs$temperature <- NULL
+    generate_kwargs$top_p <- NULL
+  }
+  # max_new_tokens is a constructor argument of HuggingFaceLLM, which passes
+  # it to generate() itself; putting it in generate_kwargs as well raised
+  # "got multiple values for keyword argument 'max_new_tokens'"
+  llm_args <- list(
+    model_name = model_name,
+    tokenizer_name = tokenizer_name,
+    device_map = device,
+    generate_kwargs = generate_kwargs,
+    # Required for newer architectures like Gemma 3 (remote modeling code)
+    tokenizer_kwargs = tokenizer_kwargs,
+    model_kwargs = list(trust_remote_code = TRUE),
+    # The persona. With is_chat_model = TRUE, llama-index sends it as the
+    # system message and formats every query with the tokenizer's chat
+    # template, which instruction-tuned models expect
+    system_prompt = prompt,
+    is_chat_model = isTRUE(is_chat_model)
+  )
+  if (!is.null(max_new_tokens)) llm_args$max_new_tokens <- as.integer(max_new_tokens)
 
   # Import Settings from llama_index.core
   Settings <- llama_index$core$Settings
@@ -1537,18 +1640,45 @@ setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name
   HuggingFaceLLM <- get_huggingface_llm(llama_index)
 
   # Configure global Settings instead of ServiceContext
-  Settings$llm <- HuggingFaceLLM(
-    model_name = model_name,
-    tokenizer_name = tokenizer_name,
-    device_map = device,
-    generate_kwargs = generate_kwargs,
-    # Required for newer architectures like Gemma 3 (remote modeling code)
-    tokenizer_kwargs = tokenizer_kwargs,
-    model_kwargs = list(trust_remote_code = TRUE)
-  )
+  Settings$llm <- do.call(HuggingFaceLLM, llm_args)
   Settings$context_window <- as.integer(context_window)
   set_default_embedding(llama_index, device = device)
 
+  invisible(NULL)
+}
+
+#' @noRd
+# Gemma 3 (gated): try without a token, then with the token from the
+# environment or an interactive prompt. Any other loading error is raised:
+# an earlier version swallowed it and silently kept the previous model.
+setup_gemma3 <- function(llama_index, prompt, device, repo, context_window,
+                         temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL)
+{
+  # is_chat_model stays FALSE: Gemma 3's chat template rejects the system
+  # turn llama-index adds ("Conversation roles must alternate"), so the
+  # prompt is prepended to the query as plain text instead
+  load_settings <- function() setup_hf_llm(
+    llama_index, prompt, device,
+    model_name = repo, tokenizer_name = repo,
+    context_window = context_window, is_chat_model = FALSE,
+    temperature = temperature, do_sample = do_sample,
+    max_new_tokens = max_new_tokens, top_p = top_p
+  )
+  settings_try <- try(load_settings(), silent = TRUE)
+  if (!inherits(settings_try, "try-error")) return(invisible(NULL))
+  if (!.is_hf_auth_error(settings_try)) {
+    stop("Could not load ", repo, ":\n", conditionMessage(attr(settings_try, "condition")), call. = FALSE)
+  }
+  if (!interactive()) {
+    stop(
+      "Gemma 3 model download requires a token. Run interactively to be prompted, ",
+      "or wrap your call with with_hf_token('<token>', { rag(...) }) after accepting the model license.",
+      call. = FALSE
+    )
+  }
+  tok <- .hf_prompt_token()
+  settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
+  if (inherits(settings_try, "try-error")) stop(settings_try)
   invisible(NULL)
 }
 
@@ -1835,7 +1965,6 @@ setup_tinyllama <- function(llama_index, prompt, device,
   if (!is.null(temperature))    gen$temperature    <- as.double(temperature)
   if (!is.null(do_sample))       gen$do_sample      <- isTRUE(do_sample)
   if (!is.null(top_p))           gen$top_p          <- as.double(top_p)
-  if (!is.null(max_new_tokens))  gen$max_new_tokens <- as.integer(max_new_tokens)
 
   # Import Settings from llama_index.core
   Settings <- llama_index$core$Settings
@@ -1844,8 +1973,10 @@ setup_tinyllama <- function(llama_index, prompt, device,
   HuggingFaceLLM <- get_huggingface_llm(llama_index)
   PromptTemplate <- get_prompt_template(llama_index)
 
-  # Configure global Settings instead of ServiceContext
-  Settings$llm <- HuggingFaceLLM(
+  # max_new_tokens is a constructor argument of HuggingFaceLLM, which passes
+  # it to generate() itself; in generate_kwargs as well it raised "got
+  # multiple values for keyword argument 'max_new_tokens'" (as in setup_hf_llm())
+  llm_args <- list(
     model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     tokenizer_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
     query_wrapper_prompt = PromptTemplate(
@@ -1857,6 +1988,10 @@ setup_tinyllama <- function(llama_index, prompt, device,
     device_map = device,
     generate_kwargs = gen
   )
+  if (!is.null(max_new_tokens)) llm_args$max_new_tokens <- as.integer(max_new_tokens)
+
+  # Configure global Settings instead of ServiceContext
+  Settings$llm <- do.call(HuggingFaceLLM, llm_args)
   Settings$context_window <- 2048L
   set_default_embedding(llama_index, device = device)
 

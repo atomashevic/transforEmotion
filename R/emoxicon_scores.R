@@ -44,7 +44,6 @@
 #'
 #' @importFrom dplyr left_join
 #' @importFrom stats aggregate
-#' @importFrom utils install.packages installed.packages
 #'
 #' @export
 #'
@@ -52,26 +51,6 @@
 # Emoxicon Function
 # Updated 04.02.2022
 emoxicon_scores <- function(text, lexicon, exclude) {
-  
-  # Check for install packages
-  installed_packages <- row.names(installed.packages())
-
-  # remotes is suggested. It is loaded here, not when the package is attached.
-  if (!requireNamespace("remotes", quietly = TRUE)) {
-    install.packages("remotes")
-  }
-  if (!requireNamespace("remotes", quietly = TRUE)) {
-    stop(
-      "Package \"remotes\" is needed to install emoxicon from GitHub. ",
-      "Install it with install.packages(\"remotes\").",
-      call. = FALSE
-    )
-  }
-
-  # Install 'emoxicon' package from GitHub
-  if(!"emoxicon" %in% installed_packages){
-    remotes::install_github("tvall/emoxicon")
-  } 
   
   # Check that input of 'text' argument is in the
   # appropriate format for the analysis
@@ -133,10 +112,9 @@ emoxicon_scores <- function(text, lexicon, exclude) {
   results$text <- text  # put the text with the emotion scores
   results <- results[, c("doc_id", "text", emotion_labels)]  # reorder the columns
   
-  class(results) <- append(class(results),"emoxicon")
-  if(default.lexicon){
-    class(results) <- append(class(results),"emotions")
-  }
+  # The subclasses go before "data.frame": after it, vctrs (tidyr, dplyr)
+  # rejects the object as an incompatible data frame
+  class(results) <- c("emoxicon", if (default.lexicon) "emotions", "data.frame")
   
   results
   

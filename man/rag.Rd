@@ -7,7 +7,8 @@
 rag(
   text = NULL,
   path = NULL,
-  transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen3-1.7B", "Ministral-3B"),
+  transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen2.5-1.5B", "Qwen2.5-3B",
+    "Qwen3-1.7B", "Ministral-3B"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "no_text", "refine", "simple_summarize",
@@ -50,6 +51,11 @@ Available models include:
   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
   HuggingFace: \code{google/gemma-3-1b-it},
   \code{google/gemma-3-4b-it}.}
+  \item{"Qwen2.5-1.5B / Qwen2.5-3B"}{Alibaba's Qwen 2.5 Instruct models via
+  HuggingFace: \code{Qwen/Qwen2.5-1.5B-Instruct},
+  \code{Qwen/Qwen2.5-3B-Instruct}. Not gated (no Hugging Face token needed)
+  and loadable with the transformers version the package installs.
+  Support structured outputs like Gemma 3.}
   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
   HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
   \code{Qwen/Qwen3-1.7B-Instruct}.}
@@ -69,7 +75,9 @@ Defaults to \code{prompt} if not provided}
 \item{response_mode}{Character (length = 1).
 Different responses generated from the model.
 See documentation
-\href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}
+\href{https://developers.llamaindex.ai/python/framework/module_guides/}{here}.
+\code{"no_text"} only retrieves the texts closest to \code{query}
+(in \code{content}) and loads no LLM
 
 Defaults to \code{"tree_summarize"}}
 
@@ -111,13 +119,14 @@ or \code{"csv"}.
   \item \code{"text"} (default): returns a free-text response
   with retrieved content.
   \item Structured outputs (\code{"json"}/\code{"table"}/\code{"csv"})
-  are supported ONLY for Gemma3-1B and Gemma3-4B.
+  are supported ONLY for the instruction-tuned models Gemma3-1B,
+  Gemma3-4B, Qwen2.5-1.5B and Qwen2.5-3B.
   For other models, requests for structured outputs
   fall back to \code{"text"}.
-  \item For Gemma3-1B/4B and task = \code{"sentiment"} or
+  \item For these models and task = \code{"sentiment"} or
   \code{"emotion"}, returns per-document dominant
   \code{label} and \code{confidence}.
-  \item For Gemma3-1B/4B and task = \code{"general"},
+  \item For these models and task = \code{"general"},
   returns the prior schema with \code{labels},
   \code{confidences}, \code{intensity}, and
   \code{evidence_chunks}.
@@ -222,9 +231,11 @@ rag(
  similarity_top_k = 5
 )
 
-# Structured outputs
-rag(text = text, query = "Extract emotions", output = "json")
-rag(text = text, query = "Extract emotions", output = "table")
+# Structured outputs (Gemma 3 or Qwen 2.5)
+rag(text = text, query = "Extract emotions", output = "json",
+    transformer = "Qwen2.5-3B")
+rag(text = text, query = "Extract emotions", output = "table",
+    transformer = "Qwen2.5-3B")
 }
 
 }

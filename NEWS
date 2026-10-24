@@ -1,6 +1,6 @@
 # Changes in version 0.1.8
 
-o CHANGE: `remotes` moved from Imports to Suggests. Only `emoxicon_scores()` uses it, to install emoxicon from GitHub, and it is loaded then rather than when transforEmotion is attached
+o CHANGE: `remotes` moved from Imports to Suggests, so it is not loaded when the package is attached. The README and the first-run workflow still use it to install transforEmotion from GitHub
 
 o FIX: `library(transforEmotion)` failed on machines without OpenGL (`libGLU.so.1`) and warned about a missing display during `R CMD check`, because importing `LSAfun` loaded `rgl` at startup. `LSAfun` is now suggested and is loaded only by `nlp_scores()`, which is the only function that uses it
 
@@ -13,6 +13,32 @@ o ADD: `speech_scores()` scores segments of the audio track of an audio file, a 
 o FIX: `video_scores()` and `detect_faces()` failed for every YouTube URL with "Failed to get video stream after 3 attempts", because YouTube no longer offers progressive streams (video and audio in one file). They now download the highest H.264 video-only MP4 at 720p or below when no progressive stream exists, so a video kept with `save_video = TRUE` has no sound
 
 o FIX: `video_scores()` and `detect_faces()` treated every input that contained "youtu" as a YouTube URL, so a local file such as `youtube/clip.mp4` was sent to the YouTube download and failed. Only http(s) URLs on youtube.com or youtu.be count as YouTube videos now, as in `speech_scores()`
+
+o ADD: `rag()` and `rag_sentemo()` support Qwen 2.5 Instruct (`transformer = "Qwen2.5-1.5B"` or `"Qwen2.5-3B"`), including structured outputs (`output = "json"`, `"table"`, `"csv"`). The Qwen models are not gated, so no Hugging Face token is needed, and they load with the transformers version the package installs (Gemma 3 needs transformers >= 4.50)
+
+o CHANGE: for the HuggingFace models, `rag()` now passes `prompt` to the model as the system prompt (it was ignored before); for Qwen 2.5 every query is formatted with the tokenizer's chat template (`is_chat_model = TRUE` in llama-index)
+
+o FIX: `rag()` failed with "got multiple values for keyword argument 'max_new_tokens'" when `max_new_tokens` was set for a HuggingFace model
+
+o FIX: when a Gemma 3 model failed to load for a reason other than authentication (for example an old transformers version), `rag()` swallowed the error and silently kept the previously loaded model
+
+o FIX: `rag()` read retrieved nodes through a property that raises in llama-index >= 0.13; it now uses `get_content()`
+
+o FIX: `rag()` frees the previously loaded LLM before it loads another one. Both stayed in memory, so switching from TinyLLAMA to Qwen2.5-3B on a 16 GB machine was refused or killed
+
+o FIX: `rag(transformer = "TinyLLAMA", max_new_tokens = ...)` failed on every document with the same "got multiple values for keyword argument 'max_new_tokens'" error
+
+o CHANGE: `rag(response_mode = "no_text")` only retrieves, so it no longer loads an LLM; a model loaded by an earlier call is kept
+
+o FIX: the memory check before `rag()` loads a model on the CPU counts the 32-bit weights and the extra memory used while loading (Qwen2.5-3B needs about 14 GB, not 6 GB), reads the memory available now on Linux from `/proc/meminfo`, and respects a cgroup memory limit (containers, Colab, systemd), which `free` does not show. On a GPU it checks free rather than total memory
+
+o FIX: `sentence_similarity()` failed for models given by name with the default `device = "auto"`, and ignored `device` for the default model
+
+o FIX: `emoxicon_scores()` returned a data frame that tidyr and dplyr rejected (its class put "emoxicon" after "data.frame"; the `emotions` dataset had the same order), and it no longer installs the unused `emoxicon` package from GitHub
+
+o FIX: the printed summary of `evaluate_emotions()` read the second and third columns as truth and prediction instead of `truth_col` and `pred_col`
+
+o FIX: `validate_rag_json()` rejected `evidence_chunks` read with `jsonlite::fromJSON()`, which turns the array of chunks into a data frame
 
 o CHANGE: faster, smaller Python setup. The first environment build downloads about 500 MB instead of about 3.4 GB on Linux, and later sessions reuse the cached environment in under a second
 

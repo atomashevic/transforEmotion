@@ -81,6 +81,11 @@ validate_rag_json <- function(x, error = TRUE)
   # evidence_chunks
   if (ok) {
     ec <- x$evidence_chunks
+    # jsonlite::fromJSON() simplifies an array of objects to a data frame by
+    # default; read it as the list of chunks it stands for
+    if (is.data.frame(ec)) {
+      ec <- lapply(seq_len(nrow(ec)), function(i) as.list(ec[i, , drop = FALSE]))
+    }
     if (is.null(ec)) {
       # allow NULL by normalizing to empty list
       x$evidence_chunks <- list()

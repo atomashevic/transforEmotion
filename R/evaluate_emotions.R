@@ -169,7 +169,7 @@ evaluate_emotions <- function(data,
   )
   
   # Summary statistics
-  results$summary <- .create_evaluation_summary(results, eval_data)
+  results$summary <- .create_evaluation_summary(results, eval_data, truth_col, pred_col)
   
   # Plotting data if requested
   if (return_plot) {
@@ -702,12 +702,16 @@ print.emotion_evaluation <- function(x, ...) {
 
 #' Create evaluation summary
 #' @noRd
-.create_evaluation_summary <- function(results, data) {
+.create_evaluation_summary <- function(results, data, truth_col, pred_col) {
   
+  # Classes seen in the truth and prediction columns, by name: the 2nd and 3rd
+  # columns are those only when the data happen to be ordered id, truth, pred
+  observed <- unique(c(as.character(data[[truth_col]]), as.character(data[[pred_col]])))
+  observed <- observed[!is.na(observed)]
   summary_list <- list(
     n_instances = nrow(data),
-    n_classes = length(unique(c(data[[2]], data[[3]]))),  # truth and pred cols
-    classes = sort(unique(c(data[[2]], data[[3]]))),
+    n_classes = length(observed),
+    classes = sort(observed),
     accuracy = results$accuracy %||% NA
   )
   
