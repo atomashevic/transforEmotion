@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use transforEmotion, please cite the article below."
 title: "transforEmotion: Transformer Emotion Analysis for Text, Image, Video, and Speech"
 type: software
-version: 0.1.8
-date-released: 2026-10-23
+version: 0.1.9
+date-released: 2026-10-26
 url: "https://github.com/atomashevic/transforEmotion"
 repository-code: "https://github.com/atomashevic/transforEmotion"
 license: GPL-3.0-or-later
