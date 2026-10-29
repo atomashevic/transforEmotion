@@ -1,7 +1,8 @@
-#' Sentiment Analysis Scores
+#' Sentence Similarity
 #'
-#' @description Uses sentiment analysis pipelines from \href{https://huggingface.co}{huggingface}
-#' to compute probabilities that the text corresponds to the specified classes
+#' @description Uses sentence similarity models from \href{https://huggingface.co}{huggingface}
+#' to compute embeddings of \code{text} and \code{comparison_text}
+#' and returns the cosine similarity of each pair
 #'
 #' @param text Character vector or list.
 #' Text in a vector or list data format
@@ -16,13 +17,16 @@
 #'
 #' Also allows any sentence similarity models with a pipeline
 #' from \href{https://huggingface.co/models?pipeline_tag=sentence-similarity}{huggingface}
-#' to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
+#' to be used by using the specified name (e.g., \code{"sentence-transformers/all-mpnet-base-v2"}; see Examples)
 #'
 #' @param device Character.
 #' Whether to use CPU or GPU for inference.
 #' Defaults to \code{"auto"} which will use
 #' GPU over CPU (if CUDA-capable GPU is setup).
-#' Set to \code{"cpu"} to perform over CPU
+#' Set to \code{"cpu"} to perform over CPU.
+#' A classifier kept in \code{envir} moves to the device
+#' set by \code{"cpu"} or \code{"cuda"}.
+#' With \code{"auto"}, it stays on its current device
 #'
 #' @param preprocess Boolean.
 #' Should basic preprocessing be applied?
@@ -91,7 +95,7 @@ sentence_similarity <- function(
   # Check for comparison text
   if(missing(comparison_text)){
     stop(
-      "Comparison text to compute similarity must be specified using the 'comparison_text' argument (e.g., `comparison_text = c(\"a similar sentence\", \a random sentence\")`)\n",
+      "Comparison text to compute similarity must be specified using the 'comparison_text' argument (e.g., `comparison_text = c(\"a similar sentence\", \"a random sentence\")`)\n",
       call. = FALSE
     )
   }
@@ -114,6 +118,15 @@ sentence_similarity <- function(
   # Check for classifiers in environment
   if(exists(transformer, envir = as.environment(envir))){
     classifier <- get(transformer, envir = as.environment(envir))
+
+    # Bind the module too, so that keep_in_env can store it
+    sentence_transformers <- reticulate::import("sentence_transformers")
+
+    # Move the classifier to a device that the user sets
+    if(device != "auto" && !identical(classifier$device$type, device)){
+      classifier$to(device)
+    }
+
   }else{
     
     # Try to import sentence-transformers
@@ -168,7 +181,7 @@ sentence_similarity <- function(
             paste(
               "Transformer model '",
               transformer,
-              "' exists but does not have a working pipeline yet.\n\nTry a default model or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=zero-shot-classification>\n",
+              "' exists but does not have a working pipeline yet.\n\nTry a default model or select a model from huggingface: <https://huggingface.co/models?pipeline_tag=sentence-similarity>\n",
               sep = ""
             ), call. = FALSE
           )
@@ -179,6 +192,11 @@ sentence_similarity <- function(
           pipeline_catch <- try(
             classifier <- sentence_transformers$SentenceTransformer(transformer), silent = TRUE
           )
+
+          # If the second attempt also fails, stop with its error
+          if(is(pipeline_catch, "try-error")){
+            stop(pipeline_catch, call. = FALSE)
+          }
 
         }else{
           stop(pipeline_catch, call. = FALSE)

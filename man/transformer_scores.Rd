@@ -101,7 +101,10 @@ Whether the classifier should be kept in your global environment.
 Defaults to \code{TRUE}.
 By keeping the classifier in your environment, you can skip
 re-loading the classifier every time you run this function.
-\code{TRUE} is recommended}
+\code{TRUE} is recommended.
+The classifier is kept under the name in \code{transformer}. A later call
+reuses it only if both calls give the same \code{local_model_path}, or
+neither gives one}
 
 \item{envir}{Numeric.
 Environment for the classifier to be saved for repeated use.

@@ -8,7 +8,7 @@ rag(
   text = NULL,
   path = NULL,
   transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen2.5-1.5B", "Qwen2.5-3B",
-    "Qwen3-1.7B", "Ministral-3B"),
+    "Ministral-3B"),
   prompt = "You are an expert at extracting themes across many texts",
   query,
   response_mode = c("accumulate", "compact", "no_text", "refine", "simple_summarize",
@@ -50,17 +50,27 @@ Available models include:
   Fast and light local inference.}
   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
   HuggingFace: \code{google/gemma-3-1b-it},
-  \code{google/gemma-3-4b-it}.}
+  \code{google/gemma-3-4b-it}. Gemma 3 needs transformers >= 4.50.
+  The Python environment that transforEmotion installs does not have it:
+  it caps transformers below 4.47 for its llama-index 0.10 stack.
+  Gemma 3 therefore works only with a fixed Python environment that has
+  transformers >= 4.50, set with the \code{TRANSFOREMOTION_PYTHON}
+  environment variable (see \code{\link{python_requirements}}).
+  Such an environment also needs huggingface-hub >= 0.26,
+  llama-index-core >= 0.12 and llama-index-llms-huggingface >= 0.4.2.
+  Replace the transformers, huggingface-hub and llama-index-core caps in
+  the \code{python_requirements()} output with these versions.
+  transforEmotion is not tested with them. Before it loads a Gemma 3
+  model, \code{rag()} checks the transformers version and stops when it
+  is older than 4.50.}
   \item{"Qwen2.5-1.5B / Qwen2.5-3B"}{Alibaba's Qwen 2.5 Instruct models via
   HuggingFace: \code{Qwen/Qwen2.5-1.5B-Instruct},
   \code{Qwen/Qwen2.5-3B-Instruct}. Not gated (no Hugging Face token needed)
   and loadable with the transformers version the package installs.
   Support structured outputs like Gemma 3.}
-  \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
-  HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
-  \code{Qwen/Qwen3-1.7B-Instruct}.}
-  \item{"Ministral-3B"}{Mistral's compact 3B Instruct via
-  HuggingFace: \code{ministral/Ministral-3b-instruct}.}
+  \item{"Ministral-3B"}{A 3B Instruct model with the Mistral architecture
+  from the community repository \code{ministral/Ministral-3b-instruct}
+  on HuggingFace. Mistral AI did not publish this model.}
 }}
 
 \item{prompt}{Character (length = 1).
