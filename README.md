@@ -438,7 +438,7 @@ register_vision_model(
 
 ## GPU Support
 
-When an NVIDIA GPU is detected on Linux or Windows, the CUDA 12.6 build of PyTorch is installed; otherwise the CPU-only build is used (on macOS, PyTorch supports Apple Silicon GPUs directly). GPU use needs only an NVIDIA driver recent enough for CUDA 12 (R525 or newer); the CUDA libraries come with PyTorch, so no CUDA Toolkit or compiler is required.
+When an NVIDIA GPU is detected on Linux or Windows, the CUDA 12.6 build of PyTorch is installed; otherwise the CPU-only build is used. On macOS, transforEmotion runs on the CPU, also on Apple Silicon: `device = "auto"` chooses CUDA or the CPU and never the Apple GPU (MPS). GPU use needs only an NVIDIA driver recent enough for CUDA 12 (R525 or newer); the CUDA libraries come with PyTorch, so no CUDA Toolkit or compiler is required.
 
 To override the detection, set an environment variable in a new R session before loading the package (or add it to `.Renviron`):
 
