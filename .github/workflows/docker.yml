@@ -1,58 +1,297 @@
-# Builds the offline image (docker/Dockerfile) and publishes it to
-# ghcr.io/<owner>/transforemotion, as a CPU image and a CUDA image (-cuda tags).
+# Builds the offline image (docker/Dockerfile), tests it with no network, and
+# publishes it to ghcr.io/<owner>/transforemotion: a CPU image, and a CUDA
+# image with -cuda tags.
+#
+# Event                                   CPU tags          CUDA tags
+# release published (tag v0.1.10/0.1.10)  0.1.10, latest    0.1.10-cuda, latest-cuda
+# push to main                            main, sha-*       not built
+# manual run on main, push: true          main, sha-*       main-cuda, sha-*-cuda
+# manual run on another ref, push: true   sha-* (+ X.Y.Z on a tag), CUDA the same with -cuda
+# manual run with push: false             built and tested, not pushed (CUDA built, not pushed)
+# pull request                            CPU image built and tested, not pushed
+#
+# sha-* is "sha-" and the first 7 characters of the commit. A manual re-run
+# replaces the sha-* and X.Y.Z tags with a new build of the same commit; only
+# the digest names one build. The version tag is the Version field in
+# DESCRIPTION; a release whose tag does not match it fails. latest moves only
+# on a release that is not marked as a pre-release.
+#
+# The CPU job pushes the image that it tested. The CUDA job starts only after
+# the CPU job passes. It is not tested with docker run, but docker/Dockerfile
+# fails the build if a Python module does not import or the default models do
+# not load offline, so a pushed CUDA image has passed those checks (on the CPU).
+# A release runs the workflow file of the tagged commit, not the one on main.
 name: Docker image
 
 on:
-  workflow_dispatch:
   release:
     types: [published]
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - ".dockerignore"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "R/**"
+      - "inst/**"
+      - ".github/workflows/docker.yml"
+      - ".github/scripts/docker-smoke.R"
+  # The same paths as for push, so that a change that breaks the image fails
+  # before the merge
+  pull_request:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - ".dockerignore"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "R/**"
+      - "inst/**"
+      - ".github/workflows/docker.yml"
+      - ".github/scripts/docker-smoke.R"
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push the images to GHCR"
+        type: boolean
+        default: false
+      cuda:
+        description: "Also build the CUDA image"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  # Cancel superseded pull request builds. Other events never cancel a running
+  # build, but GitHub replaces a pending run of the group with the newest one,
+  # so after several quick merges an intermediate commit can lack its sha-* tag.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TEST_TAG: transforemotion:test
+  # A release or a push to main publishes; a manual run only with push: true
+  PUSH: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push) }}
 
 jobs:
-  build:
+  cpu:
+    name: CPU image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - gpu: "0"
-            suffix: ""
-          - gpu: "1"
-            suffix: "-cuda"
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      # The CUDA image needs more space than the runner has free by default
+      - name: Image name and version
+        id: vars
+        run: |
+          version=$(sed -n 's/^Version: *//p' DESCRIPTION)
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Version $version in DESCRIPTION"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/transforemotion" >> "$GITHUB_OUTPUT"
+
+      # BuildKit keeps one copy of the image and Docker another for the test.
+      # The df lines record the free space of this runner image.
       - name: Free disk space
-        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        run: |
+          docker info --format 'Docker {{.ServerVersion}}, storage driver {{.Driver}}, root {{.DockerRootDir}}'
+          df -h / /mnt || true
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
+          docker image prune --all --force > /dev/null
+          df -h / /mnt || true
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - uses: docker/login-action@v3
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ steps.vars.outputs.image }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ steps.vars.outputs.version }},enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short,enable=${{ github.event_name != 'pull_request' && github.event_name != 'release' }}
+          # The action also sets url, source, version, revision and created.
+          # These labels take precedence over the LABEL lines of
+          # docker/Dockerfile. Without the licenses line the action writes
+          # GPL-3.0, the repository license as GitHub reports it; DESCRIPTION
+          # says GPL (>= 3.0).
+          labels: |
+            org.opencontainers.image.title=transforEmotion
+            org.opencontainers.image.description=transforEmotion R package with a fixed Python environment and its default models, for offline use (CPU build of PyTorch)
+            org.opencontainers.image.licenses=GPL-3.0-or-later
+
+      # provenance and sbom are off, so Docker loads the image manifest itself
+      # and the push step sends this image unchanged. actions/attest signs the
+      # provenance of the pushed digest.
+      - name: Build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          build-args: |
+            GPU=0
+            REVISION=${{ github.sha }}
+          load: true
+          tags: ${{ env.TEST_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          sbom: false
+
+      - name: Smoke test with no network
+        run: |
+          docker run --rm --network none \
+            -v "$PWD/.github/scripts:/scripts:ro" -e EXPECT_EXTRAS= -e EXPECT_GPU=0 \
+            "$TEST_TAG" Rscript /scripts/docker-smoke.R
+
+      # Apptainer runs the image read-only, as the calling user
+      - name: Smoke test read-only, as a non-root user
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp --user 1000:1000 -e HOME=/tmp \
+            -v "$PWD/.github/scripts:/scripts:ro" -e EXPECT_EXTRAS= -e EXPECT_GPU=0 \
+            "$TEST_TAG" Rscript /scripts/docker-smoke.R
+
+      - name: Log in to GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: meta
-        uses: docker/metadata-action@v5
+      # The tested image itself is tagged and pushed; there is no second build
+      - name: Push the tested image
+        id: push
+        if: env.PUSH == 'true'
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          # shellcheck disable=SC2086
+          set -- $TAGS
+          if [ "$#" -eq 0 ]; then
+            echo "::error::No tags for this event"
+            exit 1
+          fi
+          for tag in "$@"; do docker tag "$TEST_TAG" "$tag"; done
+          docker push --all-tags "$IMAGE"
+          digest=$(docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' | jq -r .digest)
+          echo "pushed $* as $digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        if: env.PUSH == 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          images: ghcr.io/${{ github.repository_owner }}/transforemotion
+          subject-name: ${{ steps.vars.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          # Storage records exist only for organization-owned repositories
+          create-storage-record: false
+
+  cuda:
+    name: CUDA image
+    needs: cpu
+    # Built only for a release and on request until the CUDA image has passed
+    # a test on a GPU (maintainer decision D2)
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.cuda)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Image name and version
+        id: vars
+        run: |
+          echo "version=$(sed -n 's/^Version: *//p' DESCRIPTION)" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/transforemotion" >> "$GITHUB_OUTPUT"
+
+      - name: Free disk space
+        run: |
+          docker info --format 'Docker {{.ServerVersion}}, storage driver {{.Driver}}, root {{.DockerRootDir}}'
+          df -h / /mnt || true
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache
+          docker image prune --all --force > /dev/null
+          df -h / /mnt || true
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ steps.vars.outputs.image }}
           flavor: |
             latest=false
-            suffix=${{ matrix.suffix }},onlatest=true
+            suffix=-cuda,onlatest=true
           tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.ref_name == github.event.repository.default_branch }}
+            type=raw,value=${{ steps.vars.outputs.version }},enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short,enable=${{ github.event_name != 'release' }}
+          labels: |
+            org.opencontainers.image.title=transforEmotion
+            org.opencontainers.image.description=transforEmotion R package with a fixed Python environment and its default models, for offline use (CUDA 12.6 build of PyTorch; run with --gpus all)
+            org.opencontainers.image.licenses=GPL-3.0-or-later
 
-      - uses: docker/build-push-action@v6
+      - name: Log in to GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # No load into Docker and no docker run: a second copy of a 10 GB image
+      # may not fit on the runner. The module check and the offline smoke test
+      # in docker/Dockerfile run inside this build (on the CPU: the runner has
+      # no GPU). The image is exported (layers compressed) also when it is not
+      # pushed, so a run with push: false needs as much disk as a publish.
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: docker/Dockerfile
-          build-args: GPU=${{ matrix.gpu }}
-          push: true
+          build-args: |
+            GPU=1
+            REVISION=${{ github.sha }}
+          outputs: type=image,push=${{ env.PUSH }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          sbom: false
+
+      - name: Disk space after the build
+        if: always()
+        run: |
+          df -h / /mnt || true
+          docker buildx du || true
+
+      - name: Attest build provenance
+        if: env.PUSH == 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ steps.vars.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
