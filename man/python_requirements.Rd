@@ -39,6 +39,13 @@ transforEmotion uses that interpreter and does not install anything. This is
 the route for read-only environments such as Apptainer images, where uv
 cannot write to its cache.
 
+A function that needs an optional feature set (\code{extras}), for example
+\code{rag()}, stops when the fixed environment does not have the Python
+modules of that set. The error names the missing modules, a command that
+installs their packages, and the \code{EXTRAS} build argument of
+\code{docker/Dockerfile}. Use \code{\link{setup_modules}} with the same
+\code{extras} to compare the whole environment with the requirements.
+
 A fixed environment does not change when transforEmotion is updated, and a
 new version can add Python packages. After an update, rebuild the
 environment or the image from \code{python_requirements()}, or install the

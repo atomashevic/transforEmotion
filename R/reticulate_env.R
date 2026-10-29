@@ -18,6 +18,8 @@
 # Feature sets declared with py_require() in this session
 .te_py_state <- new.env(parent = emptyenv())
 .te_py_state$features <- character()
+# Extra feature sets found in a fixed environment (TRANSFOREMOTION_PYTHON)
+.te_py_state$fixed_features <- character()
 
 #' @noRd
 te_should_use_gpu <- function() {
@@ -180,6 +182,13 @@ te_should_use_gpu <- function() {
 #' the route for read-only environments such as Apptainer images, where uv
 #' cannot write to its cache.
 #'
+#' A function that needs an optional feature set (\code{extras}), for example
+#' \code{rag()}, stops when the fixed environment does not have the Python
+#' modules of that set. The error names the missing modules, a command that
+#' installs their packages, and the \code{EXTRAS} build argument of
+#' \code{docker/Dockerfile}. Use \code{\link{setup_modules}} with the same
+#' \code{extras} to compare the whole environment with the requirements.
+#'
 #' A fixed environment does not change when transforEmotion is updated, and a
 #' new version can add Python packages. After an update, rebuild the
 #' environment or the image from \code{python_requirements()}, or install the
@@ -282,27 +291,85 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   check <- .te_unmet_requirements(extras)
   unmet <- check$unmet
   if (!length(unmet)) return(invisible(TRUE))
-  python <- .te_shell_python(Sys.getenv("TRANSFOREMOTION_PYTHON"))
-  args <- c(
-    if (length(extras)) paste0("extras = ", paste(deparse(extras), collapse = "")),
-    if (isTRUE(check$gpu)) "gpu = TRUE"
-  )
   warning(
     "The Python environment that TRANSFOREMOTION_PYTHON points to does not ",
     "meet these requirements:\n",
     paste0("  ", names(unmet), ": ",
            ifelse(nzchar(unmet), paste(unmet, "is installed"), "not installed"),
            collapse = "\n"),
-    "\ntransforEmotion does not install packages into a fixed environment. ",
-    "Install them with\n",
-    "  uv pip install --python \"", python, "\" ",
-    paste0("\"", names(unmet), "\"", collapse = " "), "\n",
-    "or rebuild the environment from python_requirements(",
-    paste(args, collapse = ", "), "). For a read-only image, see ",
-    "?python_requirements.",
+    "\n", .te_fixed_python_fix(names(unmet), extras, check$gpu),
+    " For a read-only image, see ?python_requirements.",
     call. = FALSE
   )
   invisible(FALSE)
+}
+
+#' @noRd
+# The fix for requirements that the fixed Python environment does not meet: a
+# uv command that installs them, and the python_requirements() call that
+# gives the requirements to rebuild the environment
+.te_fixed_python_fix <- function(requirements, extras = character(), gpu = FALSE) {
+  python <- .te_shell_python(Sys.getenv("TRANSFOREMOTION_PYTHON"))
+  args <- c(
+    if (length(extras)) paste0("extras = ", paste(deparse(extras), collapse = "")),
+    if (isTRUE(gpu)) "gpu = TRUE"
+  )
+  paste0(
+    "transforEmotion does not install packages into a fixed environment. ",
+    "Install them with\n",
+    "  uv pip install --python \"", python, "\" ",
+    paste0("\"", requirements, "\"", collapse = " "), "\n",
+    "or rebuild the environment from python_requirements(",
+    paste(args, collapse = ", "), ")."
+  )
+}
+
+#' @noRd
+# Stop when the fixed Python environment lacks a module of a requested extra
+# feature set, before the function fails on the import. importlib.util's
+# find_spec() finds a module without running it; for a dotted name it imports
+# only the parent packages, which are namespace packages here. A set that
+# passes is not checked again in this session. On failure, the requirements
+# to install come from .te_unmet_requirements(), as in setup_modules().
+.te_check_fixed_features <- function(features) {
+  todo <- setdiff(features, c("core", .te_py_state$fixed_features))
+  if (!length(todo)) return(invisible(TRUE))
+  util <- reticulate::import("importlib.util")
+  # find_spec() raises ModuleNotFoundError when a parent package is missing
+  found <- function(module) {
+    tryCatch(!is.null(util$find_spec(module)), error = function(e) FALSE)
+  }
+  missing <- list()
+  for (feature in todo) {
+    modules <- .te_feature_modules[[feature]]
+    absent <- modules[!vapply(modules, found, logical(1))]
+    if (length(absent)) {
+      missing[[feature]] <- absent
+    } else {
+      .te_py_state$fixed_features <- c(.te_py_state$fixed_features, feature)
+    }
+  }
+  if (!length(missing)) return(invisible(TRUE))
+
+  sets <- names(missing)
+  check <- .te_unmet_requirements(sets)
+  # A module can be missing while its package is installed (a broken install)
+  requirements <- names(check$unmet)
+  if (!length(requirements)) requirements <- unlist(lapply(sets, .te_py_requirements))
+  stop(
+    "The Python environment that TRANSFOREMOTION_PYTHON points to does not ",
+    "have these modules of the feature sets that this function needs:\n",
+    paste0("  ", sets, ": ", vapply(missing, paste, "", collapse = ", "),
+           collapse = "\n"),
+    "\n", .te_fixed_python_fix(requirements, sets, check$gpu),
+    " For a Docker image, build it from docker/Dockerfile with --build-arg ",
+    "EXTRAS=", paste(sets, collapse = ","), ", and list there every feature ",
+    "set that the image needs, separated by commas.",
+    if ("gpu" %in% sets) {
+      " --build-arg GPU=1 adds the gpu set and the CUDA build of PyTorch."
+    },
+    call. = FALSE
+  )
 }
 
 #' @noRd
@@ -329,6 +396,8 @@ python_requirements <- function(extras = character(), gpu = FALSE,
       reticulate::use_python(python, required = TRUE)
       .te_py_state$fixed_python <- TRUE
     }
+    # Nothing can be added to it; stop if it lacks a requested extra set
+    .te_check_fixed_features(features)
     return(invisible(TRUE))
   }
 
