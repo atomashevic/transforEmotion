@@ -26,17 +26,24 @@
 #'   Fast and light local inference.}
 #'   \item{"Gemma3-1B / Gemma3-4B"}{Google's Gemma 3 Instruct via
 #'   HuggingFace: \code{google/gemma-3-1b-it},
-#'   \code{google/gemma-3-4b-it}.}
+#'   \code{google/gemma-3-4b-it}. Gemma 3 needs transformers >= 4.50.
+#'   The Python environment that transforEmotion installs does not have it:
+#'   it caps transformers below 4.47 for its llama-index 0.10 stack.
+#'   Gemma 3 therefore works only with a fixed Python environment that has
+#'   transformers >= 4.50, set with the \code{TRANSFOREMOTION_PYTHON}
+#'   environment variable (see \code{\link{python_requirements}}).
+#'   Such an environment also needs llama-index-llms-huggingface >= 0.4.2
+#'   and llama-index-core >= 0.12. transforEmotion is not tested with these
+#'   versions. Before it loads a Gemma 3 model, \code{rag()} checks the
+#'   transformers version and stops when it is older than 4.50.}
 #'   \item{"Qwen2.5-1.5B / Qwen2.5-3B"}{Alibaba's Qwen 2.5 Instruct models via
 #'   HuggingFace: \code{Qwen/Qwen2.5-1.5B-Instruct},
 #'   \code{Qwen/Qwen2.5-3B-Instruct}. Not gated (no Hugging Face token needed)
 #'   and loadable with the transformers version the package installs.
 #'   Support structured outputs like Gemma 3.}
-#'   \item{"Qwen3-0.6B / Qwen3-1.7B"}{Qwen 3 small Instruct models via
-#'   HuggingFace: \code{Qwen/Qwen3-0.6B-Instruct},
-#'   \code{Qwen/Qwen3-1.7B-Instruct}.}
-#'   \item{"Ministral-3B"}{Mistral's compact 3B Instruct via
-#'   HuggingFace: \code{ministral/Ministral-3b-instruct}.}
+#'   \item{"Ministral-3B"}{A 3B Instruct model with the Mistral architecture
+#'   from the community repository \code{ministral/Ministral-3b-instruct}
+#'   on HuggingFace. Mistral AI did not publish this model.}
 #' }
 #'
 #' @param prompt Character (length = 1).
@@ -212,14 +219,13 @@
 #' @export
 #'
 # Retrieval-augmented generation
-# Updated 19.10.2026
+# Updated 29.10.2026
 rag <- function(
     text = NULL, path = NULL,
     transformer = c(
       "TinyLLAMA",
       "Gemma3-1B", "Gemma3-4B",
       "Qwen2.5-1.5B", "Qwen2.5-3B",
-      "Qwen3-1.7B",
       "Ministral-3B"
     ),
     prompt = "You are an expert at extracting themes across many texts",
@@ -240,6 +246,11 @@ rag <- function(
     envir = 1, progress = TRUE
 )
 {
+
+  # A removed Qwen3 choice stops with its reason, before Python starts
+  if(!missing(transformer)){
+    .te_stop_if_qwen3(transformer)
+  }
 
   # Declare the core and RAG Python requirements
   .te_require("rag")
@@ -364,6 +375,12 @@ rag <- function(
   # Reconfigure Settings if transformer changed or not yet set
   }else if(is.null(current_transformer) || current_transformer != transformer){
 
+    # Gemma 3 needs transformers >= 4.50. Check the installed version before
+    # the previous model is freed and before any download
+    if (transformer %in% c("gemma3-1b", "gemma3-4b")) {
+      .te_check_gemma3_transformers()
+    }
+
     # Free the previous model before measuring memory and loading the next
     # one. Settings is global to the Python session, so the old model stays
     # resident until it is replaced: TinyLLAMA and Qwen2.5-3B together do not
@@ -417,17 +434,6 @@ rag <- function(
           model_name = "Qwen/Qwen2.5-3B-Instruct",
           tokenizer_name = "Qwen/Qwen2.5-3B-Instruct",
           context_window = 32768L, is_chat_model = TRUE,
-          temperature = temperature, do_sample = do_sample,
-          max_new_tokens = max_new_tokens, top_p = top_p
-        )
-      }),
-      # Non-gated: avoid sending any HF token during downloads
-      "qwen3-1.7b" = without_hf_token({
-        setup_hf_llm(
-          llama_index, prompt, device,
-          model_name = "Qwen/Qwen3-1.7B-Instruct",
-          tokenizer_name = "Qwen/Qwen3-1.7B-Instruct",
-          context_window = 32000L,
           temperature = temperature, do_sample = do_sample,
           max_new_tokens = max_new_tokens, top_p = top_p
         )
@@ -1154,7 +1160,6 @@ response_cleanup <- function(response, transformer)
       "tinyllama" = response,
       "gemma3-1b" = response,
       "gemma3-4b" = response,
-      "qwen3-1.7b" = response,
       "qwen2.5-1.5b" = response,
       "qwen2.5-3b" = response,
       "pleias-rag-350m" = pleias_response_cleanup(response, debug = TRUE),
@@ -1680,6 +1685,56 @@ setup_gemma3 <- function(llama_index, prompt, device, repo, context_window,
   settings_try <- try(with_hf_token(tok, { load_settings() }), silent = TRUE)
   if (inherits(settings_try, "try-error")) stop(settings_try)
   invisible(NULL)
+}
+
+#' @noRd
+# Version string of an installed Python package, read from its metadata
+# without importing it. NA when Python or the package is not available.
+.te_py_pkg_version <- function(package)
+{
+  version <- try(reticulate::import("importlib.metadata")$version(package), silent = TRUE)
+  if (inherits(version, "try-error") || !is.character(version)) NA_character_ else version
+}
+
+#' @noRd
+# Gemma 3 (model type gemma3) needs transformers >= 4.50. The environment
+# that transforEmotion installs caps transformers below 4.47 for the
+# llama-index 0.10 stack, so only a fixed environment can load Gemma 3.
+# An unknown version is left to the loader, which then reports its own error.
+.te_check_gemma3_transformers <- function()
+{
+  version <- .te_py_pkg_version("transformers")
+  release <- numeric_version(sub("^([0-9]+(\\.[0-9]+)*).*$", "\\1", version), strict = FALSE)
+  if (is.na(release) || release >= "4.50") return(invisible(TRUE))
+  stop(
+    "Gemma 3 needs transformers >= 4.50, and this Python environment has transformers ",
+    version, ". The Python environment that transforEmotion installs caps transformers ",
+    "below 4.47 for its llama-index 0.10 stack, so Gemma 3 works only with a fixed ",
+    "environment that has transformers >= 4.50, set with TRANSFOREMOTION_PYTHON (see ?rag). ",
+    "Qwen2.5-1.5B and Qwen2.5-3B also give structured outputs and load in the installed environment.",
+    call. = FALSE
+  )
+}
+
+#' @noRd
+# The Qwen3 choice was removed: the Qwen/Qwen3-*-Instruct repositories it
+# named do not exist, and Qwen3 (model type qwen3) needs transformers >= 4.51.
+# A value that starts with "Qwen3" stops with that reason instead of the
+# generic match.arg() error.
+.te_stop_if_qwen3 <- function(transformer)
+{
+  if (!is.character(transformer) || length(transformer) != 1L ||
+      !grepl("^qwen3", transformer, ignore.case = TRUE)) {
+    return(invisible(NULL))
+  }
+  stop(
+    "transformer = \"", transformer, "\" is no longer available. ",
+    "The Qwen3 repository IDs that transforEmotion used did not exist on the ",
+    "Hugging Face Hub, and Qwen3 needs transformers >= 4.51, which the Python ",
+    "environment that transforEmotion installs does not have (it caps transformers ",
+    "below 4.47). Use transformer = \"Qwen2.5-1.5B\" or \"Qwen2.5-3B\" instead.",
+    call. = FALSE
+  )
 }
 
 #' @noRd

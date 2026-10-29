@@ -13,12 +13,11 @@ auto_device <- function(device, transformer, verbose = TRUE)
     "mistral-7b" = 16800, "openchat-3.5" = 16800,
     "orca-2" = 33600, # supported by 32-bit
     "phi-2" = 6480,
-    # Gemma3, Ministral, Qwen3 (approximate memory, MB)
+    # Gemma3, Ministral, Qwen 2.5 (approximate memory, MB)
     "gemma3-1b" = 815,
     "gemma3-4b" = 3300,
     "ministral-3b" = 7000,
     "ministral-8b" = 18400,
-    "qwen3-1.7b" = 1800,
     "qwen2.5-1.5b" = 3100,
     "qwen2.5-3b" = 6200,
     # New: PleIAs and JSON-tuned 1B (approximate)

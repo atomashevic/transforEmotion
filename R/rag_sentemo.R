@@ -22,10 +22,13 @@
 #'     \item \code{"Gemma3-4B"}
 #'     \item \code{"Qwen2.5-1.5B"}
 #'     \item \code{"Qwen2.5-3B"} (not gated, no token needed)
-#'     \item \code{"Qwen3-0.6B"}
-#'     \item \code{"Qwen3-1.7B"}
 #'     \item \code{"Ministral-3B"}
 #'   }
+#'   Gemma 3 needs transformers >= 4.50, which the Python environment that
+#'   transforEmotion installs does not have: it caps transformers below 4.47
+#'   for its llama-index 0.10 stack. Gemma 3 therefore works only with a
+#'   fixed environment that has transformers >= 4.50, set with
+#'   \code{TRANSFOREMOTION_PYTHON} (see \code{\link{rag}}).
 #' @param similarity_top_k Integer. Retrieval depth per query. Default 5.
 #' @param response_mode Character. LlamaIndex response mode. 
 #'   Default \code{"compact"}.
@@ -65,7 +68,7 @@ rag_sentemo <- function(
   max_labels = 5,
   transformer = c(
     "TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen2.5-1.5B", "Qwen2.5-3B",
-    "Qwen3-1.7B", "Ministral-3B"
+    "Ministral-3B"
   ),
   similarity_top_k = 5,
   response_mode = c("compact", "refine", "simple_summarize"),
@@ -74,6 +77,8 @@ rag_sentemo <- function(
   ...
 ){
   task <- match.arg(task)
+  # A removed Qwen3 choice stops with its reason (see rag())
+  if (!missing(transformer)) .te_stop_if_qwen3(transformer)
   transformer <- match.arg(transformer)
   response_mode <- match.arg(response_mode)
   output <- match.arg(output)

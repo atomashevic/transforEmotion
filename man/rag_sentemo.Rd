@@ -11,7 +11,7 @@ rag_sentemo(
   labels_set = NULL,
   max_labels = 5,
   transformer = c("TinyLLAMA", "Gemma3-1B", "Gemma3-4B", "Qwen2.5-1.5B", "Qwen2.5-3B",
-    "Qwen3-1.7B", "Ministral-3B"),
+    "Ministral-3B"),
   similarity_top_k = 5,
   response_mode = c("compact", "refine", "simple_summarize"),
   output = c("table", "json", "csv"),
@@ -42,10 +42,13 @@ for \code{task = "sentiment"}.}
   \item \code{"Gemma3-4B"}
   \item \code{"Qwen2.5-1.5B"}
   \item \code{"Qwen2.5-3B"} (not gated, no token needed)
-  \item \code{"Qwen3-0.6B"}
-  \item \code{"Qwen3-1.7B"}
   \item \code{"Ministral-3B"}
-}}
+}
+Gemma 3 needs transformers >= 4.50, which the Python environment that
+transforEmotion installs does not have: it caps transformers below 4.47
+for its llama-index 0.10 stack. Gemma 3 therefore works only with a
+fixed environment that has transformers >= 4.50, set with
+\code{TRANSFOREMOTION_PYTHON} (see \code{\link{rag}}).}
 
 \item{similarity_top_k}{Integer. Retrieval depth per query. Default 5.}
 
