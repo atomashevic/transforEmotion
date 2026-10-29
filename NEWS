@@ -54,7 +54,7 @@ o CHANGE: with `TRANSFOREMOTION_PYTHON` set, for example in the Docker image, `l
 
 o CHANGE: `setup_cache()` also sets `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to the model folder of the cache, `<path>/huggingface/hub`. These variables take precedence over `HF_HOME`. Before, a value of either variable, for example from the Docker image, kept the models out of the cache folder. It also unsets `TRANSFORMERS_CACHE`, `PYTORCH_TRANSFORMERS_CACHE` and `PYTORCH_PRETRAINED_BERT_CACHE`, which transformers reads before `HF_HUB_CACHE`
 
-o ADD: images on GitHub Container Registry. `docker pull ghcr.io/atomashevic/transforemotion:main` gives the GitHub version; from this release, `latest` and `0.1.10` give the CRAN release. On clusters, `apptainer pull docker://ghcr.io/atomashevic/transforemotion:main` makes an Apptainer image. The images are for x86_64. These are the first published images. The GitHub Actions workflow came with 0.1.8, but it did not run for 0.1.8 or 0.1.9
+o ADD: images on GitHub Container Registry. `docker pull ghcr.io/atomashevic/transforemotion:main` gives the GitHub version; from this release, `latest` and `0.1.10` give the release, built when its GitHub release is published. On clusters, `apptainer pull docker://ghcr.io/atomashevic/transforemotion:main` makes an Apptainer image. The images are for x86_64. These are the first published images. The GitHub Actions workflow came with 0.1.8, but it did not run for 0.1.8 or 0.1.9
 
 o CHANGE: `docker/Dockerfile` checks the image at build time. The build fails if a Python module of the requested feature sets does not import, if a `GPU=1` build has the CPU build of PyTorch, or if the default text, image and sentence models do not load without network
 
