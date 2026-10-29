@@ -71,6 +71,14 @@ test_that("setup_cache() points every cache at one folder", {
   vars <- c("UV_CACHE_DIR", "UV_PYTHON_INSTALL_DIR", "UV_PYTHON_PREFERENCE",
             "HF_HOME", "R_USER_CACHE_DIR", "UV_OFFLINE", "HF_HUB_OFFLINE")
   withr::local_envvar(setNames(rep(NA_character_, length(vars)), vars))
+  # Values that the Docker image sets; setup_cache() replaces them
+  withr::local_envvar(
+    HF_HUB_CACHE = "/opt/transforEmotion/huggingface/hub",
+    SENTENCE_TRANSFORMERS_HOME = "/opt/transforEmotion/huggingface/hub"
+  )
+  # transformers prefers these over HF_HUB_CACHE; setup_cache() unsets them
+  old_vars <- c("TRANSFORMERS_CACHE", "PYTORCH_TRANSFORMERS_CACHE", "PYTORCH_PRETRAINED_BERT_CACHE")
+  withr::local_envvar(setNames(rep("/home/u/.cache/transformers", 3), old_vars))
   dir <- withr::local_tempdir()
 
   set <- setup_cache(dir, offline = TRUE)
@@ -79,6 +87,12 @@ test_that("setup_cache() points every cache at one folder", {
   # reticulate only reuses a uv-installed interpreter under ".../uv/python/"
   expect_equal(Sys.getenv("UV_PYTHON_INSTALL_DIR"), file.path(root, "uv", "python"))
   expect_equal(Sys.getenv("HF_HOME"), file.path(root, "huggingface"))
+  # These take precedence over HF_HOME
+  expect_equal(Sys.getenv("HF_HUB_CACHE"), file.path(root, "huggingface", "hub"))
+  expect_equal(Sys.getenv("SENTENCE_TRANSFORMERS_HOME"), file.path(root, "huggingface", "hub"))
+  expect_equal(unname(set["HF_HUB_CACHE"]), file.path(root, "huggingface", "hub"))
+  expect_equal(Sys.getenv(old_vars, unset = NA), setNames(rep(NA_character_, 3), old_vars))
+  expect_false(any(old_vars %in% names(set)))
   expect_equal(Sys.getenv("R_USER_CACHE_DIR"), file.path(root, "R"))
   expect_equal(Sys.getenv("HF_HUB_OFFLINE"), "1")
   expect_equal(unname(set["UV_OFFLINE"]), "1")

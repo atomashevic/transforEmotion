@@ -15,7 +15,7 @@
 #' }
 #' @export
 te_cleanup_default_venv <- function(confirm = TRUE) {
-  venv_path <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
+  venv_path <- .te_default_venv()
   if (!dir.exists(venv_path)) {
     message("No default reticulate venv detected at ", venv_path)
     return(invisible(FALSE))
@@ -49,3 +49,8 @@ te_cleanup_default_venv <- function(confirm = TRUE) {
   invisible(ok)
 }
 
+#' @noRd
+# reticulate's default virtual environment
+.te_default_venv <- function() {
+  path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
+}

@@ -325,7 +325,9 @@ test_that("setup_cache(offline = TRUE, gpu = ) does not check the cache", {
   # PyTorch build and feature sets
   local_offline_session(features = character())
   vars <- c("UV_PYTHON_INSTALL_DIR", "UV_PYTHON_PREFERENCE", "HF_HOME",
-            "R_USER_CACHE_DIR", "HF_HUB_OFFLINE")
+            "HF_HUB_CACHE", "SENTENCE_TRANSFORMERS_HOME", "R_USER_CACHE_DIR",
+            "HF_HUB_OFFLINE", "TRANSFORMERS_CACHE", "PYTORCH_TRANSFORMERS_CACHE",
+            "PYTORCH_PRETRAINED_BERT_CACHE")
   withr::local_envvar(setNames(rep(NA_character_, length(vars)), vars))
   local_mocked_bindings(te_should_use_gpu = function() FALSE)
   local_mocked_bindings(

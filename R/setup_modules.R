@@ -108,10 +108,13 @@ check_nvidia_gpu <- function() {
 setup_modules <- function(extras = character(), download_models = TRUE,
                           models = character()) {
   extras <- .te_check_extras(extras)
-  .te_require(c("core", extras))
-  # Nothing is installed into a fixed environment; report what it lacks
+  # Nothing is installed into a fixed environment; report everything it
+  # lacks, instead of the stop of .te_require() for a missing extra set
   if (nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))) {
+    .te_require("core")
     .te_warn_unmet_requirements(extras)
+  } else {
+    .te_require(c("core", extras))
   }
 
   # Start Python so a failed resolution is reported here, not on first use

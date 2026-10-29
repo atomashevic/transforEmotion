@@ -47,9 +47,11 @@
     Sys.unsetenv("RETICULATE_PYTHON")
     requireNamespace("reticulate")
 
-    # If the default reticulate venv exists, suggest the cleanup helper (no prompts on attach)
-    default_venv <- path.expand(file.path("~", ".virtualenvs", "r-reticulate"))
-    if (dir.exists(default_venv)) {
+    # If the default reticulate venv exists, suggest the cleanup helper (no
+    # prompts on attach). A fixed environment (TRANSFOREMOTION_PYTHON), for
+    # example in the Docker image, does not use it.
+    fixed <- nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))
+    if (!fixed && dir.exists(.te_default_venv())) {
         packageStartupMessage(
           "Detected ~/.virtualenvs/r-reticulate; run transforEmotion::te_cleanup_default_venv() to remove it and prefer uv."
         )

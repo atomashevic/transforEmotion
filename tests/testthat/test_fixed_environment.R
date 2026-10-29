@@ -1,7 +1,8 @@
 # setup_modules() with a fixed Python environment (TRANSFOREMOTION_PYTHON)
-# compares its packages with the requirements. No test runs Python except the
-# last one: reticulate::import() returns fake importlib.metadata and
-# packaging.requirements modules.
+# compares its packages with the requirements, and a function that needs an
+# extra feature set checks that its modules are there. No test runs Python
+# except the last one: reticulate::import() returns fake importlib.metadata,
+# importlib.util and packaging.requirements modules.
 
 requirement_name <- function(req) sub("^([A-Za-z0-9._-]+).*$", "\\1", req)
 
@@ -17,9 +18,13 @@ complete_environment <- function(extras = character(), torch = "2.14.0+cpu") {
 # requirements of installed packages (`requires`). The specifier of a
 # requirement in `rejects` does not contain the installed version; that of a
 # requirement in `invalid` raises InvalidVersion, as packaging before 25 does
-# for a version outside PEP 440.
+# for a version outside PEP 440. find_spec() finds the import names in
+# `modules` (all when NULL), and adds each name it is called with to `specs`
+# in the caller.
 fake_import <- function(installed, rejects = character(), packaging = TRUE,
-                        requires = list(), invalid = character()) {
+                        requires = list(), invalid = character(),
+                        modules = NULL, env = parent.frame()) {
+  force(env)
   metadata <- list(
     version = function(name) {
       if (is.null(installed[[name]])) stop("PackageNotFoundError: ", name)
@@ -35,9 +40,20 @@ fake_import <- function(installed, rejects = character(), packaging = TRUE,
       !req %in% rejects
     })
   )
+  # As in Python, find_spec() raises when a parent package is missing
+  find_spec <- function(name) {
+    env$specs <- c(env$specs, name)
+    if (is.null(modules) || name %in% modules) return("spec")
+    parent <- sub("\\.[^.]*$", "", name)
+    if (parent != name && !any(modules == parent | startsWith(modules, paste0(parent, ".")))) {
+      stop("ModuleNotFoundError: No module named '", parent, "'")
+    }
+    NULL
+  }
   function(module, ...) {
     switch(module,
       "importlib.metadata" = metadata,
+      "importlib.util" = list(find_spec = find_spec),
       "packaging.requirements" = if (packaging) {
         list(Requirement = requirement)
       } else {
@@ -50,14 +66,22 @@ fake_import <- function(installed, rejects = character(), packaging = TRUE,
   }
 }
 
-# A fixed environment that .te_require() has already selected
+# A fixed environment that .te_require() has already selected. As in a
+# session with TRANSFOREMOTION_PYTHON, no feature set is declared.
 local_fixed_python <- function(python = "~/te-venv/bin/python", env = parent.frame()) {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = python, HF_HUB_OFFLINE = "1",
                       .local_envir = env)
   state <- transforEmotion:::.te_py_state
-  fixed <- state$fixed_python
-  withr::defer(state$fixed_python <- fixed, envir = env)
+  old <- list(fixed_python = state$fixed_python, fixed_features = state$fixed_features,
+              features = state$features)
+  withr::defer({
+    state$fixed_python <- old$fixed_python
+    state$fixed_features <- old$fixed_features
+    state$features <- old$features
+  }, envir = env)
   state$fixed_python <- TRUE
+  state$fixed_features <- character()
+  state$features <- character()
 }
 
 test_that("setup_modules() warns about packages a fixed environment lacks or has too old", {
@@ -231,6 +255,236 @@ test_that("a managed environment is not checked", {
   )
   local_mocked_bindings(import = fake_import(complete_environment()), .package = "reticulate")
   expect_message(setup_modules(download_models = FALSE), "Python environment ready")
+})
+
+# The import names of the given feature sets
+feature_modules <- function(features) {
+  unique(unlist(transforEmotion:::.te_feature_modules[c("core", features)], use.names = FALSE))
+}
+
+test_that("a function that needs an extra set stops when a fixed environment lacks it", {
+  local_fixed_python()
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(complete_environment(), modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  err <- expect_error(rag("a text"), "does not have these modules")
+  msg <- conditionMessage(err)
+  expect_match(msg, paste0("  rag: llama_index.core, llama_index.llms.huggingface, ",
+                           "llama_index.embeddings.huggingface, pypdf, rank_bm25\n"), fixed = TRUE)
+  expect_match(msg, "transforEmotion does not install packages into a fixed environment",
+               fixed = TRUE)
+  python <- normalizePath("~/te-venv/bin/python", winslash = "/", mustWork = FALSE)
+  expect_match(msg, paste0('uv pip install --python "', python, '" "llama-index-core>=0.10.30,<0.11" ',
+                           '"llama-index-llms-huggingface" "llama-index-embeddings-huggingface" ',
+                           '"pypdf" "rank-bm25"\n'), fixed = TRUE)
+  expect_match(msg, 'python_requirements(extras = "rag")', fixed = TRUE)
+  expect_match(msg, "--build-arg EXTRAS=rag.", fixed = TRUE)
+  expect_match(msg, "also list every other feature set that the environment needs", fixed = TRUE)
+  expect_no_match(msg, "GPU=1", fixed = TRUE)
+  # A failed set is checked again on the next call
+  expect_length(transforEmotion:::.te_py_state$fixed_features, 0)
+
+  expect_error(download_findingemo_data(withr::local_tempdir()),
+               "  findingemo: findingemo_light, termcolor\n", fixed = TRUE)
+})
+
+test_that("each extra set of a fixed environment is checked once, by find_spec()", {
+  local_fixed_python()
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(complete_environment(c("youtube", "gpu")),
+                         modules = feature_modules(c("youtube", "gpu"))),
+    .package = "reticulate"
+  )
+  specs <- character()
+  expect_no_error(transforEmotion:::.te_require("youtube"))
+  expect_equal(specs, "pytubefix")
+  expect_equal(transforEmotion:::.te_py_state$fixed_features, "youtube")
+  expect_no_error(transforEmotion:::.te_require(c("core", "youtube")))
+  expect_equal(specs, "pytubefix")
+
+  # Only the requested sets that were not found before are checked, and the
+  # error names only those that are missing
+  specs <- character()
+  err <- expect_error(transforEmotion:::.te_require(c("youtube", "gpu", "audio", "findingemo")),
+                      "does not have these modules")
+  expect_equal(specs, c("bitsandbytes", "av", "findingemo_light", "termcolor"))
+  msg <- conditionMessage(err)
+  expect_match(msg, "\n  audio: av\n  findingemo: findingemo_light, termcolor\n", fixed = TRUE)
+  expect_no_match(msg, "  youtube:", fixed = TRUE)
+  expect_match(msg, '" "av>=14,<20" "findingemo-light" "termcolor"\n', fixed = TRUE)
+  # A rebuild keeps the sets that were found
+  expect_match(msg, 'python_requirements(extras = c("youtube", "audio", "findingemo", "gpu"))',
+               fixed = TRUE)
+  expect_match(msg, "--build-arg EXTRAS=youtube,audio,findingemo,gpu.", fixed = TRUE)
+  expect_equal(transforEmotion:::.te_py_state$fixed_features, c("youtube", "gpu"))
+})
+
+test_that("the install command names only the packages of the missing sets", {
+  # An environment for Gemma 3 has the rag set and transformers 4.50, which
+  # is outside the core requirement. Installing the core requirement would
+  # downgrade it.
+  local_fixed_python()
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(complete_environment("rag"), rejects = "transformers>=4.40,<4.47",
+                         modules = feature_modules("rag")),
+    .package = "reticulate"
+  )
+  specs <- character()
+  expect_no_error(transforEmotion:::.te_require("rag"))
+  err <- expect_error(transforEmotion:::.te_require("youtube"), "  youtube: pytubefix\n",
+                      fixed = TRUE)
+  msg <- conditionMessage(err)
+  expect_match(msg, '" "pytubefix"\n', fixed = TRUE)
+  expect_no_match(msg, "transformers", fixed = TRUE)
+  expect_match(msg, 'python_requirements(extras = c("rag", "youtube"))', fixed = TRUE)
+  expect_match(msg, "--build-arg EXTRAS=rag,youtube.", fixed = TRUE)
+
+  # PyAV is installed, but its module is not found: its own requirement
+  local_mocked_bindings(
+    import = fake_import(complete_environment("audio"), rejects = "transformers>=4.40,<4.47",
+                         modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  err <- expect_error(transforEmotion:::.te_require("audio"), "  audio: av\n", fixed = TRUE)
+  expect_match(conditionMessage(err), '" "av>=14,<20"\n', fixed = TRUE)
+  expect_no_match(conditionMessage(err), "transformers", fixed = TRUE)
+})
+
+test_that("EVA-CLIP needs the gpu set of a fixed environment only with a CUDA PyTorch", {
+  # A CPU image on a host where a GPU is visible: image.py loads EVA-CLIP
+  # without 4-bit quantization
+  local_fixed_python()
+  local_mocked_bindings(
+    te_should_use_gpu = function() TRUE,
+    ensure_te_py_env = function() stop("past the requirements")
+  )
+  local_mocked_bindings(
+    import = fake_import(complete_environment(), modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  specs <- character()
+  expect_false(transforEmotion:::.te_uses_gpu())
+  expect_error(image_scores("face.jpg", c("happy", "sad"), model = "eva-8B"),
+               "past the requirements", fixed = TRUE)
+  expect_length(specs, 0)
+
+  # The CUDA build, from the PyTorch index or from PyPI, needs bitsandbytes
+  local_mocked_bindings(te_should_use_gpu = function() FALSE)
+  local_mocked_bindings(
+    import = fake_import(complete_environment(torch = "2.14.0+cu126"),
+                         modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  expect_true(transforEmotion:::.te_uses_gpu())
+  expect_error(image_scores("face.jpg", c("happy", "sad"), model = "eva-8B"),
+               "  gpu: bitsandbytes\n", fixed = TRUE)
+  local_mocked_bindings(
+    import = fake_import(complete_environment(torch = "2.11.0"),
+                         requires = list(torch = list("nvidia-cudnn-cu13==9.13.0.50")),
+                         modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  expect_true(transforEmotion:::.te_uses_gpu())
+})
+
+test_that("load_findingemo_annotations() does not need the findingemo set", {
+  local_fixed_python()
+  # A dataset in the flat structure needs no Python
+  local_mocked_bindings(import = function(...) stop("Python was started"), .package = "reticulate")
+  dir <- withr::local_tempdir()
+  utils::write.csv(data.frame(image_path = "a.jpg", valence = 0.5, arousal = 0.2),
+                   file.path(dir, "annotations.csv"), row.names = FALSE)
+  writeLines('{"a.jpg": "https://example.org/a.jpg"}', file.path(dir, "urls.json"))
+  data <- suppressMessages(load_findingemo_annotations(dir))
+  expect_equal(nrow(data), 1)
+  expect_equal(data$valence, 0.5)
+
+  # Other datasets are read with pandas, from the core set
+  declared <- list()
+  local_mocked_bindings(.te_require = function(features = "core", ...) {
+    declared[[length(declared) + 1]] <<- features
+    stop("declared")
+  })
+  expect_error(load_findingemo_annotations(withr::local_tempdir()), "declared")
+  expect_equal(declared, list("core"))
+})
+
+test_that("the core set of a fixed environment does not start Python", {
+  local_fixed_python()
+  local_mocked_bindings(import = function(...) stop("Python was started"), .package = "reticulate")
+  expect_no_error(transforEmotion:::.te_require("core"))
+  expect_no_error(transforEmotion:::.te_require(character()))
+})
+
+test_that("a missing gpu set names the CUDA build, and a broken package its requirement", {
+  local_fixed_python()
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  installed <- complete_environment(torch = "2.14.0+cu126")
+  local_mocked_bindings(import = fake_import(installed, modules = feature_modules(character())),
+                        .package = "reticulate")
+  err <- expect_error(transforEmotion:::.te_require("gpu"), "  gpu: bitsandbytes\n", fixed = TRUE)
+  expect_match(conditionMessage(err), 'python_requirements(extras = "gpu", gpu = TRUE)', fixed = TRUE)
+  expect_match(conditionMessage(err), "docker/Dockerfile with --build-arg GPU=1. GPU=1 gives",
+               fixed = TRUE)
+  expect_no_match(conditionMessage(err), "EXTRAS=", fixed = TRUE)
+
+  # PyAV is installed, but its module does not import
+  local_mocked_bindings(
+    import = fake_import(complete_environment("audio"), modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  err <- expect_error(transforEmotion:::.te_require("audio"), "  audio: av\n", fixed = TRUE)
+  expect_match(conditionMessage(err), '" "av>=14,<20"\n', fixed = TRUE)
+})
+
+test_that("setup_modules() reports a missing extra set of a fixed environment", {
+  # The stop of .te_require() would hide the other unmet requirements
+  local_fixed_python()
+  installed <- complete_environment()
+  installed$protobuf <- NULL
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(installed, modules = feature_modules(character())),
+    .package = "reticulate"
+  )
+  specs <- character()
+  expect_message(
+    w <- expect_warning(setup_modules(extras = "rag", download_models = FALSE),
+                        "does not meet these requirements"),
+    "Python environment ready"
+  )
+  expect_match(conditionMessage(w), "  protobuf>=3.20,<8: not installed", fixed = TRUE)
+  expect_match(conditionMessage(w), "  rank-bm25: not installed", fixed = TRUE)
+  expect_length(specs, 0)
+})
+
+test_that("the note about ~/.virtualenvs/r-reticulate is not shown for a fixed environment", {
+  venv <- withr::local_tempdir()
+  local_mocked_bindings(.te_default_venv = function() venv)
+  # .onAttach() unsets RETICULATE_PYTHON and can set RETICULATE_AUTOCONFIGURE
+  withr::local_envvar(RETICULATE_PYTHON = NA, RETICULATE_AUTOCONFIGURE = "FALSE")
+  startup_messages <- function() {
+    messages <- character()
+    withCallingHandlers(
+      transforEmotion:::.onAttach(dirname(venv), "transforEmotion"),
+      packageStartupMessage = function(m) {
+        messages <<- c(messages, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+    messages
+  }
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  expect_true(any(grepl("~/.virtualenvs/r-reticulate", startup_messages(), fixed = TRUE)))
+  # The Docker image sets TRANSFOREMOTION_PYTHON
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = "/opt/transforEmotion/venv/bin/python")
+  messages <- startup_messages()
+  expect_true(any(grepl("transforEmotion (version", messages, fixed = TRUE)))
+  expect_false(any(grepl("r-reticulate", messages, fixed = TRUE)))
 })
 
 test_that("the check reads the versions of a real fixed environment", {
