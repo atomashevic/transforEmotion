@@ -123,3 +123,71 @@ test_that("every Hugging Face repository that rag() loads exists on the Hub", {
     expect_identical(httr::status_code(res), 200L, info = repo)
   }
 })
+
+test_that("every internal setup_*() helper is reachable from rag()", {
+  # Guards against model setup code left behind when a model leaves the
+  # rag() choices (setup_orca2() and five other helpers had no caller in
+  # 0.1.7 to 0.1.9). All internal setup_*() helpers are in rag.R.
+  ns <- asNamespace("transforEmotion")
+  helpers <- setdiff(grep("^setup_", ls(ns), value = TRUE),
+                     getNamespaceExports("transforEmotion"))
+  reached <- "rag"
+  repeat {
+    called <- unique(unlist(lapply(reached, function(f) all.names(body(get(f, envir = ns))))))
+    new <- setdiff(intersect(called, helpers), reached)
+    if (!length(new)) break
+    reached <- c(reached, new)
+  }
+  expect_true(length(helpers) > 0)
+  expect_identical(sort(setdiff(helpers, reached)), character(0))
+})
+
+test_that("auto_device() and response_cleanup() name only rag() choices", {
+  # Both dispatch on the lower-case rag() transformer. auto_device() needs a
+  # memory entry for every choice; without one, it stops with "argument is of
+  # length zero" for device "auto" or "cpu"
+  switch_keys <- function(fn) {
+    keys <- character()
+    walk <- function(e) {
+      if (!is.call(e)) return(invisible())
+      if (identical(e[[1]], as.name("switch")) && identical(e[[2]], as.name("transformer"))) {
+        keys <<- c(keys, setdiff(names(e)[-(1:2)], ""))
+      }
+      for (i in seq_along(e)[-1]) if (!identical(e[[i]], quote(expr = ))) walk(e[[i]])
+    }
+    walk(body(fn))
+    keys
+  }
+  choices <- tolower(eval(formals(rag)$transformer))
+  expect_setequal(switch_keys(auto_device), choices)
+  cleanup <- switch_keys(response_cleanup)
+  expect_true(length(cleanup) > 0)
+  expect_true(all(cleanup %in% choices), info = paste(setdiff(cleanup, choices), collapse = ", "))
+})
+
+test_that("setup_hf_llm() uses one set of sampling defaults and applies user values", {
+  # HuggingFaceLLM is stubbed, so no Python is needed
+  args <- NULL
+  local_mocked_bindings(
+    get_huggingface_llm = function(llama_index) function(...) args <<- list(...),
+    set_default_embedding = function(...) invisible(NULL)
+  )
+  llama_index <- list(core = list(Settings = new.env()))
+  build <- function(model, ...) {
+    setup_hf_llm(llama_index, "a prompt", "cpu", model_name = model, tokenizer_name = model,
+                 context_window = 32000L, ...)
+    args
+  }
+  for (model in c("google/gemma-3-1b-it", "Qwen/Qwen2.5-3B-Instruct", "ministral/Ministral-3b-instruct")) {
+    expect_identical(build(model)$generate_kwargs, list(temperature = 0.1, do_sample = TRUE), info = model)
+  }
+  # max_new_tokens goes to the constructor only
+  out <- build("Qwen/Qwen2.5-3B-Instruct", temperature = 0.7, top_p = 0.9, max_new_tokens = 64)
+  expect_identical(out$generate_kwargs, list(temperature = 0.7, do_sample = TRUE, top_p = 0.9))
+  expect_identical(out$max_new_tokens, 64L)
+  # Greedy decoding drops the sampling parameters
+  out <- build("Qwen/Qwen2.5-3B-Instruct", do_sample = FALSE, temperature = 0.7, top_p = 0.9)
+  expect_identical(out$generate_kwargs, list(do_sample = FALSE))
+  expect_null(out$max_new_tokens)
+  expect_identical(llama_index$core$Settings$context_window, 32000L)
+})

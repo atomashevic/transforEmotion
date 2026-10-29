@@ -1,15 +1,6 @@
 #' @noRd
 # Internal helpers to ensure Hugging Face auth for gated models (Gemma 3)
 
-# Check env for an HF token (session only; no persistence)
-.hf_get_token <- function() {
-  tok <- Sys.getenv("HF_TOKEN", unset = NA_character_)
-  if (!is.na(tok) && nzchar(tok)) return(tok)
-  tok <- Sys.getenv("HUGGINGFACE_HUB_TOKEN", unset = NA_character_)
-  if (!is.na(tok) && nzchar(tok)) return(tok)
-  return(NA_character_)
-}
-
 # Prompt user to paste HF token (no storage); returns token string
 .hf_prompt_token <- function() {
   message(
@@ -53,22 +44,4 @@ without_hf_token <- function(expr) {
   msg <- paste(capture.output(print(err)), collapse = "\n")
   grepl("401|Unauthorized|Forbidden|gated|not authorized|requires authorization|You are not logged in",
         msg, ignore.case = TRUE)
-}
-
-# Backward-compatible: Ensure HF auth (Gemma) without persisting tokens.
-# Prefer prompting only when actually needed by the caller.
-ensure_hf_auth_for_gemma <- function(interactive_ok = TRUE, repo_id = NULL) {
-  ensure_te_py_env()
-  tok <- .hf_get_token()
-  if (!is.na(tok) && nzchar(tok)) return(invisible(TRUE))
-  if (interactive_ok && interactive()) {
-    # Return silently; caller should prompt on failure and use with_hf_token()
-    return(invisible(TRUE))
-  }
-  stop(
-    paste0(
-      "Hugging Face token not found. Gemma 3 models are gated. Run interactively to be prompted, ",
-      "or wrap your call with with_hf_token('<token>', { ... }) after accepting the model license."
-    ), call. = FALSE
-  )
 }
