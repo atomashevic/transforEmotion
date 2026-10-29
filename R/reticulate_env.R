@@ -215,6 +215,87 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# Requirements of the core set and of extras that the running Python does not
+# meet: the package is missing, or its version is outside the specifier. Reads
+# package metadata, so no package is imported. A direct URL (the PyTorch
+# wheels) is checked only for presence. Returns what is installed for each
+# unmet requirement ("" when nothing is), named by the requirement, and the
+# PyTorch build (gpu) of the requirements: that of the installed torch.
+.te_unmet_requirements <- function(extras = character()) {
+  metadata <- reticulate::import("importlib.metadata")
+  installed <- function(name) {
+    tryCatch(as.character(metadata$version(name)), error = function(e) NA_character_)
+  }
+  # packaging comes with transformers; without it, check only presence
+  requirement <- tryCatch(reticulate::import("packaging.requirements")$Requirement,
+                          error = function(e) NULL)
+  torch <- installed("torch")
+  gpu <- if (is.na(torch)) te_should_use_gpu() else grepl("+cu", torch, fixed = TRUE)
+
+  unmet <- character()
+  for (req in python_requirements(extras, gpu = gpu)) {
+    parsed <- if (!is.null(requirement)) tryCatch(requirement(req), error = function(e) NULL)
+    name <- if (is.null(parsed)) sub("^([A-Za-z0-9._-]+).*$", "\\1", req) else parsed$name
+    # Every OpenCV build provides cv2
+    if (identical(name, "opencv-python-headless")) {
+      name <- c(name, "opencv-python", "opencv-contrib-python")
+    }
+    versions <- vapply(name, installed, character(1))
+    found <- which(!is.na(versions))[1L]
+    if (is.na(found)) {
+      unmet[req] <- ""
+    } else if (!is.null(parsed) && is.null(parsed$url) &&
+               !isTRUE(parsed$specifier$contains(versions[[found]], prereleases = TRUE))) {
+      unmet[req] <- paste(name[[found]], versions[[found]])
+    }
+  }
+  list(unmet = unmet, gpu = gpu)
+}
+
+#' @noRd
+# A Python path for a printed shell command: absolute, with "~" expanded,
+# which the shell does not do inside quotes. Only the folder is resolved: in
+# a virtual environment bin/python is a link to the base interpreter, and
+# uv pip install --python with the resolved path installs into that
+# interpreter instead of the environment.
+.te_shell_python <- function(python) {
+  file.path(normalizePath(dirname(python), winslash = "/", mustWork = FALSE),
+            basename(python))
+}
+
+#' @noRd
+# Warn about the requirements that the fixed Python environment
+# (TRANSFOREMOTION_PYTHON) does not meet; transforEmotion installs nothing
+# into it. A fixed environment built for an older version can lack packages
+# or versions that a newer version needs.
+.te_warn_unmet_requirements <- function(extras = character()) {
+  check <- .te_unmet_requirements(extras)
+  unmet <- check$unmet
+  if (!length(unmet)) return(invisible(TRUE))
+  python <- .te_shell_python(Sys.getenv("TRANSFOREMOTION_PYTHON"))
+  args <- c(
+    if (length(extras)) paste0("extras = ", paste(deparse(extras), collapse = "")),
+    if (isTRUE(check$gpu)) "gpu = TRUE"
+  )
+  warning(
+    "The Python environment that TRANSFOREMOTION_PYTHON points to does not ",
+    "meet these requirements:\n",
+    paste0("  ", names(unmet), ": ",
+           ifelse(nzchar(unmet), paste(unmet, "is installed"), "not installed"),
+           collapse = "\n"),
+    "\ntransforEmotion does not install packages into a fixed environment. ",
+    "Install them with\n",
+    "  uv pip install --python \"", python, "\" ",
+    paste0("\"", names(unmet), "\"", collapse = " "), "\n",
+    "or rebuild the environment from python_requirements(",
+    paste(args, collapse = ", "), "). For a read-only image, see ",
+    "?python_requirements.",
+    call. = FALSE
+  )
+  invisible(FALSE)
+}
+
+#' @noRd
 # Declare Python requirements for one or more feature sets. "core" is always
 # declared first. Before Python starts this only records requirements; after
 # it starts, reticulate installs the additions into the running session.

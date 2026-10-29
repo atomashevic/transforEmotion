@@ -652,8 +652,7 @@ textsymbol <- function(symbol = c("alpha", "beta", "chi", "delta",
   }
   python <- Sys.getenv("TRANSFOREMOTION_PYTHON", unset = "")
   fixed <- nzchar(python)
-  # The shell does not expand "~" inside the quotes of the printed command
-  if (fixed) python <- normalizePath(python, winslash = "/", mustWork = FALSE)
+  if (fixed) python <- .te_shell_python(python)
   reason <- NULL
   if (!fixed && isTRUE(reticulate::py_available(initialize = FALSE))) {
     config <- tryCatch(reticulate::py_config(), error = function(e) NULL)

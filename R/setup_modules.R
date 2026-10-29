@@ -81,6 +81,13 @@ check_nvidia_gpu <- function() {
 #' \code{.Renviron} or before \code{library(transforEmotion)}, in a new R
 #' session.
 #'
+#' When \code{TRANSFOREMOTION_PYTHON} is set, \code{setup_modules()} installs
+#' nothing. It compares the packages in that environment with the
+#' requirements of the core set and of \code{extras}
+#' (see \code{\link{python_requirements}}), and gives a warning that names
+#' each package that is missing or has a version outside its requirement,
+#' with a command that installs them.
+#'
 #' @return Invisibly returns \code{NULL}.
 #'
 #' @author Alexander P. Christensen <alexpaulchristensen@gmail.com>
@@ -102,6 +109,10 @@ setup_modules <- function(extras = character(), download_models = TRUE,
                           models = character()) {
   extras <- .te_check_extras(extras)
   .te_require(c("core", extras))
+  # Nothing is installed into a fixed environment; report what it lacks
+  if (nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))) {
+    .te_warn_unmet_requirements(extras)
+  }
 
   # Start Python so a failed resolution is reported here, not on first use
   torch <- reticulate::import("torch")

@@ -1,0 +1,201 @@
+# setup_modules() with a fixed Python environment (TRANSFOREMOTION_PYTHON)
+# compares its packages with the requirements. No test runs Python except the
+# last one: reticulate::import() returns fake importlib.metadata and
+# packaging.requirements modules.
+
+requirement_name <- function(req) sub("^([A-Za-z0-9._-]+).*$", "\\1", req)
+
+# Installed versions that meet every requirement of the given feature sets
+complete_environment <- function(extras = character(), torch = "2.14.0+cpu") {
+  reqs <- python_requirements(extras, gpu = grepl("+cu", torch, fixed = TRUE))
+  installed <- setNames(as.list(rep("1.0", length(reqs))), requirement_name(reqs))
+  installed$torch <- torch
+  installed
+}
+
+# reticulate::import() for a Python with the installed versions. The
+# specifier of a requirement in `rejects` does not contain the installed
+# version.
+fake_import <- function(installed, rejects = character(), packaging = TRUE) {
+  metadata <- list(version = function(name) {
+    if (is.null(installed[[name]])) stop("PackageNotFoundError: ", name)
+    installed[[name]]
+  })
+  requirement <- function(req) list(
+    name = requirement_name(req),
+    url = if (grepl(" @ ", req, fixed = TRUE)) sub("^.* @ ", "", req),
+    specifier = list(contains = function(version, prereleases = FALSE) !req %in% rejects)
+  )
+  function(module, ...) {
+    switch(module,
+      "importlib.metadata" = metadata,
+      "packaging.requirements" = if (packaging) {
+        list(Requirement = requirement)
+      } else {
+        stop("ModuleNotFoundError: No module named 'packaging'")
+      },
+      "torch" = list(`__version__` = installed$torch,
+                     cuda = list(is_available = function() FALSE)),
+      stop("unexpected import: ", module)
+    )
+  }
+}
+
+# A fixed environment that .te_require() has already selected
+local_fixed_python <- function(python = "~/te-venv/bin/python", env = parent.frame()) {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = python, HF_HUB_OFFLINE = "1",
+                      .local_envir = env)
+  state <- transforEmotion:::.te_py_state
+  fixed <- state$fixed_python
+  withr::defer(state$fixed_python <- fixed, envir = env)
+  state$fixed_python <- TRUE
+}
+
+test_that("setup_modules() warns about packages a fixed environment lacks or has too old", {
+  local_fixed_python()
+  installed <- complete_environment("audio")
+  installed$protobuf <- NULL
+  installed$av <- NULL
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(installed, rejects = "transformers>=4.40,<4.47"),
+    .package = "reticulate"
+  )
+  expect_message(
+    w <- expect_warning(setup_modules(extras = "audio", download_models = FALSE),
+                        "does not meet these requirements"),
+    "Python environment ready"
+  )
+  msg <- conditionMessage(w)
+  expect_match(msg, "  protobuf>=3.20,<8: not installed", fixed = TRUE)
+  expect_match(msg, "  av>=14,<20: not installed", fixed = TRUE)
+  expect_match(msg, "  transformers>=4.40,<4.47: transformers 1.0 is installed", fixed = TRUE)
+  expect_no_match(msg, "numpy", fixed = TRUE)
+  # The command works in a shell: "~" is expanded
+  python <- normalizePath("~/te-venv/bin/python", winslash = "/", mustWork = FALSE)
+  expect_match(msg, paste0('uv pip install --python "', python, '" "transformers>=4.40,<4.47" ',
+                           '"protobuf>=3.20,<8" "av>=14,<20"'), fixed = TRUE)
+  expect_match(msg, 'python_requirements(extras = "audio")', fixed = TRUE)
+})
+
+test_that("printed commands keep the link to the Python of a virtual environment", {
+  skip_on_os("windows")
+  dir <- withr::local_tempdir()
+  base <- file.path(dir, "python3.12")
+  file.create(base)
+  bin <- file.path(dir, "venv", "bin")
+  dir.create(bin, recursive = TRUE)
+  link <- file.path(bin, "python")
+  skip_if_not(file.symlink(base, link))
+  # uv pip install --python with the resolved path would install into the
+  # base interpreter
+  python <- file.path(normalizePath(bin, winslash = "/"), "python")
+  expect_equal(transforEmotion:::.te_shell_python(link), python)
+  expect_false(identical(python, normalizePath(link, winslash = "/")))
+  expect_false(startsWith(transforEmotion:::.te_shell_python("~/venv/bin/python"), "~"))
+
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = link)
+  err <- "ImportError: \n requires the protobuf library but it was not found in your environment."
+  expect_error(transforEmotion:::.te_stop_if_no_protobuf(err),
+               paste0('--python "', python, '"'), fixed = TRUE)
+  installed <- complete_environment()
+  installed$protobuf <- NULL
+  local_mocked_bindings(import = fake_import(installed), .package = "reticulate")
+  expect_warning(transforEmotion:::.te_warn_unmet_requirements(),
+                 paste0('--python "', python, '"'), fixed = TRUE)
+})
+
+test_that("a complete fixed environment gives no warning", {
+  local_fixed_python()
+  extras <- c("rag", "youtube", "audio", "findingemo", "gpu")
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(import = fake_import(complete_environment(extras)), .package = "reticulate")
+  expect_no_warning(expect_message(setup_modules(extras = extras, download_models = FALSE),
+                                   "Python environment ready"))
+})
+
+test_that("any OpenCV build provides cv2, and a URL requirement needs only the package", {
+  installed <- complete_environment()
+  installed[["opencv-python-headless"]] <- NULL
+  installed[["opencv-python"]] <- "4.10.0"
+  torch <- grep("^torch\\b", python_requirements(), value = TRUE)[1]
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(import = fake_import(installed, rejects = torch), .package = "reticulate")
+  # On Linux x86_64 and Windows the PyTorch requirements are wheel URLs
+  if (grepl(" @ ", torch, fixed = TRUE)) {
+    expect_length(transforEmotion:::.te_unmet_requirements()$unmet, 0)
+  }
+
+  # The version of the build found is checked
+  installed[["opencv-python"]] <- "5.0.0"
+  local_mocked_bindings(
+    import = fake_import(installed, rejects = "opencv-python-headless<5"),
+    .package = "reticulate"
+  )
+  unmet <- transforEmotion:::.te_unmet_requirements()$unmet
+  expect_equal(unname(unmet["opencv-python-headless<5"]), "opencv-python 5.0.0")
+})
+
+test_that("a CUDA PyTorch gives gpu = TRUE in the rebuild advice", {
+  local_fixed_python()
+  installed <- complete_environment(torch = "2.14.0+cu126")
+  installed$protobuf <- NULL
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(import = fake_import(installed), .package = "reticulate")
+  w <- expect_warning(transforEmotion:::.te_warn_unmet_requirements(), "protobuf")
+  expect_match(conditionMessage(w), "python_requirements(gpu = TRUE)", fixed = TRUE)
+})
+
+test_that("without PyTorch, the GPU is detected once for the PyTorch requirements", {
+  installed <- complete_environment(c("rag", "audio"))
+  installed$torch <- NULL
+  installed$torchvision <- NULL
+  calls <- 0
+  local_mocked_bindings(te_should_use_gpu = function() {
+    calls <<- calls + 1
+    TRUE
+  })
+  local_mocked_bindings(import = fake_import(installed), .package = "reticulate")
+  check <- transforEmotion:::.te_unmet_requirements(c("rag", "audio"))
+  expect_equal(calls, 1)
+  expect_true(check$gpu)
+  expect_equal(unname(requirement_name(names(check$unmet))), c("torch", "torchvision"))
+  expect_equal(names(check$unmet), python_requirements(gpu = TRUE)[1:2])
+})
+
+test_that("without packaging, the check falls back to presence", {
+  installed <- complete_environment()
+  installed$protobuf <- NULL
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(
+    import = fake_import(installed, rejects = "transformers>=4.40,<4.47", packaging = FALSE),
+    .package = "reticulate"
+  )
+  unmet <- transforEmotion:::.te_unmet_requirements()$unmet
+  expect_equal(names(unmet), "protobuf>=3.20,<8")
+  expect_equal(unname(unmet), "")
+})
+
+test_that("a managed environment is not checked", {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA, HF_HUB_OFFLINE = "1")
+  local_mocked_bindings(
+    .te_require = function(...) invisible(TRUE),
+    .te_unmet_requirements = function(...) stop("must not run")
+  )
+  local_mocked_bindings(import = fake_import(complete_environment()), .package = "reticulate")
+  expect_message(setup_modules(download_models = FALSE), "Python environment ready")
+})
+
+test_that("the check reads the versions of a real fixed environment", {
+  skip_on_cran()
+  skip_if(!nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")), "TRANSFOREMOTION_PYTHON is not set")
+  transforEmotion:::.te_require("core")
+  imported <- "sorted(__import__('sys').modules)"
+  before <- reticulate::py_eval(imported)
+  check <- transforEmotion:::.te_unmet_requirements()
+  expect_type(check$unmet, "character")
+  expect_type(check$gpu, "logical")
+  # Reading metadata imports none of the required packages
+  new <- setdiff(reticulate::py_eval(imported), before)
+  expect_false(any(c("transformers", "sentence_transformers", "timm", "cv2") %in% new))
+})
