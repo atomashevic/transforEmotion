@@ -80,3 +80,29 @@ test_that("evaluate_emotions warns when probs_cols do not name the classes", {
     evaluate_emotions(d, probs_cols = c("p1", "p2", "p3"), classes = emotions)
   )
 })
+
+test_that("evaluate_emotions keeps the type of numeric and factor labels", {
+  # Numeric labels with probs_cols in sorted order give the same result as
+  # the call with the classes given
+  d <- probs_data(c(1, 2, 3))
+  probs_cols <- paste0("prob_", 1:3)
+  res <- evaluate_emotions(d, probs_cols = probs_cols)
+  expect_type(res$auroc$per_class$class, "double")
+  expect_identical(res, evaluate_emotions(d, probs_cols = probs_cols,
+                                          classes = c(1, 2, 3)))
+
+  # Unsorted probs_cols reorder the numeric labels
+  res <- evaluate_emotions(d, probs_cols = paste0("prob_", c(3, 1, 2)))
+  expect_identical(res$auroc$per_class$class, c(3, 1, 2))
+  expect_equal(res$auroc$macro, 1)
+
+  # Factor labels
+  d <- probs_data(c("c1", "c2", "c3"))
+  d$truth <- factor(d$truth)
+  d$pred <- factor(d$pred, levels = levels(d$truth))
+  probs_cols <- paste0("prob_c", 1:3)
+  res <- evaluate_emotions(d, probs_cols = probs_cols)
+  expect_s3_class(res$auroc$per_class$class, "factor")
+  expect_identical(res, evaluate_emotions(d, probs_cols = probs_cols,
+                                          classes = factor(c("c1", "c2", "c3"))))
+})

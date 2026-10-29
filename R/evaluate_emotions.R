@@ -133,12 +133,13 @@ evaluate_emotions <- function(data,
     classes <- .infer_emotion_classes(eval_data, truth_col, pred_col)
     if (!is.null(probs_cols)) {
       # Take the order of the classes from probs_cols, matched by name. The
-      # sorted labels pair with probs_cols by position only.
+      # sorted labels pair with probs_cols by position only. Reorder the
+      # inferred labels so that numeric and factor labels keep their type.
       prob_classes <- .probs_cols_classes(probs_cols, classes)
       if (!is.null(prob_classes)) {
-        in_data <- prob_classes %in% classes
-        classes <- prob_classes[in_data]
-        auroc_cols <- probs_cols[in_data]
+        idx <- match(prob_classes, as.character(classes))
+        classes <- classes[idx[!is.na(idx)]]
+        auroc_cols <- probs_cols[!is.na(idx)]
       } else if ("auroc" %in% metrics && length(probs_cols) == length(classes)) {
         warning("The names of probs_cols do not match the class labels. ",
                 "AUROC pairs them by position with the sorted classes: ",
