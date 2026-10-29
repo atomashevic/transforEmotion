@@ -111,10 +111,13 @@ RUN Rscript -e ' \
  && rm -rf ${TE_HOME}/venv/lib/python3.12/site-packages/torch/test \
  && uv pip freeze --python ${TE_HOME}/venv/bin/python > ${TE_HOME}/python-packages.txt
 
-# Point transforEmotion at the environment once it exists. reticulate fails
-# when RETICULATE_PYTHON_ENV names a folder that does not exist, and Apptainer
-# passes that variable in from the host unless the image sets it.
+# Point transforEmotion and reticulate at the environment once it exists.
+# Apptainer passes RETICULATE_PYTHON and RETICULATE_PYTHON_ENV in from the
+# host unless the image sets them. reticulate prefers either one to the
+# Python that transforEmotion selects, and fails when it names a Python or a
+# folder that does not exist.
 ENV TRANSFOREMOTION_PYTHON=${TE_HOME}/venv/bin/python \
+    RETICULATE_PYTHON=${TE_HOME}/venv/bin/python \
     RETICULATE_PYTHON_ENV=${TE_HOME}/venv
 
 # Every Python module of the requested feature sets must import through R and
@@ -159,10 +162,14 @@ RUN Rscript -e ' \
 # Run offline by default. HF_HUB_CACHE and SENTENCE_TRANSFORMERS_HOME are set
 # as well as HF_HOME: Apptainer passes host variables that the image does not
 # set into the container, and a host HF_HUB_CACHE, HUGGINGFACE_HUB_CACHE or
-# SENTENCE_TRANSFORMERS_HOME would hide the bundled models. To use other
-# models, pass -e HF_HUB_OFFLINE=0 and set both variables to a mounted,
-# writable folder: Apptainer images are read-only, and --rm deletes a download
-# into a container.
+# SENTENCE_TRANSFORMERS_HOME would hide the bundled models. A host
+# TRANSFORMERS_CACHE or PYTORCH_TRANSFORMERS_CACHE also hides them from
+# transformers. The image does not set these two, because transformers warns
+# in every session when one is set: unset them on the host, or use
+# apptainer exec --cleanenv. To use other models, pass -e HF_HUB_OFFLINE=0 and
+# set HF_HUB_CACHE and SENTENCE_TRANSFORMERS_HOME to a mounted, writable
+# folder: Apptainer images are read-only, and --rm deletes a download into a
+# container.
 ENV HF_HUB_OFFLINE=1 \
     HF_HUB_CACHE=${HF_HOME}/hub \
     SENTENCE_TRANSFORMERS_HOME=${HF_HOME}/hub

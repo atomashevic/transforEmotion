@@ -60,7 +60,7 @@ o CHANGE: an image built from `docker/Dockerfile` lists what it contains in `/op
 
 o CHANGE: the image compiles the Python bytecode at build time, so each R session in a read-only image (Apptainer) starts about 5 seconds faster. The Python layer is about 220 MB larger, but the image is about 120 MB smaller to download, because the R layer no longer keeps package caches and the source tree
 
-o CHANGE: the image sets `HF_HUB_CACHE`, `SENTENCE_TRANSFORMERS_HOME` and `RETICULATE_PYTHON_ENV`. These variables from the host (Apptainer passes host variables into the container) no longer hide the models or the Python environment of the image. To use a model folder of your own in the image, set `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to it, not `HF_HOME`, or call `setup_cache()`
+o CHANGE: the image sets `HF_HUB_CACHE`, `SENTENCE_TRANSFORMERS_HOME`, `RETICULATE_PYTHON` and `RETICULATE_PYTHON_ENV`. These variables from the host (Apptainer passes host variables into the container) no longer hide the models or the Python environment of the image. A host `TRANSFORMERS_CACHE` or `PYTORCH_TRANSFORMERS_CACHE` still hides the models from transformers: unset it before `apptainer exec`, or use `apptainer exec --cleanenv`. To use a model folder of your own in the image, set `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to it, not `HF_HOME`, or call `setup_cache()`
 
 o FIX: in a read-only image, transformers printed two warnings in each session: "You are offline and the cache for model files in Transformers v4.22.0 has been updated", and that it could not write to the cache folder. The models loaded correctly. The image now has the cache version file that transformers reads
 

@@ -28,10 +28,18 @@ gpu <- identical(Sys.getenv("EXPECT_GPU"), "1")
 if (gpu) extras <- unique(c(extras, "gpu"))
 python <- Sys.getenv("TRANSFOREMOTION_PYTHON")
 
+# The variables that docker/Dockerfile sets so that host values, which
+# Apptainer passes in, do not hide its Python environment and models
 check("image environment", {
-  message("TRANSFOREMOTION_PYTHON=", python, "; HF_HUB_OFFLINE=", Sys.getenv("HF_HUB_OFFLINE"),
-          "; user ", system("id -u", intern = TRUE))
-  nzchar(python) && file.exists(python) && identical(Sys.getenv("HF_HUB_OFFLINE"), "1")
+  vars <- Sys.getenv(c("TRANSFOREMOTION_PYTHON", "RETICULATE_PYTHON", "RETICULATE_PYTHON_ENV",
+                       "HF_HOME", "HF_HUB_CACHE", "SENTENCE_TRANSFORMERS_HOME", "HF_HUB_OFFLINE"))
+  message(paste0(names(vars), "=", vars, collapse = "\n"), "\nuser ", system("id -u", intern = TRUE))
+  hub <- file.path(vars[["HF_HOME"]], "hub")
+  nzchar(python) && file.exists(python) && identical(vars[["HF_HUB_OFFLINE"]], "1") &&
+    identical(vars[["RETICULATE_PYTHON"]], python) &&
+    identical(vars[["RETICULATE_PYTHON_ENV"]], dirname(dirname(python))) &&
+    nzchar(vars[["HF_HOME"]]) && identical(vars[["HF_HUB_CACHE"]], hub) &&
+    identical(vars[["SENTENCE_TRANSFORMERS_HOME"]], hub)
 })
 
 check("library(transforEmotion)", {
@@ -47,8 +55,10 @@ check("Python is the fixed environment", {
   normalizePath(cfg$python) == normalizePath(python)
 })
 
+# --no-cache: the image runs with no writable HOME, where uv keeps its cache
 check("Python dependencies are consistent (uv pip check)", {
-  out <- system2("uv", c("pip", "check", "--python", python), stdout = TRUE, stderr = TRUE)
+  out <- system2("uv", c("pip", "check", "--no-cache", "--python", python),
+                 stdout = TRUE, stderr = TRUE)
   message(paste(out, collapse = "\n"))
   is.null(attr(out, "status"))
 })
