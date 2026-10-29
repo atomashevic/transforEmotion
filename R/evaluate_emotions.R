@@ -16,8 +16,13 @@
 #'   (default: "pred").
 #' @param probs_cols Character vector. Names of columns containing class 
 #'   probabilities. If NULL, probabilistic metrics will be skipped.
-#' @param classes Character vector. Emotion classes to evaluate. If NULL, 
-#'   will be inferred from the data.
+#'   AUROC pairs \code{probs_cols[i]} with \code{classes[i]}.
+#' @param classes Character vector. Emotion classes to evaluate. If NULL,
+#'   will be inferred from the data. With \code{probs_cols}, the inferred
+#'   classes take the order of \code{probs_cols}, matched by column name
+#'   (without a \code{"prob_"} prefix if every column has one). If the column
+#'   names do not match the labels, the classes are sorted and AUROC gives a
+#'   warning.
 #' @param metrics Character vector. Metrics to compute. Options include:
 #'   "accuracy", "precision", "recall", "f1_macro", "f1_micro", "auroc", 
 #'   "ece", "krippendorff", "confusion_matrix" (default: all metrics).
@@ -120,9 +125,28 @@ evaluate_emotions <- function(data,
     na_rm = na_rm
   )
   
+  # AUROC pairs auroc_cols[i] with classes[i]
+  auroc_cols <- probs_cols
+
   # Infer classes if not provided
   if (is.null(classes)) {
     classes <- .infer_emotion_classes(eval_data, truth_col, pred_col)
+    if (!is.null(probs_cols)) {
+      # Take the order of the classes from probs_cols, matched by name. The
+      # sorted labels pair with probs_cols by position only.
+      prob_classes <- .probs_cols_classes(probs_cols, classes)
+      if (!is.null(prob_classes)) {
+        in_data <- prob_classes %in% classes
+        classes <- prob_classes[in_data]
+        auroc_cols <- probs_cols[in_data]
+      } else if ("auroc" %in% metrics && length(probs_cols) == length(classes)) {
+        warning("The names of probs_cols do not match the class labels. ",
+                "AUROC pairs them by position with the sorted classes: ",
+                paste(probs_cols, classes, sep = " = ", collapse = ", "),
+                ". Set classes in the order of probs_cols.",
+                call. = FALSE)
+      }
+    }
   }
   
   # Initialize results list
@@ -147,7 +171,7 @@ evaluate_emotions <- function(data,
   }
   
   if ("auroc" %in% metrics && !is.null(probs_cols)) {
-    results$auroc <- .compute_auroc(eval_data, truth_col, probs_cols, classes)
+    results$auroc <- .compute_auroc(eval_data, truth_col, auroc_cols, classes)
   }
   
   if ("ece" %in% metrics && !is.null(probs_cols)) {
@@ -275,6 +299,15 @@ print.emotion_evaluation <- function(x, ...) {
     }
   }
   
+  # Without classes, name the argmax predictions by the classes of probs_cols
+  if (is.null(classes) && !is.null(probs_cols)) {
+    labels <- as.character(data[[truth_col]])
+    if (pred_col %in% names(data)) {
+      labels <- c(labels, as.character(data[[pred_col]]))
+    }
+    classes <- .probs_cols_classes(probs_cols, labels)
+  }
+
   # If pred_col missing or has NAs and we have probabilities, compute predictions from argmax
   if (!is.null(probs_cols) && length(probs_cols) > 1) {
     if (!(pred_col %in% names(data))) {
@@ -341,6 +374,27 @@ print.emotion_evaluation <- function(x, ...) {
   pred_classes <- unique(data[[pred_col]])
   all_classes <- sort(unique(c(truth_classes, pred_classes)))
   return(all_classes)
+}
+
+#' Name the classes of the probability columns
+#'
+#' Returns the column names, or the names without a "prob_" prefix that every
+#' column has, whichever contains every label. Returns NULL if neither does.
+#' @noRd
+.probs_cols_classes <- function(probs_cols, labels) {
+  probs_cols <- as.character(probs_cols)
+  candidates <- list(probs_cols)
+  if (all(startsWith(probs_cols, "prob_"))) {
+    candidates <- c(candidates, list(sub("^prob_", "", probs_cols)))
+  }
+  labels <- unique(as.character(labels))
+  labels <- labels[!is.na(labels)]
+  for (candidate in candidates) {
+    if (all(labels %in% candidate)) {
+      return(candidate)
+    }
+  }
+  NULL
 }
 
 #' Compute accuracy

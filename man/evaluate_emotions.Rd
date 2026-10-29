@@ -32,10 +32,15 @@ optionally class probabilities.}
 (default: "pred").}
 
 \item{probs_cols}{Character vector. Names of columns containing class 
-probabilities. If NULL, probabilistic metrics will be skipped.}
+probabilities. If NULL, probabilistic metrics will be skipped.
+AUROC pairs \code{probs_cols[i]} with \code{classes[i]}.}
 
-\item{classes}{Character vector. Emotion classes to evaluate. If NULL, 
-will be inferred from the data.}
+\item{classes}{Character vector. Emotion classes to evaluate. If NULL,
+will be inferred from the data. With \code{probs_cols}, the inferred
+classes take the order of \code{probs_cols}, matched by column name
+(without a \code{"prob_"} prefix if every column has one). If the column
+names do not match the labels, the classes are sorted and AUROC gives a
+warning.}
 
 \item{metrics}{Character vector. Metrics to compute. Options include:
 "accuracy", "precision", "recall", "f1_macro", "f1_micro", "auroc", 
