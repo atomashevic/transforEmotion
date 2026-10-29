@@ -87,7 +87,7 @@ te_should_use_gpu <- function() {
 .te_feature_modules <- list(
   core = c("torch", "torchvision", "transformers", "huggingface_hub", "numpy",
            "pandas", "accelerate", "safetensors", "sentencepiece",
-           "sentence_transformers", "timm", "einops", "cv2"),
+           "google.protobuf", "sentence_transformers", "timm", "einops", "cv2"),
   rag = c("llama_index.core", "llama_index.llms.huggingface",
           "llama_index.embeddings.huggingface", "pypdf", "rank_bm25"),
   youtube = "pytubefix",
@@ -116,6 +116,12 @@ te_should_use_gpu <- function() {
       "accelerate<2",
       "safetensors<1",
       "sentencepiece<1",
+      # transformers needs protobuf to read a SentencePiece model when it
+      # builds a fast tokenizer for a repository without tokenizer.json, for
+      # example joeddav/xlm-roberta-large-xnli. transformers[sentencepiece]
+      # declares it; plain sentencepiece does not. 3.20 is the first release
+      # with google.protobuf.internal.builder, which sentencepiece imports.
+      "protobuf>=3.20,<8",
       "sentence-transformers<6",
       "timm<2",
       "einops<1",
@@ -173,6 +179,16 @@ te_should_use_gpu <- function() {
 #' transforEmotion uses that interpreter and does not install anything. This is
 #' the route for read-only environments such as Apptainer images, where uv
 #' cannot write to its cache.
+#'
+#' A fixed environment does not change when transforEmotion is updated, and a
+#' new version can add Python packages. After an update, rebuild the
+#' environment or the image from \code{python_requirements()}, or install the
+#' new packages into it. For a read-only image that you cannot rebuild,
+#' install a missing package into a writable folder on a machine with network
+#' access, for example
+#' \code{uv pip install --python <python> --target <folder> "protobuf>=3.20,<8"},
+#' and start R with the environment variable \code{PYTHONPATH} set to that
+#' folder.
 #'
 #' @return A character vector of requirement specifiers.
 #'

@@ -44,9 +44,22 @@
 #'
 #' Defaults to \code{"cross-encoder-distilroberta"}
 #'
-#' Also allows any zero-shot classification models with a pipeline
-#' from \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{huggingface}
-#' to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)
+#' Also allows any other model on the Hugging Face Hub with the
+#' \href{https://huggingface.co/models?pipeline_tag=zero-shot-classification}{zero-shot-classification}
+#' pipeline tag. Give its full model ID, \code{"owner/name"}, exactly as the
+#' model page shows it (for example,
+#' \code{"typeform/distilbert-base-uncased-mnli"}; see Examples). The model is
+#' downloaded on first use.
+#'
+#' The three default models are trained on English text. For text in other
+#' languages, use a multilingual model, for example
+#' \code{"joeddav/xlm-roberta-large-xnli"} (XLM-RoBERTa large fine-tuned on
+#' MultiNLI and XNLI, 15 languages, a download of about 2.2 GB). The classes
+#' can be in the language of the text. There is no
+#' \code{"facebook/xlm-roberta-large-xnli"}: a model ID that does not exist
+#' fails with "is not a valid model identifier". For offline use, download the
+#' model first with
+#' \code{setup_modules(models = "joeddav/xlm-roberta-large-xnli")}.
 #'
 #' Note: Using custom HuggingFace model IDs beyond the recommended models is done at your own risk.
 #' Large models may cause memory issues or crashes, especially on systems with limited resources.
@@ -133,6 +146,13 @@
 #'    "active", "excitement", "cheerful"
 #'  ),
 #'  transformer = "typeform/distilbert-base-uncased-mnli"
+#')
+#'
+#' # Text in another language: a multilingual model (about 2.2 GB)
+#' transformer_scores(
+#'  text = "Estoy muy contento de verte hoy",
+#'  classes = c("alegría", "ira", "miedo"),
+#'  transformer = "joeddav/xlm-roberta-large-xnli"
 #')
 #' }
 #'
@@ -372,6 +392,9 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
       # Errors
       if(is(pipeline_catch, "try-error")){
 
+        # SentencePiece tokenizer in a Python environment without protobuf
+        .te_stop_if_no_protobuf(pipeline_catch)
+
         # Model exists but no pipeline
         if(isTRUE(grepl("Tokenizer class", pipeline_catch))){
 
@@ -410,6 +433,7 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
 
           # If the second attempt also fails, stop with an error
           if (is(pipeline_catch, "try-error")) {
+            .te_stop_if_no_protobuf(pipeline_catch)
             stop(pipeline_catch, call. = FALSE)
           }
 

@@ -44,6 +44,14 @@ environment variables for the session:
 Offline sessions can use any combination of the feature sets prepared
 with \code{setup_modules()}, and any model it downloaded.
 
+After you update transforEmotion, repeat the preparation once with network
+access: \code{setup_cache()} with the same \code{path} and \code{gpu} value
+but without \code{offline = TRUE}, then the same \code{setup_modules()}
+call. A new version can change the Python requirements, and an offline
+session cannot install them: uv reports that a package "was not found in
+the cache", and the analysis function fails with "Installation of Python
+not found".
+
 The cache must stay writable, because uv locks it even when reusing an
 environment. For read-only environments such as Apptainer images, build a
 fixed Python environment instead (see \code{\link{python_requirements}}).
