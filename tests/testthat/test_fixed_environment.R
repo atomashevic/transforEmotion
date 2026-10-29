@@ -233,6 +233,31 @@ test_that("a managed environment is not checked", {
   expect_message(setup_modules(download_models = FALSE), "Python environment ready")
 })
 
+test_that("the note about ~/.virtualenvs/r-reticulate is not shown for a fixed environment", {
+  venv <- withr::local_tempdir()
+  local_mocked_bindings(.te_default_venv = function() venv)
+  # .onAttach() unsets RETICULATE_PYTHON and can set RETICULATE_AUTOCONFIGURE
+  withr::local_envvar(RETICULATE_PYTHON = NA, RETICULATE_AUTOCONFIGURE = "FALSE")
+  startup_messages <- function() {
+    messages <- character()
+    withCallingHandlers(
+      transforEmotion:::.onAttach(dirname(venv), "transforEmotion"),
+      packageStartupMessage = function(m) {
+        messages <<- c(messages, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+    messages
+  }
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  expect_true(any(grepl("~/.virtualenvs/r-reticulate", startup_messages(), fixed = TRUE)))
+  # The Docker image sets TRANSFOREMOTION_PYTHON
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = "/opt/transforEmotion/venv/bin/python")
+  messages <- startup_messages()
+  expect_true(any(grepl("transforEmotion (version", messages, fixed = TRUE)))
+  expect_false(any(grepl("r-reticulate", messages, fixed = TRUE)))
+})
+
 test_that("the check reads the versions of a real fixed environment", {
   skip_on_cran()
   skip_if(!nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON")), "TRANSFOREMOTION_PYTHON is not set")
