@@ -314,8 +314,9 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
       torch <- modules_import$torch
     }
 
-    # Check for custom transformer
-    if(transformer %in% c(
+    # Built-in name from the Hub. A local_model_path loads in the custom
+    # branch below, also for a built-in name.
+    if(is.null(local_model_path) && transformer %in% c(
       "cross-encoder-roberta", "cross-encoder-distilroberta", "facebook-bart"
     )){
 
