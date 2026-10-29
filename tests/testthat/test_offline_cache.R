@@ -23,23 +23,30 @@ local_offline_session <- function(features = "core", use_gpu = FALSE,
   )
   state <- transforEmotion:::.te_py_state
   old <- list(features = state$features, use_gpu = state$use_gpu,
-              cache_check = state$cache_check)
+              cache_ok = state$cache_ok)
   withr::defer({
     state$features <- old$features
     state$use_gpu <- old$use_gpu
-    state$cache_check <- old$cache_check
+    state$cache_ok <- old$cache_ok
   }, envir = env)
   state$features <- features
   state$use_gpu <- use_gpu
-  state$cache_check <- NULL
+  state$cache_ok <- NULL
 }
 
-# The requirements reticulate reports for the declared feature sets
-declared <- function(features = "core", use_gpu = FALSE, other = character()) {
+# The requirements reticulate reports for the declared feature sets.
+# reticulate declares numpy itself, and ipykernel in Positron.
+declared <- function(features = "core", use_gpu = FALSE, other = character(),
+                     own = "numpy") {
+  ours <- unlist(lapply(features, transforEmotion:::.te_py_requirements, use_gpu = use_gpu))
   list(
-    packages = c("numpy", unlist(lapply(features, transforEmotion:::.te_py_requirements,
-                                        use_gpu = use_gpu)), other),
-    python_version = c(">=3.12", "<3.13")
+    packages = c(own, ours, other),
+    python_version = c(">=3.12", "<3.13"),
+    history = list(
+      list(requested_from = "reticulate", packages = own, action = "add"),
+      list(requested_from = "transforEmotion", packages = ours, action = "add"),
+      if (length(other)) list(requested_from = "R_GlobalEnv", packages = other, action = "add")
+    )
   )
 }
 
@@ -57,8 +64,11 @@ test_that("offline, a package missing from the uv cache stops before Python star
     },
     .package = "reticulate"
   )
-  err <- expect_error(transforEmotion:::.te_require("core"),
-                      "uv cannot build the Python environment from its cache")
+  expect_message(
+    err <- expect_error(transforEmotion:::.te_require("core"),
+                        "uv cannot build the Python environment from its cache"),
+    "checking the Python packages in the uv cache"
+  )
   msg <- conditionMessage(err)
   # uv's reason, from its error line on
   expect_match(msg, "pytubefix was not found in the cache", fixed = TRUE)
@@ -84,19 +94,48 @@ test_that("the offline fix names the declared PyTorch build and extras", {
     uv_run_tool = function(...) uv_missing_package,
     .package = "reticulate"
   )
-  err <- expect_error(transforEmotion:::.te_require("rag"), "uv cannot build")
+  err <- expect_error(suppressMessages(transforEmotion:::.te_require("rag")), "uv cannot build")
   msg <- conditionMessage(err)
   expect_match(msg, 'setup_cache("/project/lab/cache", gpu = TRUE)', fixed = TRUE)
   expect_match(msg, 'setup_modules(extras = "rag")', fixed = TRUE)
   # Every declared package belongs to transforEmotion or reticulate
   expect_no_match(msg, "Declare ")
+})
 
-  # A uv cache that setup_cache() did not set
-  state <- transforEmotion:::.te_py_state
-  state$cache_check <- NULL
+test_that("without setup_cache(), the offline fix uses the session's uv cache", {
+  # UV_OFFLINE from a job script or .Renviron, with uv's default cache
+  local_offline_session(features = c("core", "rag"), use_gpu = TRUE)
   withr::local_envvar(UV_CACHE_DIR = NA)
-  err <- expect_error(transforEmotion:::.te_require("rag"), "uv cannot build")
-  expect_match(conditionMessage(err), "setup_cache(<the same path>, gpu = TRUE)", fixed = TRUE)
+  state <- transforEmotion:::.te_py_state
+  local_mocked_bindings(
+    py_available = function(...) FALSE,
+    py_require = function(...) declared(c("core", "rag"), use_gpu = state$use_gpu),
+    py_discover_config = function(...) NULL,
+    uv_run_tool = function(...) uv_missing_package,
+    .package = "reticulate"
+  )
+  err <- expect_error(suppressMessages(transforEmotion:::.te_require("rag")), "uv cannot build")
+  msg <- conditionMessage(err)
+  expect_match(msg, paste0(
+    'with network access:\n',
+    '  Sys.unsetenv(c("UV_OFFLINE", "UV_CACHE_DIR"))\n',
+    '  Sys.setenv(TRANSFOREMOTION_USE_GPU = "1")\n',
+    '  library(transforEmotion)\n',
+    '  setup_modules(extras = "rag")\n'
+  ), fixed = TRUE)
+  expect_no_match(msg, "setup_cache(", fixed = TRUE)
+  expect_no_match(msg, "offline = TRUE", fixed = TRUE)
+
+  # A cache folder set by the user
+  withr::local_envvar(UV_CACHE_DIR = "/scratch/uv-cache")
+  state$use_gpu <- FALSE
+  err <- expect_error(suppressMessages(transforEmotion:::.te_require("rag")), "uv cannot build")
+  expect_match(conditionMessage(err), paste0(
+    '  Sys.unsetenv("UV_OFFLINE")\n',
+    '  Sys.setenv(UV_CACHE_DIR = "/scratch/uv-cache")\n',
+    '  Sys.setenv(TRANSFOREMOTION_USE_GPU = "0")\n',
+    '  library(transforEmotion)\n'
+  ), fixed = TRUE)
 })
 
 test_that("a uv cache with the packages passes, and each requirement set is checked once", {
@@ -113,32 +152,70 @@ test_that("a uv cache with the packages passes, and each requirement set is chec
     },
     .package = "reticulate"
   )
-  expect_no_error(transforEmotion:::.te_require("core"))
-  expect_no_error(transforEmotion:::.te_require("core"))
+  expect_message(expect_no_error(transforEmotion:::.te_require("core")), "uv cache")
+  expect_no_message(expect_no_error(transforEmotion:::.te_require("core")))
   expect_equal(calls, 1)
 
   # A new requirement is a new set
   reqs <- declared(other = "pytubefix")
-  expect_no_error(transforEmotion:::.te_require("core"))
+  expect_no_error(suppressMessages(transforEmotion:::.te_require("core")))
   expect_equal(calls, 2)
 })
 
-test_that("a failed check is remembered for the same requirements", {
+test_that("after a failed check, the next call checks again", {
   local_offline_session()
   calls <- 0
+  cached <- FALSE
   local_mocked_bindings(
     py_available = function(...) FALSE,
     py_require = function(...) declared(other = "pytubefix"),
     py_discover_config = function(...) NULL,
     uv_run_tool = function(...) {
       calls <<- calls + 1
-      uv_missing_package
+      if (cached) character() else uv_missing_package
     },
     .package = "reticulate"
   )
-  expect_error(transforEmotion:::.te_require("core"), "pytubefix was not found")
-  expect_error(transforEmotion:::.te_require("core"), "pytubefix was not found")
-  expect_equal(calls, 1)
+  expect_error(suppressMessages(transforEmotion:::.te_require("core")), "pytubefix was not found")
+  expect_error(suppressMessages(transforEmotion:::.te_require("core")), "pytubefix was not found")
+  expect_equal(calls, 2)
+
+  # The cache was filled from a machine with network access
+  cached <- TRUE
+  expect_no_error(suppressMessages(transforEmotion:::.te_require("core")))
+  expect_no_error(transforEmotion:::.te_require("core"))
+  expect_equal(calls, 3)
+})
+
+test_that("after a failed check, another Python is used without a restart", {
+  local_offline_session()
+  discovered <- NULL
+  local_mocked_bindings(
+    py_available = function(...) FALSE,
+    py_require = function(...) declared(other = "pytubefix"),
+    py_discover_config = function(...) discovered,
+    uv_run_tool = function(...) uv_missing_package,
+    .package = "reticulate"
+  )
+  expect_error(suppressMessages(transforEmotion:::.te_require("core")), "pytubefix was not found")
+  # The user sets VIRTUAL_ENV in the same session
+  discovered <- list(python = "/work/venv/bin/python", forced = "VIRTUAL_ENV")
+  expect_no_error(transforEmotion:::.te_require("core"))
+})
+
+test_that("packages that reticulate declares are not named in the fix", {
+  # In Positron, reticulate also declares ipykernel
+  local_offline_session()
+  local_mocked_bindings(
+    py_available = function(...) FALSE,
+    py_require = function(...) declared(own = c("numpy", "ipykernel"), other = "pytubefix"),
+    py_discover_config = function(...) NULL,
+    uv_run_tool = function(...) uv_missing_package,
+    .package = "reticulate"
+  )
+  err <- expect_error(suppressMessages(transforEmotion:::.te_require("core")), "uv cannot build")
+  expect_match(conditionMessage(err), "Declare pytubefix with", fixed = TRUE)
+  expect_no_match(conditionMessage(err), "ipykernel", fixed = TRUE)
 })
 
 test_that("a uv that cannot run offline is reported with the same fix", {
@@ -150,9 +227,58 @@ test_that("a uv that cannot run offline is reported with the same fix", {
     uv_run_tool = function(...) stop("cannot open URL 'https://astral.sh/uv/install.sh'"),
     .package = "reticulate"
   )
-  err <- expect_error(transforEmotion:::.te_require("core"), "astral.sh", fixed = TRUE)
+  err <- expect_error(suppressMessages(transforEmotion:::.te_require("core")), "astral.sh",
+                      fixed = TRUE)
   expect_match(conditionMessage(err), 'setup_cache("/project/lab/cache", gpu = FALSE)',
                fixed = TRUE)
+})
+
+test_that("an analysis that adds a feature set checks the uv cache once", {
+  # The full set is declared before the check, so uv does not build a
+  # core-only environment that the session never uses
+  local_offline_session(use_gpu = TRUE)
+  state <- transforEmotion:::.te_py_state
+  seen <- list()
+  local_mocked_bindings(
+    setup_modules = function(...) stop("stop here"),
+    .te_faces_py = function() stop("stop here")
+  )
+  local_mocked_bindings(
+    py_available = function(...) FALSE,
+    py_require = function(...) declared(state$features, use_gpu = TRUE),
+    py_discover_config = function(...) NULL,
+    uv_run_tool = function(..., with = NULL) {
+      seen[[length(seen) + 1]] <<- with
+      character()
+    },
+    source_python = function(...) stop("stop here"),
+    .package = "reticulate"
+  )
+  run <- function(expr) {
+    seen <<- list()
+    state$features <- "core"
+    state$cache_ok <- NULL
+    try(suppressMessages(expr), silent = TRUE)
+    seen
+  }
+  url <- "https://www.youtube.com/watch?v=placeholder"
+
+  # EVA-CLIP on a GPU adds bitsandbytes
+  seen <- run(image_scores("x.png", c("a", "b"), model = "eva-8B"))
+  expect_length(seen, 1)
+  expect_true("bitsandbytes" %in% seen[[1]])
+  dir <- withr::local_tempdir()
+  file.create(file.path(dir, "x.png"))
+  seen <- run(image_scores_dir(dir, c("a", "b"), model = "eva-8B"))
+  expect_length(seen, 1)
+  expect_true("bitsandbytes" %in% seen[[1]])
+  # A YouTube URL adds pytubefix
+  seen <- run(video_scores(url, c("a", "b"), model = "eva-8B"))
+  expect_length(seen, 1)
+  expect_true(all(c("pytubefix", "bitsandbytes") %in% seen[[1]]))
+  seen <- run(detect_faces(url))
+  expect_length(seen, 1)
+  expect_true("pytubefix" %in% seen[[1]])
 })
 
 test_that("the cache is not checked online, after Python starts, or while loading", {
@@ -253,7 +379,7 @@ test_that("the cache is not checked when reticulate will use another Python", {
     py_discover_config = function(...) list(python = "/cache/env/bin/python", ephemeral = TRUE),
     .package = "reticulate"
   )
-  expect_error(transforEmotion:::.te_require("core"), "pytubefix was not found")
+  expect_error(suppressMessages(transforEmotion:::.te_require("core")), "pytubefix was not found")
   expect_equal(calls, 1)
 })
 

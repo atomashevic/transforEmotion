@@ -394,8 +394,9 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 # does not have stops the start of Python with reticulate's "Installation of
 # Python not found". uv_run_tool() runs the uv command that reticulate runs
 # when Python starts, in a subprocess, and builds the same cached
-# environment; Python does not start here. Each set of requirements is
-# checked once per session.
+# environment; Python does not start here. A passed check is kept for the
+# session. After a failure the next call checks again, so a cache filled in
+# the meantime, or another Python, is used without a restart of R.
 .te_check_offline_cache <- function() {
   if (!.te_uv_offline() || reticulate::py_available(initialize = FALSE)) {
     return(invisible(TRUE))
@@ -407,42 +408,45 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   }
   key <- paste(c(reqs$packages, python_version, reqs$exclude_newer,
                  Sys.getenv("UV_CACHE_DIR")), collapse = "\n")
-  if (!identical(.te_py_state$cache_check$key, key)) {
-    if (!.te_uses_uv_python()) return(invisible(TRUE))
-    out <- tryCatch(
-      suppressWarnings(reticulate::uv_run_tool(
-        "python", c("-c", "pass"),
-        with = reqs$packages,
-        python_version = python_version,
-        exclude_newer = reqs$exclude_newer,
-        stdout = TRUE, stderr = TRUE
-      )),
-      # For example, reticulate cannot download uv offline
-      error = function(e) structure(conditionMessage(e), status = -1L)
-    )
-    error <- if (!is.null(attr(out, "status"))) {
-      .te_offline_cache_error(out, reqs$packages)
-    }
-    .te_py_state$cache_check <- list(key = key, error = error)
+  if (identical(.te_py_state$cache_ok, key) || !.te_uses_uv_python()) {
+    return(invisible(TRUE))
   }
-  if (!is.null(.te_py_state$cache_check$error)) {
-    stop(.te_py_state$cache_check$error, call. = FALSE)
+  # uv's output is kept for the error, so it does not show while uv builds
+  # the environment
+  message("UV_OFFLINE is set; checking the Python packages in the uv cache ...")
+  out <- tryCatch(
+    suppressWarnings(reticulate::uv_run_tool(
+      "python", c("-c", "pass"),
+      with = reqs$packages,
+      python_version = python_version,
+      exclude_newer = reqs$exclude_newer,
+      stdout = TRUE, stderr = TRUE
+    )),
+    # For example, reticulate cannot download uv offline
+    error = function(e) structure(conditionMessage(e), status = -1L)
+  )
+  if (!is.null(attr(out, "status"))) {
+    stop(.te_offline_cache_error(out, reqs), call. = FALSE)
   }
+  .te_py_state$cache_ok <- key
   invisible(TRUE)
 }
 
 #' @noRd
 # The error for a failed offline check: uv's output from its first "error:"
 # line on (the lines before it report progress), and the fix
-.te_offline_cache_error <- function(out, packages) {
+.te_offline_cache_error <- function(out, reqs) {
   first <- grep("^error:", out)
   if (length(first)) out <- out[first[1L]:length(out)]
   out <- out[nzchar(trimws(out))]
   # Packages declared with py_require() by the user or by another package.
-  # reticulate itself declares numpy.
+  # reticulate itself declares numpy, and ipykernel in Positron.
   ours <- unlist(lapply(.te_py_state$features, .te_py_requirements,
                         use_gpu = isTRUE(.te_py_state$use_gpu)))
-  other <- setdiff(packages, c(ours, "numpy"))
+  own <- unlist(lapply(reqs$history, function(entry) {
+    if (identical(entry$requested_from, "reticulate")) entry$packages
+  }))
+  other <- setdiff(reqs$packages, c(ours, own, "numpy"))
   paste0(
     "uv cannot build the Python environment from its cache without network ",
     "access. uv reported:\n", paste0("  ", out, collapse = "\n"), "\n",
@@ -453,26 +457,42 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 #' @noRd
 # What to run with network access when the uv cache does not have the Python
 # packages that an offline session needs. setup_cache() keeps uv's cache in
-# <path>/uv.
+# <path>/uv. Any other cache, and UV_OFFLINE with it, comes from the
+# environment of the session, so the lines set them directly.
 .te_offline_fix <- function(features = .te_py_state$features, other = character()) {
   cache <- Sys.getenv("UV_CACHE_DIR", unset = "")
-  path <- if (identical(basename(cache), "uv")) deparse(dirname(cache)) else "<the same path>"
+  gpu <- isTRUE(.te_py_state$use_gpu)
   extras <- setdiff(features, "core")
+  setup <- identical(basename(cache), "uv")
+  lines <- if (setup) {
+    c("library(transforEmotion)",
+      paste0("setup_cache(", deparse(dirname(cache)), ", gpu = ", gpu, ")"))
+  } else {
+    c(if (nzchar(cache)) {
+        c('Sys.unsetenv("UV_OFFLINE")', paste0("Sys.setenv(UV_CACHE_DIR = ", deparse(cache), ")"))
+      } else {
+        'Sys.unsetenv(c("UV_OFFLINE", "UV_CACHE_DIR"))'
+      },
+      # The PyTorch build is chosen when the package loads
+      paste0('Sys.setenv(TRANSFOREMOTION_USE_GPU = "', as.integer(gpu), '")'),
+      "library(transforEmotion)")
+  }
+  lines <- c(lines, paste0(
+    "setup_modules(",
+    if (length(extras)) paste0("extras = ", paste(deparse(extras), collapse = "")),
+    ")"
+  ))
   paste0(
     "UV_OFFLINE is set, so uv can install only packages that are in its ",
     "cache. A new version of transforEmotion can require packages that the ",
     "cache does not have. To add them, run these lines once in a new R ",
-    "session with network access, without offline = TRUE:\n",
-    "  library(transforEmotion)\n",
-    "  setup_cache(", path, ", gpu = ", isTRUE(.te_py_state$use_gpu), ")\n",
-    "  setup_modules(",
-    if (length(extras)) paste0("extras = ", paste(deparse(extras), collapse = "")),
-    ")\n",
+    "session with network access", if (setup) ", without offline = TRUE", ":\n",
+    paste0("  ", lines, "\n", collapse = ""),
     if (length(other)) {
       paste0("Declare ", paste(other, collapse = ", "), " with ",
              "reticulate::py_require() in that session too.\n")
     },
-    "Then run the offline session again."
+    "Then run the analysis again."
   )
 }
 

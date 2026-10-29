@@ -118,8 +118,9 @@ detect_faces <- function(x, face_detector = c("yunet", "haar"), min_confidence =
                          pattern = "\\.(jpg|jpeg|png|bmp)$", recursive = FALSE) {
   face_detector <- match.arg(face_detector)
   input <- .te_face_inputs(x, pattern, recursive)
-  ensure_te_py_env()
+  # The extra set comes first, so an offline check of the uv cache runs once
   if (input$type == "youtube") .te_require("youtube")
+  ensure_te_py_env()
   te_faces <- .te_faces_py()
 
   sface <- NULL
