@@ -100,6 +100,23 @@ test_that("setup_cache() points every cache at one folder", {
   expect_error(setup_cache(c("a", "b")), "single folder")
 })
 
+test_that("setup_cache() without offline = TRUE turns offline mode off", {
+  skip_if(reticulate::py_available(initialize = FALSE), "Python already started")
+  vars <- c("UV_CACHE_DIR", "UV_PYTHON_INSTALL_DIR", "UV_PYTHON_PREFERENCE",
+            "HF_HOME", "HF_HUB_CACHE", "SENTENCE_TRANSFORMERS_HOME",
+            "R_USER_CACHE_DIR")
+  withr::local_envvar(setNames(rep(NA_character_, length(vars)), vars))
+  # The Docker image sets HF_HUB_OFFLINE; a .Renviron file can set either
+  withr::local_envvar(UV_OFFLINE = "1", HF_HUB_OFFLINE = "1")
+  dir <- withr::local_tempdir()
+
+  set <- setup_cache(dir)
+  expect_equal(Sys.getenv(c("UV_OFFLINE", "HF_HUB_OFFLINE"), unset = NA),
+               c(UV_OFFLINE = NA_character_, HF_HUB_OFFLINE = NA_character_))
+  expect_false(any(c("UV_OFFLINE", "HF_HUB_OFFLINE") %in% names(set)))
+  expect_false(transforEmotion:::.te_hf_offline())
+})
+
 test_that("a failed install into a running Python is an error, not a warning", {
   withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
   state <- transforEmotion:::.te_py_state
