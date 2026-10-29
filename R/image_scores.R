@@ -66,9 +66,10 @@
 
 image_scores <- function(image, classes, face_selection = "largest", model = "oai-base", local_model_path = NULL,
                          face_detector = c("yunet", "haar")) {
-  # Declare Python requirements
-  ensure_te_py_env()
+  # Declare Python requirements. The extra set comes first, so an offline
+  # check of the uv cache runs once, for the full set
   if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
+  ensure_te_py_env()
   
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")
@@ -205,9 +206,10 @@ image_scores_dir <- function(dir,
                              model = "oai-base",
                              local_model_path = NULL,
                              face_detector = c("yunet", "haar")) {
-  # Declare Python requirements
-  ensure_te_py_env()
+  # Declare Python requirements. The extra set comes first, so an offline
+  # check of the uv cache runs once, for the full set
   if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
+  ensure_te_py_env()
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")

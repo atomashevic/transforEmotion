@@ -74,13 +74,14 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
                          save_video = FALSE, save_frames = FALSE, save_dir = "temp/",
                          video_name = "temp", model = "oai-base", local_model_path = NULL,
                          face_detector = c("yunet", "haar")) {
-  # Declare Python requirements; pytubefix is only needed for YouTube URLs
-  ensure_te_py_env()
+  # Declare Python requirements; pytubefix is only needed for YouTube URLs.
+  # The extra sets come first, in one call, so an offline check of the uv
+  # cache runs once, for the full set
   is_youtube <- is.character(video) && length(video) == 1 && .te_is_youtube_url(video)
-  if (is_youtube) {
-    .te_require("youtube")
-  }
-  if (.te_uses_eva_adapter(model) && .te_uses_gpu()) .te_require("gpu")
+  extras <- c(if (is_youtube) "youtube",
+              if (.te_uses_eva_adapter(model) && .te_uses_gpu()) "gpu")
+  if (length(extras)) .te_require(extras)
+  ensure_te_py_env()
 
   # Suppress TensorFlow messages
   Sys.setenv(TF_CPP_MIN_LOG_LEVEL = "2")

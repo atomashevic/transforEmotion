@@ -56,6 +56,13 @@ Set \code{TE_FORCE_CPU=1} to always use the CPU build, or
 made when the package is loaded, so set either variable in
 \code{.Renviron} or before \code{library(transforEmotion)}, in a new R
 session.
+
+When \code{TRANSFOREMOTION_PYTHON} is set, \code{setup_modules()} installs
+nothing. It compares the packages in that environment with the
+requirements of the core set and of \code{extras}
+(see \code{\link{python_requirements}}), and gives a warning that names
+each package that is missing or has a version outside its requirement,
+with a command that installs them.
 }
 \examples{
 \dontrun{

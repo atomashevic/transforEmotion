@@ -470,7 +470,7 @@ scores <- transformer_scores(text, classes)
 
 Login nodes usually have no GPU, so set `gpu` explicitly, to the same value in both places: `TRUE` if the compute nodes have NVIDIA GPUs, `FALSE` otherwise. Offline jobs can use the default models plus any passed to `setup_modules(models = )`. The cache folder must stay writable.
 
-After each update of transforEmotion, run the login-node lines once more, so that the cache gets any new Python packages. Until then, offline jobs fail with "Installation of Python not found".
+After each update of transforEmotion, run the login-node lines once more, so that the cache gets any new Python packages. Until then, an offline job stops at its first analysis function, with uv's reason and the lines to run on the login node.
 
 ### Docker and Apptainer
 
