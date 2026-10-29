@@ -8,7 +8,9 @@ vignette_sources <- function() {
   dirs <- c(testthat::test_path("..", "..", "vignettes"),
             system.file("doc", package = "transforEmotion"))
   dirs <- dirs[nzchar(dirs) & dir.exists(dirs)]
-  files <- unlist(lapply(dirs, list.files, pattern = "\\.Rmd$", full.names = TRUE))
+  # character(0), not NULL, when R CMD check runs without built vignettes
+  files <- as.character(unlist(lapply(dirs, list.files, pattern = "\\.Rmd$",
+                                      full.names = TRUE)))
   files[!duplicated(basename(files))]
 }
 
