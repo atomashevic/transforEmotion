@@ -230,7 +230,14 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   requirement <- tryCatch(reticulate::import("packaging.requirements")$Requirement,
                           error = function(e) NULL)
   torch <- installed("torch")
-  gpu <- if (is.na(torch)) te_should_use_gpu() else grepl("+cu", torch, fixed = TRUE)
+  # The PyTorch index marks its CUDA builds with "+cu126"; the CUDA build on
+  # PyPI (Linux x86_64) has a plain version and requires the nvidia-* packages
+  gpu <- if (is.na(torch)) {
+    te_should_use_gpu()
+  } else {
+    requires <- tryCatch(unlist(metadata$requires("torch")), error = function(e) NULL)
+    grepl("+cu", torch, fixed = TRUE) || any(startsWith(as.character(requires), "nvidia-"))
+  }
 
   unmet <- character()
   for (req in python_requirements(extras, gpu = gpu)) {
@@ -244,9 +251,12 @@ python_requirements <- function(extras = character(), gpu = FALSE,
     found <- which(!is.na(versions))[1L]
     if (is.na(found)) {
       unmet[req] <- ""
-    } else if (!is.null(parsed) && is.null(parsed$url) &&
-               !isTRUE(parsed$specifier$contains(versions[[found]], prereleases = TRUE))) {
-      unmet[req] <- paste(name[[found]], versions[[found]])
+    } else if (!is.null(parsed) && is.null(parsed$url)) {
+      # packaging before 25 raises InvalidVersion for a version outside
+      # PEP 440; later releases return False
+      ok <- tryCatch(parsed$specifier$contains(versions[[found]], prereleases = TRUE),
+                     error = function(e) FALSE)
+      if (!isTRUE(ok)) unmet[req] <- paste(name[[found]], versions[[found]])
     }
   }
   list(unmet = unmet, gpu = gpu)

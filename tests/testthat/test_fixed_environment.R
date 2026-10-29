@@ -13,18 +13,27 @@ complete_environment <- function(extras = character(), torch = "2.14.0+cpu") {
   installed
 }
 
-# reticulate::import() for a Python with the installed versions. The
-# specifier of a requirement in `rejects` does not contain the installed
-# version.
-fake_import <- function(installed, rejects = character(), packaging = TRUE) {
-  metadata <- list(version = function(name) {
-    if (is.null(installed[[name]])) stop("PackageNotFoundError: ", name)
-    installed[[name]]
-  })
+# reticulate::import() for a Python with the installed versions and the
+# requirements of installed packages (`requires`). The specifier of a
+# requirement in `rejects` does not contain the installed version; that of a
+# requirement in `invalid` raises InvalidVersion, as packaging before 25 does
+# for a version outside PEP 440.
+fake_import <- function(installed, rejects = character(), packaging = TRUE,
+                        requires = list(), invalid = character()) {
+  metadata <- list(
+    version = function(name) {
+      if (is.null(installed[[name]])) stop("PackageNotFoundError: ", name)
+      installed[[name]]
+    },
+    requires = function(name) requires[[name]]
+  )
   requirement <- function(req) list(
     name = requirement_name(req),
     url = if (grepl(" @ ", req, fixed = TRUE)) sub("^.* @ ", "", req),
-    specifier = list(contains = function(version, prereleases = FALSE) !req %in% rejects)
+    specifier = list(contains = function(version, prereleases = FALSE) {
+      if (req %in% invalid) stop("InvalidVersion: Invalid version: '", version, "'")
+      !req %in% rejects
+    })
   )
   function(module, ...) {
     switch(module,
@@ -144,6 +153,44 @@ test_that("a CUDA PyTorch gives gpu = TRUE in the rebuild advice", {
   local_mocked_bindings(import = fake_import(installed), .package = "reticulate")
   w <- expect_warning(transforEmotion:::.te_warn_unmet_requirements(), "protobuf")
   expect_match(conditionMessage(w), "python_requirements(gpu = TRUE)", fixed = TRUE)
+})
+
+test_that("the CUDA build of PyTorch from PyPI gives gpu = TRUE", {
+  # PyPI's Linux x86_64 torch has a plain version and requires the CUDA
+  # libraries as nvidia-* packages
+  local_fixed_python()
+  installed <- complete_environment(torch = "2.11.0")
+  installed$protobuf <- NULL
+  requires <- list(torch = list(
+    "filelock",
+    'nvidia-cuda-nvrtc-cu13==13.0.48; platform_system == "Linux" and platform_machine == "x86_64"'
+  ))
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(import = fake_import(installed, requires = requires),
+                        .package = "reticulate")
+  expect_true(transforEmotion:::.te_unmet_requirements()$gpu)
+  w <- expect_warning(transforEmotion:::.te_warn_unmet_requirements(), "protobuf")
+  expect_match(conditionMessage(w), "python_requirements(gpu = TRUE)", fixed = TRUE)
+
+  # The CPU build from the PyTorch index, and torch on macOS or Windows
+  for (torch in c("2.14.0+cpu", "2.14.0")) {
+    installed$torch <- torch
+    local_mocked_bindings(
+      import = fake_import(installed, requires = list(torch = list("filelock", "sympy"))),
+      .package = "reticulate"
+    )
+    expect_false(transforEmotion:::.te_unmet_requirements()$gpu, label = torch)
+  }
+})
+
+test_that("a version that packaging cannot parse is reported, not raised", {
+  installed <- complete_environment()
+  installed$sentencepiece <- "abc"
+  local_mocked_bindings(te_should_use_gpu = function() stop("torch is installed"))
+  local_mocked_bindings(import = fake_import(installed, invalid = "sentencepiece<1"),
+                        .package = "reticulate")
+  unmet <- transforEmotion:::.te_unmet_requirements()$unmet
+  expect_equal(unmet, c("sentencepiece<1" = "sentencepiece abc"))
 })
 
 test_that("without PyTorch, the GPU is detected once for the PyTorch requirements", {
