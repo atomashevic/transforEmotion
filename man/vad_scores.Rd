@@ -101,9 +101,9 @@ the psychological concepts.
 \strong{Definitional Labels (default):}
 The function uses rich descriptions that educate the model about each dimension:
 \itemize{
-  \item \strong{Valence}: "Positive valence, which refers to pleasant, enjoyable..."
-  \item \strong{Arousal}: "High arousal, which refers to intense, energetic..."
-  \item \strong{Dominance}: "High dominance, which refers to feeling in control..."
+  \item \strong{Valence}: "Positive emotional experience: pleasant, joyful, ..."
+  \item \strong{Arousal}: "High energy emotional state: intense, excited, ..."
+  \item \strong{Dominance}: "Feeling in control: powerful, confident, ..."
 }
 
 \strong{Input Type Detection:}

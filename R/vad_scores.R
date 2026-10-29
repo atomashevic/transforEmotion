@@ -80,9 +80,9 @@
 #' \strong{Definitional Labels (default):}
 #' The function uses rich descriptions that educate the model about each dimension:
 #' \itemize{
-#'   \item \strong{Valence}: "Positive valence, which refers to pleasant, enjoyable..."
-#'   \item \strong{Arousal}: "High arousal, which refers to intense, energetic..."
-#'   \item \strong{Dominance}: "High dominance, which refers to feeling in control..."
+#'   \item \strong{Valence}: "Positive emotional experience: pleasant, joyful, ..."
+#'   \item \strong{Arousal}: "High energy emotional state: intense, excited, ..."
+#'   \item \strong{Dominance}: "Feeling in control: powerful, confident, ..."
 #' }
 #'
 #' \strong{Input Type Detection:}
@@ -158,9 +158,13 @@ vad_scores <- function(input,
   }
   
   # vad_scores() sets the classes and the model, so these names in ... would
-  # reach the scoring function a second time
-  dots_set <- intersect(c("transformer", "classes"),
-                        names(match.call(expand.dots = FALSE)$...))
+  # reach the scoring function a second time. An abbreviation such as 'class'
+  # also matches 'classes' in run_vad_classification().
+  dots_names <- as.character(names(match.call(expand.dots = FALSE)$...))
+  dots_set <- c(
+    if ("transformer" %in% dots_names) "transformer",
+    if (any(nzchar(dots_names) & startsWith("classes", dots_names))) "classes"
+  )
   if (length(dots_set) > 0) {
     stop("vad_scores() sets ", paste0("'", dots_set, "'", collapse = " and "),
          " itself. Give the model as 'model' and the labels as 'custom_labels'.",

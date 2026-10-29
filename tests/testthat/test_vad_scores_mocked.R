@@ -44,6 +44,11 @@ test_that("vad_scores() rejects 'transformer' or 'classes' in ... and a model th
     vad_scores("x", input_type = "text", dimensions = "valence", classes = c("a", "b")),
     "vad_scores() sets 'classes' itself", fixed = TRUE
   )
+  # An abbreviation of 'classes' matches it by partial matching
+  expect_error(
+    vad_scores("x", input_type = "text", dimensions = "valence", class = c("a", "b")),
+    "vad_scores() sets 'classes' itself", fixed = TRUE
+  )
   expect_error(vad_scores("x", input_type = "text", model = NULL), "one character string")
   expect_error(vad_scores("x", input_type = "text", model = c("a", "b")), "one character string")
   expect_error(vad_scores("x", input_type = "text", model = NA_character_), "one character string")
