@@ -158,7 +158,7 @@ transformer_scores(
 
 transforEmotion 0.1.9 from CRAN does not install protobuf, which the tokenizer of this model needs. Install the GitHub version, or run `reticulate::py_require("protobuf>=3.20,<8")` after `library(transforEmotion)` and before the first analysis in each session.
 
-Copy the model ID from the model page. For example, `facebook/xlm-roberta-large-xnli` does not exist. For offline use, add the model to `setup_modules(models = )` on a machine with network access, or build the Docker image with `--build-arg MODELS=joeddav/xlm-roberta-large-xnli`.
+Copy the model ID from the model page. For example, `facebook/xlm-roberta-large-xnli` does not exist. For offline use, add the model to `setup_modules(models = )` on a machine with network access. For the Docker image, see [Other models](#other-models).
 
 ## RAG
 
@@ -472,9 +472,135 @@ Login nodes usually have no GPU, so set `gpu` explicitly, to the same value in b
 
 After each update of transforEmotion, run the login-node lines once more, so that the cache gets any new Python packages. Until then, an offline job stops at its first analysis function, with uv's reason and the lines to run on the login node.
 
+On clusters with Apptainer, you can also use the Docker image (see [Apptainer](#apptainer)). The image needs no writable cache folder. After an update of transforEmotion, pull the new image instead of preparing the cache again. In the image, `setup_cache()` keeps the Python environment of the image and moves the models into the cache folder. The image sets `HF_HUB_OFFLINE=1`, and `setup_cache()` without `offline = TRUE` does not change it. For this reason, add `--env HF_HUB_OFFLINE=0` to the `apptainer exec` or `docker run` call on the login node. Without it, `setup_modules()` prints "HF_HUB_OFFLINE is set; skipping model downloads." and downloads nothing.
+
 ### Docker and Apptainer
 
-`docker/Dockerfile` builds an image with the package, a fixed Python environment and the default models, which runs offline by default:
+The Docker image holds transforEmotion, a fixed Python environment and the default models. It runs offline by default. Pull it with:
+
+```bash
+docker pull ghcr.io/atomashevic/transforemotion:main
+```
+
+The download is about 1.8 GB. The images are for x86_64 (linux/amd64). On a Mac with Apple Silicon, install transforEmotion natively: PyTorch then uses the Apple GPU. `docker run --platform linux/amd64` runs the image under emulation, which is slow and not tested.
+
+| Tag | Content | Changes |
+|---|---|---|
+| `main` | the GitHub version (branch main) | at each build from main |
+| `sha-<commit>` | one build of one commit; `<commit>` is the first 7 characters of the commit | when the workflow runs again for that commit |
+| `X.Y.Z` | the CRAN release X.Y.Z | when the workflow runs again for that release |
+| `latest` | the newest CRAN release | at each release |
+
+The `X.Y.Z` and `latest` tags start with the 0.1.10 release. Only the digest names one build. To pin an image in a script, use the digest:
+
+```bash
+docker buildx imagetools inspect ghcr.io/atomashevic/transforemotion:main   # prints "Digest: sha256:<digest>"
+docker pull ghcr.io/atomashevic/transforemotion@sha256:<digest>
+```
+
+Start R with the current folder as the working folder:
+
+```bash
+docker run --rm -it -v "$PWD":/work ghcr.io/atomashevic/transforemotion:main
+```
+
+To run a script instead, add `Rscript analysis.R` after the image name. On Linux, add `--user "$(id -u):$(id -g)" -e HOME=/tmp`. Without `--user`, the files that R writes in your folder belong to root. The image also runs from a read-only file system. It needs only a writable `/tmp`:
+
+```bash
+docker run --rm -it --read-only --tmpfs /tmp:exec --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD":/work ghcr.io/atomashevic/transforemotion:main
+```
+
+#### What is in the image
+
+- transforEmotion and the R packages it needs, on R 4.6.
+- A Python 3.12 environment in `/opt/transforEmotion/venv` with the core Python packages and the CPU build of PyTorch. `TRANSFOREMOTION_PYTHON` points transforEmotion at it, so transforEmotion does not install Python packages in the image.
+- The default models: `cross-encoder/nli-distilroberta-base` for `transformer_scores()`, `openai/clip-vit-base-patch32` for `image_scores()` and `video_scores()`, `sentence-transformers/all-MiniLM-L6-v2` for `sentence_similarity()`, and the face recognition model of `detect_faces()`.
+- `HF_HUB_OFFLINE=1`, so the image does not connect to Hugging Face.
+
+The image does not have the Python packages for `rag()`, `speech_scores()`, YouTube URLs and `download_findingemo_data()`. In the image, these functions stop with an error that names the missing modules. For example, `rag()` stops with:
+
+```
+Error: The Python environment that TRANSFOREMOTION_PYTHON points to does not have these modules of the feature sets that this function needs:
+  rag: llama_index.core, llama_index.llms.huggingface, llama_index.embeddings.huggingface, pypdf, rank_bm25
+transforEmotion does not install packages into a fixed environment. Install them with
+  uv pip install --python "/opt/transforEmotion/venv/bin/python" "llama-index-core>=0.10.30,<0.11" "llama-index-llms-huggingface" "llama-index-embeddings-huggingface" "pypdf" "rank-bm25"
+or rebuild the environment from python_requirements(extras = "rag"). For a Docker image, build it from docker/Dockerfile with --build-arg EXTRAS=rag. In extras and in EXTRAS, also list every other feature set that the environment needs.
+```
+
+For these features, build your own image with `EXTRAS` (see [Build your own image](#build-your-own-image)).
+
+#### Other models
+
+To use a model that is not in the image, build your own image with `MODELS`, or keep the models in a folder on the host. Download the models into the folder once, with network access. Then mount the folder in each run:
+
+```bash
+mkdir -p hf
+# Once, with network access: the default models and the extra model
+docker run --rm -v "$PWD/hf":/hf -e HF_HUB_CACHE=/hf -e SENTENCE_TRANSFORMERS_HOME=/hf \
+  -e HF_HUB_OFFLINE=0 ghcr.io/atomashevic/transforemotion:main \
+  Rscript -e 'transforEmotion::setup_modules(models = "joeddav/xlm-roberta-large-xnli")'
+
+# Each later run, offline
+docker run --rm -it -v "$PWD":/work -v "$PWD/hf":/hf \
+  -e HF_HUB_CACHE=/hf -e SENTENCE_TRANSFORMERS_HOME=/hf \
+  ghcr.io/atomashevic/transforemotion:main
+```
+
+`HF_HUB_CACHE` is the model folder of transformers, and `SENTENCE_TRANSFORMERS_HOME` the model folder of `sentence_similarity()`. Set both to the same folder. The folder replaces the model folder of the image. For this reason, `setup_modules()` also downloads the default models (about 1 GB) into `hf`. The first offline run prints "You are offline and the cache for model files in Transformers v4.22.0 has been updated". The models load correctly, and transformers then writes `hf/version.txt`, so later runs do not print it. If you set only `-e HF_HUB_OFFLINE=0`, transforEmotion downloads the model into the container, and `--rm` deletes the model when the container stops. With `--user`, this download fails, because only root can write to the model folder of the image. In Apptainer, it fails because the image is read-only.
+
+#### Apptainer
+
+On a login node, with network access:
+
+```bash
+export APPTAINER_CACHEDIR=/project/mylab/apptainer-cache  # the default is in your home folder
+export APPTAINER_TMPDIR=/project/mylab/apptainer-tmp      # the default is /tmp; it must hold the unpacked image
+apptainer pull docker://ghcr.io/atomashevic/transforemotion:main
+```
+
+The command makes the file `transforemotion_main.sif`. In a job:
+
+```bash
+apptainer exec transforemotion_main.sif Rscript analysis.R
+```
+
+Apptainer mounts your home folder and the current folder, so the script can read and write your files. To use other models, prepare a model folder as for Docker. On the login node, add `--env HF_HUB_CACHE=$PWD/hf --env SENTENCE_TRANSFORMERS_HOME=$PWD/hf --env HF_HUB_OFFLINE=0` and run `setup_modules(models = )` once. In jobs, add `--env HF_HUB_CACHE=$PWD/hf --env SENTENCE_TRANSFORMERS_HOME=$PWD/hf`.
+
+Apptainer passes the variables of your shell into the container, except the variables that the image sets. The image sets, among others, `HF_HOME`, `HF_HUB_CACHE`, `SENTENCE_TRANSFORMERS_HOME`, `HF_HUB_OFFLINE`, `TRANSFOREMOTION_PYTHON`, `RETICULATE_PYTHON` and `RETICULATE_PYTHON_ENV`, so the values of your shell do not apply to them. Use `--env` to change them.
+
+Three other variables hide the models of the image from transformers: `TRANSFORMERS_CACHE`, `PYTORCH_TRANSFORMERS_CACHE` and `PYTORCH_PRETRAINED_BERT_CACHE`. The image does not set them, because transformers warns in each session when one of them is set. If your shell sets one of them, the default models do not load, and `transformer_scores()` stops with "OSError: We couldn't connect to 'https://huggingface.co' to load this file". `setup_cache()` unsets these variables in its session. Without `setup_cache()`, unset them for the call, for example `env -u TRANSFORMERS_CACHE apptainer exec transforemotion_main.sif Rscript analysis.R`, or use `apptainer exec --cleanenv`.
+
+R in the container reads `.Renviron` from the current folder or, if there is none, from your home folder. Its values take precedence over the variables of the image. If the file sets `TRANSFOREMOTION_PYTHON` or a model folder variable, add `--env R_ENVIRON_USER=/dev/null` to the call, or remove those lines. In Docker, this applies to a `.Renviron` in the folder that you mount on `/work`.
+
+#### An image never changes
+
+An image keeps the transforEmotion version, the Python packages and the models of its build. An update of transforEmotion on your computer does not change the image. To get a fix, pull the image again (`docker pull`, or `apptainer pull --force`), or build it again.
+
+For example, images built before the fix for issue #46 do not have the Python package protobuf. In these images, `transformer_scores()` fails for models such as `joeddav/xlm-roberta-large-xnli` with "requires the protobuf library". To check an image:
+
+```bash
+docker run --rm IMAGE /opt/transforEmotion/venv/bin/python -c "import google.protobuf"
+apptainer exec IMAGE.sif /opt/transforEmotion/venv/bin/python -c "import google.protobuf"
+```
+
+If the command prints nothing, the image has protobuf. If it prints `ModuleNotFoundError`, pull or build a new image. If you cannot replace the image, see `?python_requirements`.
+
+#### What a given image holds
+
+```bash
+docker run --rm ghcr.io/atomashevic/transforemotion:main cat /opt/transforEmotion/BUILD_INFO
+docker run --rm ghcr.io/atomashevic/transforemotion:main cat /opt/transforEmotion/python-packages.txt
+docker run --rm ghcr.io/atomashevic/transforemotion:main cat /opt/transforEmotion/models.txt
+```
+
+`BUILD_INFO` gives the package version, the transforEmotion commit of the build (`revision`), the build date, the versions of R, Python, PyTorch and uv, and the build arguments `EXTRAS`, `GPU` and `MODELS`. `python-packages.txt` lists each Python package with its version, and `models.txt` each model with its revision and its size in bytes. The label `org.opencontainers.image.revision` also gives the commit. In Apptainer, use `apptainer exec transforemotion_main.sif cat /opt/transforEmotion/BUILD_INFO`.
+
+`packageVersion("transforEmotion")` does not identify an image, because builds of the GitHub version report the number of the last CRAN release. Images built from an older `docker/Dockerfile` have the labels of the base image, rocker/r-ver, and no `BUILD_INFO`. For these images, use `docker run --rm IMAGE uv pip list --python /opt/transforEmotion/venv/bin/python`.
+
+#### Build your own image
+
+Build from the repository root, with Docker 23 or newer:
 
 ```bash
 docker build -f docker/Dockerfile -t transforemotion .                        # CPU
@@ -483,9 +609,11 @@ docker build -f docker/Dockerfile --build-arg GPU=1 -t transforemotion:cuda .  #
 docker run --rm -it -v "$PWD":/work transforemotion
 ```
 
-On clusters that run Apptainer (Singularity) instead of Docker, convert the image with `apptainer build transforemotion.sif docker-daemon://transforemotion:latest`. Apptainer images are read-only, which is why the image uses a fixed environment rather than uv's cache.
+`EXTRAS` adds optional feature sets, separated by commas: `rag`, `youtube`, `audio`, `findingemo` and `gpu`. `rag` also adds the models of `rag()` (about 2.3 GB), and `audio` the model of `speech_scores()` (about 800 MB). `MODELS` adds Hugging Face models, separated by commas, for example `--build-arg MODELS=joeddav/xlm-roberta-large-xnli`. `GPU=1` installs the CUDA 12.6 build of PyTorch. `--build-arg REVISION="$(git rev-parse HEAD)"` records the commit in `BUILD_INFO`.
 
-To build your own fixed environment, for example in a read-only software folder, install the output of `python_requirements()` into a Python 3.12 virtual environment and set `TRANSFOREMOTION_PYTHON` to its Python executable; transforEmotion then uses it without installing anything. Rebuild the fixed environment or the image after you update transforEmotion, because a new version can add Python packages (see `?python_requirements`).
+To use a local image in Apptainer, convert it with `apptainer build transforemotion.sif docker-daemon://transforemotion:latest`. Apptainer images are read-only, which is why the image uses a fixed environment rather than uv's cache. On an arm64 machine, the build gives an arm64 image. This image also holds the CUDA 13 libraries of PyTorch (about 2.5 GB to download), because transforEmotion selects the CPU build of PyTorch only on x86_64.
+
+To build your own fixed environment, for example in a read-only software folder, install the output of `python_requirements()` into a Python 3.12 virtual environment. Then set `TRANSFOREMOTION_PYTHON` to its Python executable, and transforEmotion uses it without installing anything. Rebuild the fixed environment after you update transforEmotion, because a new version can add Python packages (see `?python_requirements`).
 
 ## Datasets: FindingEmo-Light
 

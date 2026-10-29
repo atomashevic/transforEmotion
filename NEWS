@@ -1,6 +1,6 @@
 # Changes in version 0.1.10 (in development)
 
-o FIX: `transformer_scores()` failed with "ImportError: ... requires the protobuf library but it was not found in your environment" after the model weights loaded. This happened for zero-shot models whose tokenizer is a SentencePiece model without a `tokenizer.json`, such as the multilingual `joeddav/xlm-roberta-large-xnli`. transformers needs the Python package protobuf to convert these tokenizers. Versions up to 0.1.7 got protobuf indirectly through qdrant-client and TensorFlow, which 0.1.8 removed. protobuf is now a core requirement and is in `python_requirements()`. The first online session after the update builds a new Python environment. Offline setups (`setup_cache(offline = TRUE)`) must repeat the preparation once with network access: `setup_cache()` with the same path and `gpu` value but without `offline = TRUE`, then the same `setup_modules()` call. If Python already runs when transforEmotion loads, that Python must also have protobuf. A fixed environment (`TRANSFOREMOTION_PYTHON`) or an image built from `docker/Dockerfile` does not change: rebuild it from `python_requirements()`, or install protobuf into it. For a read-only image, see `?python_requirements`
+o FIX: `transformer_scores()` failed with "ImportError: ... requires the protobuf library but it was not found in your environment" after the model weights loaded. This happened for zero-shot models whose tokenizer is a SentencePiece model without a `tokenizer.json`, such as the multilingual `joeddav/xlm-roberta-large-xnli`. transformers needs the Python package protobuf to convert these tokenizers. Versions up to 0.1.7 got protobuf indirectly through qdrant-client and TensorFlow, which 0.1.8 removed. protobuf is now a core requirement and is in `python_requirements()`. The first online session after the update builds a new Python environment. Offline setups (`setup_cache(offline = TRUE)`) must repeat the preparation once with network access: `setup_cache()` with the same path and `gpu` value but without `offline = TRUE`, then the same `setup_modules()` call. If Python already runs when transforEmotion loads, that Python must also have protobuf. A fixed environment (`TRANSFOREMOTION_PYTHON`) or an image built from `docker/Dockerfile` does not change: rebuild it from `python_requirements()`, pull a new image, or install protobuf into it. For a read-only image, see `?python_requirements`
 
 o CHANGE: when a model's tokenizer needs protobuf and the Python that reticulate uses does not have it, `transformer_scores()` names that Python and says how to install protobuf into it
 
@@ -53,6 +53,8 @@ o CHANGE: `load_findingemo_annotations()` no longer declares the findingemo Pyth
 o CHANGE: with `TRANSFOREMOTION_PYTHON` set, for example in the Docker image, `library(transforEmotion)` no longer suggests `te_cleanup_default_venv()` when `~/.virtualenvs/r-reticulate` exists. A fixed environment does not use that folder
 
 o CHANGE: `setup_cache()` also sets `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to the model folder of the cache, `<path>/huggingface/hub`. These variables take precedence over `HF_HOME`. Before, a value of either variable, for example from the Docker image, kept the models out of the cache folder. It also unsets `TRANSFORMERS_CACHE`, `PYTORCH_TRANSFORMERS_CACHE` and `PYTORCH_PRETRAINED_BERT_CACHE`, which transformers reads before `HF_HUB_CACHE`
+
+o ADD: images on GitHub Container Registry. `docker pull ghcr.io/atomashevic/transforemotion:main` gives the GitHub version; from this release, `latest` and `0.1.10` give the CRAN release. On clusters, `apptainer pull docker://ghcr.io/atomashevic/transforemotion:main` makes an Apptainer image. The images are for x86_64. These are the first published images. The GitHub Actions workflow came with 0.1.8, but it did not run for 0.1.8 or 0.1.9
 
 o CHANGE: `docker/Dockerfile` checks the image at build time. The build fails if a Python module of the requested feature sets does not import, if a `GPU=1` build has the CPU build of PyTorch, or if the default text, image and sentence models do not load without network
 
@@ -128,7 +130,7 @@ o ADD: `setup_cache()` keeps the Python environment, Python itself and the model
 
 o ADD: `python_requirements()` returns the Python requirements, and `TRANSFOREMOTION_PYTHON` makes transforEmotion use a fixed Python environment, for read-only environments such as Apptainer images
 
-o ADD: `docker/Dockerfile` builds an offline image with the package, a fixed Python environment and the default models (CPU or CUDA); a GitHub Actions workflow publishes it to GHCR
+o ADD: `docker/Dockerfile` builds an offline image with the package, a fixed Python environment and the default models (CPU or CUDA). A GitHub Actions workflow can publish the image to GHCR. It first ran in 0.1.10
 
 o ADD: `setup_modules()` gains a `models` argument for additional Hugging Face models, and with `extras = "rag"` also downloads the rag() models and the NLTK data LlamaIndex needs
 
