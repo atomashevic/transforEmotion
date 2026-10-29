@@ -6,6 +6,10 @@ o CHANGE: when a model's tokenizer needs protobuf and the Python that reticulate
 
 o ADD: the help page of `transformer_scores()` names a multilingual model for text that is not in English (`joeddav/xlm-roberta-large-xnli`; there is no `facebook/xlm-roberta-large-xnli`) and shows a Spanish example. The README shows the same example, and the setup vignette and the Colab notebook name the model
 
+o FIX: offline sessions (`UV_OFFLINE`, for example from `setup_cache(offline = TRUE)`) whose uv cache lacks a declared Python package, for example after an update of transforEmotion adds a requirement, failed at the first analysis with "Installation of Python not found, Python bindings not loaded". The first function that uses Python now checks the cache with uv before Python starts. If a package is missing, it stops with uv's reason and the lines to run once with network access: `setup_cache()` with the same path and `gpu` value, then `setup_modules()` with the extras the session uses. Without `setup_cache()`, the lines unset `UV_OFFLINE` and keep the session's uv cache and PyTorch build. After the cache is filled, the same session can run the analysis again. The check is skipped when reticulate will use another Python, for example from `VIRTUAL_ENV` or a `.venv` folder. When a feature set cannot be added to a running Python offline, the error also gives these lines
+
+o ADD: with `TRANSFOREMOTION_PYTHON` set, `setup_modules()` compares the fixed environment with the requirements of the core set and of `extras`. It gives a warning that names each package that is missing or has a version outside its requirement, with a `uv pip install` command for that environment and the `python_requirements()` call to rebuild it, with `gpu = TRUE` for a CUDA build of PyTorch
+
 # Changes in version 0.1.9
 
 o ADD: `rag()` and `rag_sentemo()` support Qwen 2.5 Instruct (`transformer = "Qwen2.5-1.5B"` or `"Qwen2.5-3B"`), including structured outputs (`output = "json"`, `"table"`, `"csv"`). The Qwen models are not gated, so no Hugging Face token is needed, and they load with the transformers version the package installs (Gemma 3 needs transformers >= 4.50)
