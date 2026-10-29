@@ -52,7 +52,7 @@ o CHANGE: `load_findingemo_annotations()` no longer declares the findingemo Pyth
 
 o CHANGE: with `TRANSFOREMOTION_PYTHON` set, for example in the Docker image, `library(transforEmotion)` no longer suggests `te_cleanup_default_venv()` when `~/.virtualenvs/r-reticulate` exists. A fixed environment does not use that folder
 
-o CHANGE: `setup_cache()` also sets `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to the model folder of the cache, `<path>/huggingface/hub`. These variables take precedence over `HF_HOME`. Before, a value of either variable, for example from the Docker image, kept the models out of the cache folder
+o CHANGE: `setup_cache()` also sets `HF_HUB_CACHE` and `SENTENCE_TRANSFORMERS_HOME` to the model folder of the cache, `<path>/huggingface/hub`. These variables take precedence over `HF_HOME`. Before, a value of either variable, for example from the Docker image, kept the models out of the cache folder. It also unsets `TRANSFORMERS_CACHE`, `PYTORCH_TRANSFORMERS_CACHE` and `PYTORCH_PRETRAINED_BERT_CACHE`, which transformers reads before `HF_HUB_CACHE`
 
 o CHANGE: `docker/Dockerfile` checks the image at build time. The build fails if a Python module of the requested feature sets does not import, if a `GPU=1` build has the CPU build of PyTorch, or if the default text, image and sentence models do not load without network
 

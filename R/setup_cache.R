@@ -33,6 +33,11 @@
 #'   package that uses \code{tools::R_user_dir()} in this session.}
 #' }
 #'
+#' It also unsets \code{TRANSFORMERS_CACHE}, \code{PYTORCH_TRANSFORMERS_CACHE}
+#' and \code{PYTORCH_PRETRAINED_BERT_CACHE}. transformers reads these older
+#' variables before \code{HF_HUB_CACHE}, and it warns in every session when one
+#' of them is set.
+#'
 #' Offline sessions can use any combination of the feature sets prepared
 #' with \code{setup_modules()}, and any model it downloaded.
 #'
@@ -96,6 +101,9 @@ setup_cache <- function(path, offline = FALSE, gpu = NULL) {
     vars <- c(vars, UV_OFFLINE = "1", HF_HUB_OFFLINE = "1")
   }
   do.call(Sys.setenv, as.list(vars))
+  # transformers prefers these over HF_HUB_CACHE
+  Sys.unsetenv(c("TRANSFORMERS_CACHE", "PYTORCH_TRANSFORMERS_CACHE",
+                 "PYTORCH_PRETRAINED_BERT_CACHE"))
 
   if (!is.null(gpu)) .te_set_torch_flavor(gpu)
 

@@ -45,6 +45,11 @@ environment variables for the session:
   package that uses \code{tools::R_user_dir()} in this session.}
 }
 
+It also unsets \code{TRANSFORMERS_CACHE}, \code{PYTORCH_TRANSFORMERS_CACHE}
+and \code{PYTORCH_PRETRAINED_BERT_CACHE}. transformers reads these older
+variables before \code{HF_HUB_CACHE}, and it warns in every session when one
+of them is set.
+
 Offline sessions can use any combination of the feature sets prepared
 with \code{setup_modules()}, and any model it downloaded.
 
