@@ -303,24 +303,6 @@ nlp_scores <- function(
   space_index <- na.omit(match(
     unique_words, row.names(space)
   ))
-  # ## Obtain classes that exist in space
-  # class_index <- match(
-  #   classes, row.names(space)
-  # )
-  # ## Report if any classes are not in semantic space
-  # if(any(is.na(class_index))){
-  #   
-  #   ### Bad classes
-  #   bad_classes <- classes[is.na(class_index)]
-  #   
-  #   ### Message about bad classes
-  #   bad_classes_message(bad_classes)
-  #   
-  #   ### Remove bad classes
-  #   classes <- classes[!is.na(class_index)]
-  #   class_index <- class_index[!is.na(class_index)]
-  #   
-  # }
   ## Shrink space
   shrink_space <- space[c(
     space_index # Words in text and classes

@@ -6,24 +6,6 @@
 #' @name rag_json_utils
 NULL
 
-#' @noRd
-rag_json_schema <- function()
-{
-  list(
-    labels = "character[]",
-    confidences = "numeric[] (0..1)",
-    intensity = "numeric (0..1)",
-    evidence_chunks = list(
-      type = "array",
-      items = list(
-        doc_id = "character",
-        span = "character",
-        score = "numeric"
-      )
-    )
-  )
-}
-
 #' Validate a RAG JSON structure
 #'
 #' Ensures the object has the expected fields and types:

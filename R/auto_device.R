@@ -9,21 +9,13 @@ auto_device <- function(device, transformer, verbose = TRUE)
   # Assume GPU and 16-bit unless otherwise noted
   transformer_memory <- switch(
     transformer,
-    "tinyllama" = 2640, "llama-2" = 4200, # supported by 4-bit
-    "mistral-7b" = 16800, "openchat-3.5" = 16800,
-    "orca-2" = 33600, # supported by 32-bit
-    "phi-2" = 6480,
+    "tinyllama" = 2640,
     # Gemma3, Ministral, Qwen 2.5 (approximate memory, MB)
     "gemma3-1b" = 815,
     "gemma3-4b" = 3300,
     "ministral-3b" = 7000,
-    "ministral-8b" = 18400,
     "qwen2.5-1.5b" = 3100,
-    "qwen2.5-3b" = 6200,
-    # New: PleIAs and JSON-tuned 1B (approximate)
-    "pleias-rag-350m" = 360,
-    "pleias-rag-1b" = 900,
-    "llama1b-json" = 900
+    "qwen2.5-3b" = 6200
   )
 
   # First, check for "auto"
@@ -102,15 +94,6 @@ auto_device <- function(device, transformer, verbose = TRUE)
   # Return device
   return(device)
 
-}
-
-#' @noRd
-# GPU memory calculate
-# Based on https://www.substratus.ai/blog/calculating-gpu-memory-for-llm
-# Updated 28.01.2024
-calculate_gpu_memory <- function(parameters, bits = 32)
-{
-  return(((parameters * 4) / (32 / bits)) * 1.2)
 }
 
 #' @noRd

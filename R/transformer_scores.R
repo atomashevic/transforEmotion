@@ -221,7 +221,8 @@ transformer_scores <- function(
     transformer <- "cross-encoder-distilroberta"
   }
 
-  # Disallow non-zero-shot LLMs (Ollama models) here; guide to rag()
+  # Disallow general LLMs, which the zero-shot pipeline cannot use; guide to
+  # rag(). No release of rag() offered gemma3-270m or ministral-8b.
   blocked_llms <- c("gemma3-270m","gemma3-1b","gemma3-4b","ministral-3b","ministral-8b")
   if (tolower(transformer) %in% blocked_llms) {
     stop(

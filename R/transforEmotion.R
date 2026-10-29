@@ -28,7 +28,7 @@
 #' @importFrom googledrive as_id drive_auth drive_download
 #' @importFrom httpuv excludeStaticPath randomPort service startServer staticPath stopServer
 #' @importFrom pbapply pblapply
-#' @importFrom utils packageDescription
+#' @importFrom utils packageDescription packageVersion
 #'
 "_PACKAGE"
 #> [1] "_PACKAGE"
