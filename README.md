@@ -1,4 +1,4 @@
-### CRAN 0.1.8 | GitHub 0.1.9
+### CRAN 0.1.9 | GitHub 0.1.9
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![R-CMD-check](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml/badge.svg)](https://github.com/atomashevic/transforEmotion/actions/workflows/r.yml) [![Downloads Total](https://cranlogs.r-pkg.org/badges/grand-total/transforEmotion?color=brightgreen)](https://cran.r-project.org/package=transforEmotion) [![DOI](https://img.shields.io/badge/DOI-10.5117%2FCCR2026.2.2.TOMA-blue)](https://doi.org/10.5117/CCR2026.2.2.TOMA) [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa)](https://github.com/sponsors/atomashevic)
 
@@ -143,6 +143,22 @@ transformer_scores(
  transformer = "typeform/distilbert-base-uncased-mnli"
 )
 ```
+
+### Text in other languages
+
+The default models are trained on English text. For text in other languages, give the ID of a multilingual zero-shot model, for example [`joeddav/xlm-roberta-large-xnli`](https://huggingface.co/joeddav/xlm-roberta-large-xnli) (XLM-RoBERTa large fine-tuned on MultiNLI and XNLI, 15 languages; the first call downloads about 2.2 GB). The classes can be in the language of the text.
+
+```R
+transformer_scores(
+ text = "Estoy muy contento de verte hoy",
+ classes = c("alegría", "ira", "miedo"),
+ transformer = "joeddav/xlm-roberta-large-xnli"
+)
+```
+
+transforEmotion 0.1.9 from CRAN does not install protobuf, which the tokenizer of this model needs. Install the GitHub version, or run `reticulate::py_require("protobuf>=3.20,<8")` after `library(transforEmotion)` and before the first analysis in each session.
+
+Copy the model ID from the model page. For example, `facebook/xlm-roberta-large-xnli` does not exist. For offline use, add the model to `setup_modules(models = )` on a machine with network access, or build the Docker image with `--build-arg MODELS=joeddav/xlm-roberta-large-xnli`.
 
 ## RAG
 
@@ -454,6 +470,8 @@ scores <- transformer_scores(text, classes)
 
 Login nodes usually have no GPU, so set `gpu` explicitly, to the same value in both places: `TRUE` if the compute nodes have NVIDIA GPUs, `FALSE` otherwise. Offline jobs can use the default models plus any passed to `setup_modules(models = )`. The cache folder must stay writable.
 
+After each update of transforEmotion, run the login-node lines once more, so that the cache gets any new Python packages. Until then, offline jobs fail with "Installation of Python not found".
+
 ### Docker and Apptainer
 
 `docker/Dockerfile` builds an image with the package, a fixed Python environment and the default models, which runs offline by default:
@@ -467,7 +485,7 @@ docker run --rm -it -v "$PWD":/work transforemotion
 
 On clusters that run Apptainer (Singularity) instead of Docker, convert the image with `apptainer build transforemotion.sif docker-daemon://transforemotion:latest`. Apptainer images are read-only, which is why the image uses a fixed environment rather than uv's cache.
 
-To build your own fixed environment, for example in a read-only software folder, install the output of `python_requirements()` into a Python 3.12 virtual environment and set `TRANSFOREMOTION_PYTHON` to its Python executable; transforEmotion then uses it without installing anything.
+To build your own fixed environment, for example in a read-only software folder, install the output of `python_requirements()` into a Python 3.12 virtual environment and set `TRANSFOREMOTION_PYTHON` to its Python executable; transforEmotion then uses it without installing anything. Rebuild the fixed environment or the image after you update transforEmotion, because a new version can add Python packages (see `?python_requirements`).
 
 ## Datasets: FindingEmo-Light
 

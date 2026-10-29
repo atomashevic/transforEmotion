@@ -1,3 +1,11 @@
+# Changes in version 0.1.10 (in development)
+
+o FIX: `transformer_scores()` failed with "ImportError: ... requires the protobuf library but it was not found in your environment" after the model weights loaded. This happened for zero-shot models whose tokenizer is a SentencePiece model without a `tokenizer.json`, such as the multilingual `joeddav/xlm-roberta-large-xnli`. transformers needs the Python package protobuf to convert these tokenizers. Versions up to 0.1.7 got protobuf indirectly through qdrant-client and TensorFlow, which 0.1.8 removed. protobuf is now a core requirement and is in `python_requirements()`. The first online session after the update builds a new Python environment. Offline setups (`setup_cache(offline = TRUE)`) must repeat the preparation once with network access: `setup_cache()` with the same path and `gpu` value but without `offline = TRUE`, then the same `setup_modules()` call. If Python already runs when transforEmotion loads, that Python must also have protobuf. A fixed environment (`TRANSFOREMOTION_PYTHON`) or an image built from `docker/Dockerfile` does not change: rebuild it from `python_requirements()`, or install protobuf into it. For a read-only image, see `?python_requirements`
+
+o CHANGE: when a model's tokenizer needs protobuf and the Python that reticulate uses does not have it, `transformer_scores()` names that Python and says how to install protobuf into it
+
+o ADD: the help page of `transformer_scores()` names a multilingual model for text that is not in English (`joeddav/xlm-roberta-large-xnli`; there is no `facebook/xlm-roberta-large-xnli`) and shows a Spanish example. The README shows the same example, and the setup vignette and the Colab notebook name the model
+
 # Changes in version 0.1.9
 
 o ADD: `rag()` and `rag_sentemo()` support Qwen 2.5 Instruct (`transformer = "Qwen2.5-1.5B"` or `"Qwen2.5-3B"`), including structured outputs (`output = "json"`, `"table"`, `"csv"`). The Qwen models are not gated, so no Hugging Face token is needed, and they load with the transformers version the package installs (Gemma 3 needs transformers >= 4.50)

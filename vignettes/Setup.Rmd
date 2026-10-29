@@ -49,7 +49,7 @@ Running `setup_modules()` is optional; every function sets up what it needs on f
 
 ## 2. Using `transformer_scores` {#section_2}
 
-You can use any number of \href{https://huggingface.co}{Hugging Face} text classification transformers. *transforEmotion* currently implements only the zero-shot classification models. Future updates to the package may include opportunities to train and fine-tune these models. For now, there are several options that work well for most classification tasks straight out-of-the-box. You can view different transformers that can be used in *transforEmotion* [here](https://huggingface.co/models?pipeline_tag=zero-shot-classification).
+You can use any number of \href{https://huggingface.co}{Hugging Face} text classification transformers. *transforEmotion* currently implements only the zero-shot classification models. Future updates to the package may include opportunities to train and fine-tune these models. For now, there are several options that work well for most classification tasks straight out-of-the-box. You can view different transformers that can be used in *transforEmotion* [here](https://huggingface.co/models?pipeline_tag=zero-shot-classification). The default models are trained on English text. For text in other languages, use a multilingual model such as `joeddav/xlm-roberta-large-xnli` (see `?transformer_scores`).
 
 As mentioned in section [1](#section_1), the Python environment is set up automatically the first time you run `transformer_scores`. The first run will also trigger the download of the [Cross-Encoder's DistilRoBERTa](https://huggingface.co/cross-encoder/nli-distilroberta-base) transformer model. Therefore, the easiest way to get started is by using an example.
 
