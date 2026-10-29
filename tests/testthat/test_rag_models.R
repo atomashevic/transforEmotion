@@ -144,7 +144,8 @@ test_that("every internal setup_*() helper is reachable from rag()", {
 
 test_that("auto_device() and response_cleanup() name only rag() choices", {
   # Both dispatch on the lower-case rag() transformer. auto_device() needs a
-  # memory entry for every choice; a missing one leaves the device empty
+  # memory entry for every choice; without one, it stops with "argument is of
+  # length zero" for device "auto" or "cpu"
   switch_keys <- function(fn) {
     keys <- character()
     walk <- function(e) {
@@ -162,4 +163,31 @@ test_that("auto_device() and response_cleanup() name only rag() choices", {
   cleanup <- switch_keys(response_cleanup)
   expect_true(length(cleanup) > 0)
   expect_true(all(cleanup %in% choices), info = paste(setdiff(cleanup, choices), collapse = ", "))
+})
+
+test_that("setup_hf_llm() uses one set of sampling defaults and applies user values", {
+  # HuggingFaceLLM is stubbed, so no Python is needed
+  args <- NULL
+  local_mocked_bindings(
+    get_huggingface_llm = function(llama_index) function(...) args <<- list(...),
+    set_default_embedding = function(...) invisible(NULL)
+  )
+  llama_index <- list(core = list(Settings = new.env()))
+  build <- function(model, ...) {
+    setup_hf_llm(llama_index, "a prompt", "cpu", model_name = model, tokenizer_name = model,
+                 context_window = 32000L, ...)
+    args
+  }
+  for (model in c("google/gemma-3-1b-it", "Qwen/Qwen2.5-3B-Instruct", "ministral/Ministral-3b-instruct")) {
+    expect_identical(build(model)$generate_kwargs, list(temperature = 0.1, do_sample = TRUE), info = model)
+  }
+  # max_new_tokens goes to the constructor only
+  out <- build("Qwen/Qwen2.5-3B-Instruct", temperature = 0.7, top_p = 0.9, max_new_tokens = 64)
+  expect_identical(out$generate_kwargs, list(temperature = 0.7, do_sample = TRUE, top_p = 0.9))
+  expect_identical(out$max_new_tokens, 64L)
+  # Greedy decoding drops the sampling parameters
+  out <- build("Qwen/Qwen2.5-3B-Instruct", do_sample = FALSE, temperature = 0.7, top_p = 0.9)
+  expect_identical(out$generate_kwargs, list(do_sample = FALSE))
+  expect_null(out$max_new_tokens)
+  expect_identical(llama_index$core$Settings$context_window, 32000L)
 })

@@ -6,7 +6,7 @@ auto_device <- function(device, transformer, verbose = TRUE)
   ensure_te_py_env()
 
   # Set transformer memory (MB)
-  # Assume GPU and 16-bit unless otherwise noted
+  # Assume GPU and 16-bit
   transformer_memory <- switch(
     transformer,
     "tinyllama" = 2640,

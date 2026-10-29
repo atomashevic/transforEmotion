@@ -1529,40 +1529,21 @@ use_retrieval_only_settings <- function(llama_index, device)
 }
 
 #' @noRd
-# Generic HuggingFace LLM setup (Gemma3/Ministral)
-# Uses llama_index$llms$HuggingFaceLLM without Ollama.
+# Generic HuggingFace LLM setup (Gemma 3, Qwen 2.5, Ministral)
 setup_hf_llm <- function(llama_index, prompt, device, model_name, tokenizer_name, context_window,
                           temperature = NULL, do_sample = NULL, max_new_tokens = NULL, top_p = NULL,
                           is_chat_model = FALSE)
 {
-  # Models that don't support token_type_ids in generation
-  models_without_token_type_ids <- c(
-    "PleIAs/Pleias-RAG-350M",
-    "PleIAs/Pleias-RAG-1B",
-    "meta-llama/Llama-3.2-1B"
-  )
-
   # Configure tokenizer kwargs. Avoid explicit token_type_ids manipulation; prior attempts
   # triggered llama-index to inject an unused `token_type_ids` arg that raised
-  # ValueError for decoder-only models (Gemma / PleIAs / Llama 3.2 1B).
+  # ValueError for decoder-only models such as Gemma.
   tokenizer_kwargs <- list(trust_remote_code = TRUE)
 
-  # Optimize generation parameters for different model types
-  generate_kwargs <- if (grepl("PleIAs/Pleias-RAG", model_name)) {
-    # PleIAs RAG models: optimized for factual accuracy with reasoning
-    list(
-      temperature = as.double(0.2),  # Slightly higher for diverse reasoning
-      do_sample = TRUE,
-      top_p = as.double(0.9),        # Nucleus sampling for quality
-      repetition_penalty = as.double(1.05)  # Light repetition penalty
-    )
-  } else {
-    # Conservative sampling for other structured-ish outputs
-    list(
-      temperature = as.double(0.1),
-      do_sample = TRUE
-    )
-  }
+  # Conservative sampling for structured-ish outputs
+  generate_kwargs <- list(
+    temperature = as.double(0.1),
+    do_sample = TRUE
+  )
 
   # Apply user overrides if provided
   if (!is.null(temperature)) generate_kwargs$temperature <- as.double(temperature)
