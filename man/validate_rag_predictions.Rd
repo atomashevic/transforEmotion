@@ -64,7 +64,7 @@ rag_results <- rag_sentemo(
   texts,
   task = "emotion",
   output = "table",
-  transformer = "Gemma3-1B"
+  transformer = "Qwen2.5-3B"
 )
 
 # Ground truth labels

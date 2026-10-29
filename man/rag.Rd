@@ -56,10 +56,13 @@ Available models include:
   Gemma 3 therefore works only with a fixed Python environment that has
   transformers >= 4.50, set with the \code{TRANSFOREMOTION_PYTHON}
   environment variable (see \code{\link{python_requirements}}).
-  Such an environment also needs llama-index-llms-huggingface >= 0.4.2
-  and llama-index-core >= 0.12. transforEmotion is not tested with these
-  versions. Before it loads a Gemma 3 model, \code{rag()} checks the
-  transformers version and stops when it is older than 4.50.}
+  Such an environment also needs huggingface-hub >= 0.26,
+  llama-index-core >= 0.12 and llama-index-llms-huggingface >= 0.4.2.
+  Replace the transformers, huggingface-hub and llama-index-core caps in
+  the \code{python_requirements()} output with these versions.
+  transforEmotion is not tested with them. Before it loads a Gemma 3
+  model, \code{rag()} checks the transformers version and stops when it
+  is older than 4.50.}
   \item{"Qwen2.5-1.5B / Qwen2.5-3B"}{Alibaba's Qwen 2.5 Instruct models via
   HuggingFace: \code{Qwen/Qwen2.5-1.5B-Instruct},
   \code{Qwen/Qwen2.5-3B-Instruct}. Not gated (no Hugging Face token needed)
