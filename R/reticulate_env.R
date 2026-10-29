@@ -224,6 +224,18 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# Whether the torch of the running Python is a CUDA build, from its package
+# metadata, so torch is not imported. NA when torch is not installed. The
+# PyTorch index marks its CUDA builds with "+cu126"; the CUDA build on PyPI
+# (Linux x86_64) has a plain version and requires the nvidia-* packages.
+.te_torch_is_cuda <- function(metadata = reticulate::import("importlib.metadata")) {
+  torch <- tryCatch(as.character(metadata$version("torch")), error = function(e) NA_character_)
+  if (is.na(torch)) return(NA)
+  requires <- tryCatch(unlist(metadata$requires("torch")), error = function(e) NULL)
+  grepl("+cu", torch, fixed = TRUE) || any(startsWith(as.character(requires), "nvidia-"))
+}
+
+#' @noRd
 # Requirements of the core set and of extras that the running Python does not
 # meet: the package is missing, or its version is outside the specifier. Reads
 # package metadata, so no package is imported. A direct URL (the PyTorch
@@ -238,15 +250,8 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   # packaging comes with transformers; without it, check only presence
   requirement <- tryCatch(reticulate::import("packaging.requirements")$Requirement,
                           error = function(e) NULL)
-  torch <- installed("torch")
-  # The PyTorch index marks its CUDA builds with "+cu126"; the CUDA build on
-  # PyPI (Linux x86_64) has a plain version and requires the nvidia-* packages
-  gpu <- if (is.na(torch)) {
-    te_should_use_gpu()
-  } else {
-    requires <- tryCatch(unlist(metadata$requires("torch")), error = function(e) NULL)
-    grepl("+cu", torch, fixed = TRUE) || any(startsWith(as.character(requires), "nvidia-"))
-  }
+  gpu <- .te_torch_is_cuda(metadata)
+  if (is.na(gpu)) gpu <- te_should_use_gpu()
 
   unmet <- character()
   for (req in python_requirements(extras, gpu = gpu)) {
@@ -330,7 +335,8 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 # find_spec() finds a module without running it; for a dotted name it imports
 # only the parent packages, which are namespace packages here. A set that
 # passes is not checked again in this session. On failure, the requirements
-# to install come from .te_unmet_requirements(), as in setup_modules().
+# to install come from .te_unmet_requirements(), as in setup_modules(), but
+# only those of the missing sets.
 .te_check_fixed_features <- function(features) {
   todo <- setdiff(features, c("core", .te_py_state$fixed_features))
   if (!length(todo)) return(invisible(TRUE))
@@ -353,21 +359,34 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 
   sets <- names(missing)
   check <- .te_unmet_requirements(sets)
-  # A module can be missing while its package is installed (a broken install)
-  requirements <- names(check$unmet)
-  if (!length(requirements)) requirements <- unlist(lapply(sets, .te_py_requirements))
+  gpu <- isTRUE(check$gpu)
+  # The check also reports unmet requirements of the core set. Installing
+  # them could change packages that work, for example a newer transformers.
+  requirements <- unlist(lapply(sets, function(set) {
+    own <- .te_py_requirements(set, use_gpu = gpu)
+    unmet <- intersect(names(check$unmet), own)
+    # A module can be missing while its package is installed (a broken install)
+    if (length(unmet)) unmet else own
+  }), use.names = FALSE)
+  # A rebuild also needs the sets that were found
+  rebuild <- intersect(names(.te_feature_modules), c(.te_py_state$fixed_features, sets))
+  # GPU=1 adds the gpu set
+  docker_extras <- setdiff(rebuild, if (gpu) "gpu")
+  docker_args <- c(
+    if (length(docker_extras)) paste0("--build-arg EXTRAS=", paste(docker_extras, collapse = ",")),
+    if (gpu) "--build-arg GPU=1"
+  )
   stop(
     "The Python environment that TRANSFOREMOTION_PYTHON points to does not ",
     "have these modules of the feature sets that this function needs:\n",
     paste0("  ", sets, ": ", vapply(missing, paste, "", collapse = ", "),
            collapse = "\n"),
-    "\n", .te_fixed_python_fix(requirements, sets, check$gpu),
-    " For a Docker image, build it from docker/Dockerfile with --build-arg ",
-    "EXTRAS=", paste(sets, collapse = ","), ", and list there every feature ",
-    "set that the image needs, separated by commas.",
-    if ("gpu" %in% sets) {
-      " --build-arg GPU=1 adds the gpu set and the CUDA build of PyTorch."
-    },
+    "\n", .te_fixed_python_fix(requirements, rebuild, gpu),
+    " For a Docker image, build it from docker/Dockerfile with ",
+    paste(docker_args, collapse = " "), ".",
+    if (gpu) " GPU=1 gives the CUDA build of PyTorch and adds the gpu set.",
+    " In extras and in EXTRAS, also list every other feature set that the ",
+    "environment needs.",
     call. = FALSE
   )
 }
@@ -576,8 +595,15 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
-# Whether the declared PyTorch build is the CUDA one
+# Whether the PyTorch build is the CUDA one: in a fixed environment
+# (TRANSFOREMOTION_PYTHON) the installed build, otherwise the declared one.
+# A GPU on the host does not count for a fixed environment with the CPU
+# build, for example the CPU Docker image run with --gpus all.
 .te_uses_gpu <- function() {
+  if (nzchar(Sys.getenv("TRANSFOREMOTION_PYTHON", unset = ""))) {
+    .te_require("core")
+    return(isTRUE(.te_torch_is_cuda()))
+  }
   if (!"core" %in% .te_py_state$features) return(te_should_use_gpu())
   isTRUE(.te_py_state$use_gpu)
 }
