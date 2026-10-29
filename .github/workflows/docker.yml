@@ -31,9 +31,11 @@ on:
     paths:
       - "docker/**"
       - ".dockerignore"
+      - ".Rbuildignore"
       - "DESCRIPTION"
       - "NAMESPACE"
       - "R/**"
+      - "data/**"
       - "inst/**"
       - ".github/workflows/docker.yml"
       - ".github/scripts/docker-smoke.R"
@@ -44,9 +46,11 @@ on:
     paths:
       - "docker/**"
       - ".dockerignore"
+      - ".Rbuildignore"
       - "DESCRIPTION"
       - "NAMESPACE"
       - "R/**"
+      - "data/**"
       - "inst/**"
       - ".github/workflows/docker.yml"
       - ".github/scripts/docker-smoke.R"
@@ -180,6 +184,8 @@ jobs:
           IMAGE: ${{ steps.vars.outputs.image }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          # Without "shell: bash", GitHub runs bash -e with no pipefail
+          set -o pipefail
           # shellcheck disable=SC2086
           set -- $TAGS
           if [ "$#" -eq 0 ]; then
@@ -189,6 +195,10 @@ jobs:
           for tag in "$@"; do docker tag "$TEST_TAG" "$tag"; done
           docker push --all-tags "$IMAGE"
           digest=$(docker buildx imagetools inspect "$1" --format '{{json .Manifest}}' | jq -r .digest)
+          case "$digest" in
+            sha256:*) ;;
+            *) echo "::error::No digest for $1 (got '$digest')"; exit 1 ;;
+          esac
           echo "pushed $* as $digest"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
@@ -205,8 +215,9 @@ jobs:
   cuda:
     name: CUDA image
     needs: cpu
-    # Built only for a release and on request until the CUDA image has passed
-    # a test on a GPU (maintainer decision D2)
+    # Not built on push to main until the CUDA image has passed a test on a
+    # GPU (maintainer decision D2). A release builds and pushes X.Y.Z-cuda and
+    # latest-cuda, so test main-cuda on a GPU before the first release.
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.cuda)
     runs-on: ubuntu-latest
     timeout-minutes: 120
