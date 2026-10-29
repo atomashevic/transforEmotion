@@ -391,6 +391,28 @@ test_that("EVA-CLIP needs the gpu set of a fixed environment only with a CUDA Py
   expect_true(transforEmotion:::.te_uses_gpu())
 })
 
+test_that("load_findingemo_annotations() does not need the findingemo set", {
+  local_fixed_python()
+  # A dataset in the flat structure needs no Python
+  local_mocked_bindings(import = function(...) stop("Python was started"), .package = "reticulate")
+  dir <- withr::local_tempdir()
+  utils::write.csv(data.frame(image_path = "a.jpg", valence = 0.5, arousal = 0.2),
+                   file.path(dir, "annotations.csv"), row.names = FALSE)
+  writeLines('{"a.jpg": "https://example.org/a.jpg"}', file.path(dir, "urls.json"))
+  data <- suppressMessages(load_findingemo_annotations(dir))
+  expect_equal(nrow(data), 1)
+  expect_equal(data$valence, 0.5)
+
+  # Other datasets are read with pandas, from the core set
+  declared <- list()
+  local_mocked_bindings(.te_require = function(features = "core", ...) {
+    declared[[length(declared) + 1]] <<- features
+    stop("declared")
+  })
+  expect_error(load_findingemo_annotations(withr::local_tempdir()), "declared")
+  expect_equal(declared, list("core"))
+})
+
 test_that("the core set of a fixed environment does not start Python", {
   local_fixed_python()
   local_mocked_bindings(import = function(...) stop("Python was started"), .package = "reticulate")

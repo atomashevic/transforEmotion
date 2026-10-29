@@ -361,9 +361,6 @@ download_findingemo_data <- function(target_dir,
 load_findingemo_annotations <- function(data_dir,
                                       output_format = c("dataframe", "list"),
                                       python_path = NULL) {
-  # Declare the core and FindingEmo Python requirements
-  .te_require("findingemo")
-  
   output_format <- match.arg(output_format)
   
   # Input validation
@@ -386,6 +383,10 @@ load_findingemo_annotations <- function(data_dir,
     message("Detected flat structure dataset")
     return(.load_flat_structure_data(data_dir, output_format))
   }
+  
+  # The script needs only pandas, from the core set. The findingemo set is
+  # for download_findingemo_data().
+  .te_require("core")
   
   # Get Python script path
   script_path <- system.file("python", "load_findingemo_annotations.py", 
