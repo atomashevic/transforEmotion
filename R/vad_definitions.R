@@ -56,23 +56,25 @@ get_vad_simple_labels <- function() {
 }
 
 #' Validate custom VAD labels
+#'
+#' Only the dimensions to score must be in custom_labels.
 #' @noRd
-validate_vad_labels <- function(custom_labels) {
-  required_structure <- c("valence", "arousal", "dominance")
+validate_vad_labels <- function(custom_labels,
+                                dimensions = c("valence", "arousal", "dominance")) {
   required_poles <- c("positive", "negative", "high", "low", "high", "low")
   
   if (!is.list(custom_labels)) {
     stop("custom_labels must be a list", call. = FALSE)
   }
   
-  # Check top-level structure: require all three dimensions to be present
-  if (!all(required_structure %in% names(custom_labels))) {
+  # Check top-level structure: require each requested dimension to be present
+  if (!all(dimensions %in% names(custom_labels))) {
     stop("custom_labels must have elements named: ", 
-         paste(required_structure, collapse = ", "), call. = FALSE)
+         paste(dimensions, collapse = ", "), call. = FALSE)
   }
   
-  # Check each dimension
-  for (dim in names(custom_labels)) {
+  # Check each requested dimension
+  for (dim in dimensions) {
     dim_labels <- custom_labels[[dim]]
     
     if (!is.list(dim_labels)) {
@@ -109,13 +111,14 @@ validate_vad_labels <- function(custom_labels) {
 
 #' Get VAD labels based on type
 #' @noRd
-get_vad_labels <- function(label_type = "definitional", custom_labels = NULL) {
+get_vad_labels <- function(label_type = "definitional", custom_labels = NULL,
+                           dimensions = c("valence", "arousal", "dominance")) {
   
   if (label_type == "custom") {
     if (is.null(custom_labels)) {
       stop("custom_labels must be provided when label_type = 'custom'", call. = FALSE)
     }
-    validate_vad_labels(custom_labels)
+    validate_vad_labels(custom_labels, dimensions)
     return(custom_labels)
   }
   

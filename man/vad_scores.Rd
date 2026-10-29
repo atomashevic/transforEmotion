@@ -46,17 +46,33 @@ Default: all three dimensions}
 }}
 
 \item{custom_labels}{Optional list. Custom labels when label_type = "custom".
-Must follow structure: list(valence = list(positive = "...", negative = "..."), ...)}
+Must follow structure: list(valence = list(positive = "...", negative = "..."), ...).
+Give an element for each dimension in \code{dimensions}. The poles are
+\code{positive} and \code{negative} for valence, and \code{high} and
+\code{low} for arousal and dominance.}
 
-\item{model}{Character. Model to use for classification. Depends on input_type:
+\item{model}{Character. The model that scores each dimension.
+\code{"auto"} (default) uses \code{"cross-encoder-distilroberta"} for text
+and \code{"oai-base"} for images and video. Any other value goes unchanged
+to the scoring function for the input type, so the same values work:
 \itemize{
-  \item Text: transformer model (see transformer_scores documentation)
-  \item Image: CLIP model (see image_scores documentation)  
-  \item Video: CLIP model (see video_scores documentation)
-}}
+  \item Text: the \code{transformer} argument of
+    \code{\link{transformer_scores}}: a built-in name or the full ID of a
+    Hugging Face model with the zero-shot-classification pipeline tag.
+    For text in other languages, use a multilingual model, for example
+    \code{"joeddav/xlm-roberta-large-xnli"}
+  \item Image: the \code{model} argument of \code{\link{image_scores}}
+  \item Video: the \code{model} argument of \code{\link{video_scores}}
+}
+Give the model here, not as \code{transformer} in \code{...}. The
+definitional and simple labels are in English; to give labels in the
+language of the text, use \code{label_type = "custom"}.}
 
 \item{...}{Additional arguments passed to underlying classification functions
-(transformer_scores, image_scores, or video_scores)}
+(\code{\link{transformer_scores}}, \code{\link{image_scores}}, or
+\code{\link{video_scores}}), for example \code{local_model_path}.
+\code{vad_scores()} sets the classes and the model itself, so
+\code{classes} and \code{transformer} cannot be given here.}
 }
 \value{
 A data.frame with columns:
@@ -82,15 +98,15 @@ Instead of mapping from discrete emotions, each VAD dimension is treated as
 a separate binary classification task using definitional labels that explain
 the psychological concepts.
 
-**Definitional Labels (default):**
+\strong{Definitional Labels (default):}
 The function uses rich descriptions that educate the model about each dimension:
 \itemize{
-  \item **Valence**: "Positive valence, which refers to pleasant, enjoyable..."
-  \item **Arousal**: "High arousal, which refers to intense, energetic..."  
-  \item **Dominance**: "High dominance, which refers to feeling in control..."
+  \item \strong{Valence}: "Positive valence, which refers to pleasant, enjoyable..."
+  \item \strong{Arousal}: "High arousal, which refers to intense, energetic..."
+  \item \strong{Dominance}: "High dominance, which refers to feeling in control..."
 }
 
-**Input Type Detection:**
+\strong{Input Type Detection:}
 When input_type = "auto", the function detects input type based on:
 \itemize{
   \item URLs starting with "http": Video
@@ -98,12 +114,12 @@ When input_type = "auto", the function detects input type based on:
   \item Everything else: Text
 }
 
-**Score Interpretation:**
+\strong{Score Interpretation:}
 Scores represent the probability that the input exhibits the "high" pole:
 \itemize{
-  \item **Valence**: 1.0 = very positive, 0.0 = very negative
-  \item **Arousal**: 1.0 = high energy, 0.0 = very calm
-  \item **Dominance**: 1.0 = very controlling, 0.0 = very powerless
+  \item \strong{Valence}: 1.0 = very positive, 0.0 = very negative
+  \item \strong{Arousal}: 1.0 = high energy, 0.0 = very calm
+  \item \strong{Dominance}: 1.0 = very controlling, 0.0 = very powerless
 }
 }
 \section{Data Privacy}{
