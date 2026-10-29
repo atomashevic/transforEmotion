@@ -24,10 +24,10 @@ test_that("transformer_scores works with default settings", {
     classes = emotions   # List of emotions to detect
   )
 
-  expect_type(result, "list")
-  expect_named(result, test_text)
-  expect_equal(names(result[[1]]), test_classes)
-  expect_true(all(sapply(result[[1]], function(x) x >= 0 && x <= 1)))
+  expect_type(results, "list")
+  expect_named(results, text)
+  expect_equal(names(results[[1]]), emotions)
+  expect_true(all(sapply(results[[1]], function(x) x >= 0 && x <= 1)))
 })
 
 test_that("transformer_scores works with local_model_path", {
