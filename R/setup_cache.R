@@ -36,9 +36,11 @@
 #' access: \code{setup_cache()} with the same \code{path} and \code{gpu} value
 #' but without \code{offline = TRUE}, then the same \code{setup_modules()}
 #' call. A new version can change the Python requirements, and an offline
-#' session cannot install them: uv reports that a package "was not found in
-#' the cache", and the analysis function fails with "Installation of Python
-#' not found".
+#' session cannot install them. Before Python starts, the first analysis
+#' function of an offline session checks with uv that the cache has every
+#' declared Python package. If one is missing, the function stops with uv's
+#' reason, for example that a package "was not found in the cache", and the
+#' \code{setup_cache()} and \code{setup_modules()} calls to run.
 #'
 #' The cache must stay writable, because uv locks it even when reusing an
 #' environment. For read-only environments such as Apptainer images, build a

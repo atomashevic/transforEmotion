@@ -9,9 +9,10 @@
     # function call adds them instead, so loading never installs packages.
     # A failure here (for example TRANSFOREMOTION_PYTHON pointing to a
     # missing file) must not stop the package from loading; the first
-    # function that uses Python repeats the call and reports it.
+    # function that uses Python repeats the call and reports it. That call
+    # also checks an offline uv cache; loading does not run uv.
     if (!reticulate::py_available(initialize = FALSE)) {
-        try(.te_require("core"), silent = TRUE)
+        try(.te_require("core", check_cache = FALSE), silent = TRUE)
     }
 
     # Let C compilers find Python's headers once Python starts
