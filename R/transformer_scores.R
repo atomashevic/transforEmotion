@@ -86,7 +86,10 @@
 #' Defaults to \code{TRUE}.
 #' By keeping the classifier in your environment, you can skip
 #' re-loading the classifier every time you run this function.
-#' \code{TRUE} is recommended
+#' \code{TRUE} is recommended.
+#' The classifier is kept under the name in \code{transformer}. A later call
+#' reuses it only if both calls give the same \code{local_model_path}, or
+#' neither gives one
 #'
 #' @param envir Numeric.
 #' Environment for the classifier to be saved for repeated use.
@@ -260,6 +263,9 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
 
   # Check for a cached classifier in the environment; only reuse if Python is
   # already initialized and the object pointer is valid for this session.
+  # The cache key is the transformer name, so also check that the cached
+  # classifier was loaded from the same local_model_path, or from the Hub.
+  model_source <- if (is.null(local_model_path)) "hub" else normalizePath(local_model_path, mustWork = FALSE)
   classifier <- NULL
   if (exists(transformer, envir = as.environment(envir))) {
     py_inited <- FALSE
@@ -271,9 +277,12 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
         valid <- reticulate::is_py_object(cand) && !reticulate::py_is_null_xptr(cand)
       }, silent = TRUE))
       if (isTRUE(valid)) {
-        classifier <- cand
-        # Ensure the transformers module is bound as well for consistency
-        transformers <- try(reticulate::import("transformers"), silent = TRUE)
+        cached_source <- attr(cand, "te_model_source", exact = TRUE)
+        if (identical(if (is.null(cached_source)) "hub" else cached_source, model_source)) {
+          classifier <- cand
+          # Ensure the transformers module is bound as well for consistency
+          transformers <- try(reticulate::import("transformers"), silent = TRUE)
+        }
       } else {
         # Drop invalid cached object; will rebuild below
         try(rm(list = transformer, envir = as.environment(envir)), silent = TRUE)
@@ -314,8 +323,9 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
       torch <- modules_import$torch
     }
 
-    # Check for custom transformer
-    if(transformer %in% c(
+    # Built-in name from the Hub. A local_model_path loads in the custom
+    # branch below, also for a built-in name.
+    if(is.null(local_model_path) && transformer %in% c(
       "cross-encoder-roberta", "cross-encoder-distilroberta", "facebook-bart"
     )){
 
@@ -457,7 +467,8 @@ logging.getLogger('huggingface_hub').setLevel(logging.ERROR)  # Suppress hugging
       envir = as.environment(envir)
     )
 
-    # Keep classifier in environment
+    # Keep classifier in environment, with the source it was loaded from
+    attr(classifier, "te_model_source") <- model_source
     assign(
       x = transformer,
       value = classifier,

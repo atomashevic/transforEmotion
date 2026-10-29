@@ -197,7 +197,7 @@ test_that("vad_scores works with different label types", {
   expect_true(is.numeric(result_simple$valence))
   
   # Test custom labels
-  # validate_vad_labels() requires every dimension, even if only one is scored
+  # Labels for dimensions that are not scored are allowed
   custom_labels <- list(
     valence = list(
       positive = "Positive customer sentiment and satisfaction with our brand",

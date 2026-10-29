@@ -25,9 +25,11 @@ The `evaluate_emotions()` function provides comprehensive evaluation capabilitie
 ## Installation and Setup
 
 ```{r, eval=FALSE}
-# Install transforEmotion if not already installed
-# devtools::install_github("your-repo/transforEmotion")
-library(transforEmotion)
+# Install transforEmotion from CRAN
+install.packages("transforEmotion")
+
+# Or install the development version from GitHub
+# remotes::install_github("atomashevic/transforEmotion")
 ```
 
 ```{r}
@@ -97,7 +99,7 @@ print(results)
 
 ### Evaluation with Probabilities
 
-For more comprehensive evaluation including calibration metrics:
+For more comprehensive evaluation including calibration metrics, give the probability columns in `probs_cols`. AUROC pairs `probs_cols[i]` with `classes[i]`, so give `classes` in the same order:
 
 ```{r}
 # Full evaluation with probability scores
@@ -184,30 +186,37 @@ text_data <- c(
   "I feel very sad about this news."
 )
 
-# Get transformer-based predictions
+classes <- c("anger", "joy", "sadness")
+
+# Get transformer-based predictions: a list with one vector of class
+# probabilities per text, named by class
 predictions <- transformer_scores(
-  x = text_data,
-  classes = c("anger", "joy", "sadness"),
-  return_prob = TRUE
+  text = text_data,
+  classes = classes
 )
+
+# One row per text, one column per class
+probs <- do.call(rbind, predictions)
 
 # Step 2: Prepare evaluation data (assuming you have ground truth)
 ground_truth <- c("joy", "anger", "sadness")  # Your ground truth labels
 
+# check.names = FALSE keeps class names such as "very happy" as they are
 eval_df <- data.frame(
   id = 1:length(text_data),
   truth = ground_truth,
-  pred = predictions$predicted_class,
-  prob_anger = predictions$prob_anger,
-  prob_joy = predictions$prob_joy,
-  prob_sadness = predictions$prob_sadness,
+  pred = colnames(probs)[max.col(probs, ties.method = "first")],
+  probs,
+  row.names = NULL,
+  check.names = FALSE,
   stringsAsFactors = FALSE
 )
 
 # Step 3: Evaluate performance
 evaluation <- evaluate_emotions(
   data = eval_df,
-  probs_cols = c("prob_anger", "prob_joy", "prob_sadness")
+  probs_cols = classes,
+  classes = classes
 )
 
 print(evaluation)
@@ -224,7 +233,8 @@ write.csv(eval_data, "model_evaluation.csv", row.names = FALSE)
 # Load and evaluate from CSV
 csv_results <- evaluate_emotions(
   data = "model_evaluation.csv",
-  probs_cols = prob_cols
+  probs_cols = prob_cols,
+  classes = emotions
 )
 ```
 
@@ -296,7 +306,8 @@ When possible, include probability scores for more comprehensive evaluation:
 # Good: Include probabilities for calibration analysis
 results_with_probs <- evaluate_emotions(
   data = eval_data,
-  probs_cols = prob_cols
+  probs_cols = prob_cols,
+  classes = emotions
 )
 ```
 
@@ -331,6 +342,7 @@ Don't rely on a single metric - report comprehensive results:
 comprehensive_eval <- evaluate_emotions(
   data = eval_data,
   probs_cols = prob_cols,
+  classes = emotions,
   metrics = c("accuracy", "precision", "recall", "f1_macro", "f1_micro", 
              "auroc", "ece", "krippendorff", "confusion_matrix")
 )

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sentence_similarity.R
 \name{sentence_similarity}
 \alias{sentence_similarity}
-\title{Sentiment Analysis Scores}
+\title{Sentence Similarity}
 \usage{
 sentence_similarity(
   text,
@@ -28,13 +28,16 @@ Defaults to \code{"all_minilm_l6"} (see \href{https://huggingface.co/sentence-tr
 
 Also allows any sentence similarity models with a pipeline
 from \href{https://huggingface.co/models?pipeline_tag=sentence-similarity}{huggingface}
-to be used by using the specified name (e.g., \code{"typeform/distilbert-base-uncased-mnli"}; see Examples)}
+to be used by using the specified name (e.g., \code{"sentence-transformers/all-mpnet-base-v2"}; see Examples)}
 
 \item{device}{Character.
 Whether to use CPU or GPU for inference.
 Defaults to \code{"auto"} which will use
 GPU over CPU (if CUDA-capable GPU is setup).
-Set to \code{"cpu"} to perform over CPU}
+Set to \code{"cpu"} to perform over CPU.
+A classifier kept in \code{envir} moves to the device
+set by \code{"cpu"} or \code{"cuda"}.
+With \code{"auto"}, it stays on its current device}
 
 \item{preprocess}{Boolean.
 Should basic preprocessing be applied?
@@ -61,8 +64,9 @@ Defaults to the global environment}
 Returns a \emph{n} x \emph{m} similarity matrix where \emph{n} is length of \code{text} and \emph{m} is the length of \code{comparison_text}
 }
 \description{
-Uses sentiment analysis pipelines from \href{https://huggingface.co}{huggingface}
-to compute probabilities that the text corresponds to the specified classes
+Uses sentence similarity models from \href{https://huggingface.co}{huggingface}
+to compute embeddings of \code{text} and \code{comparison_text}
+and returns the cosine similarity of each pair
 }
 \examples{
 # Load data
