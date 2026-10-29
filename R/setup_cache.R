@@ -24,6 +24,10 @@
 #'   \item{\code{UV_PYTHON_INSTALL_DIR}, \code{UV_PYTHON_PREFERENCE}}{a Python
 #'   interpreter kept in the cache, so compute nodes do not need one}
 #'   \item{\code{HF_HOME}}{Hugging Face models}
+#'   \item{\code{HF_HUB_CACHE}, \code{SENTENCE_TRANSFORMERS_HOME}}{the model
+#'   folder in \code{HF_HOME}, \code{<path>/huggingface/hub}. These variables
+#'   take precedence over \code{HF_HOME}, so \code{setup_cache()} sets them
+#'   too, for example over the values that the Docker image sets.}
 #'   \item{\code{R_USER_CACHE_DIR}}{reticulate's own copy of uv and the NLTK
 #'   data used by \code{rag()}. This also moves the cache of any other R
 #'   package that uses \code{tools::R_user_dir()} in this session.}
@@ -82,6 +86,10 @@ setup_cache <- function(path, offline = FALSE, gpu = NULL) {
     UV_PYTHON_INSTALL_DIR = file.path(path, "uv", "python"),
     UV_PYTHON_PREFERENCE = "only-managed",
     HF_HOME = file.path(path, "huggingface"),
+    # These two take precedence over HF_HOME, for example when the Docker
+    # image sets them
+    HF_HUB_CACHE = file.path(path, "huggingface", "hub"),
+    SENTENCE_TRANSFORMERS_HOME = file.path(path, "huggingface", "hub"),
     R_USER_CACHE_DIR = file.path(path, "R")
   )
   if (isTRUE(offline)) {
