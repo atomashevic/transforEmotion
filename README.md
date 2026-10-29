@@ -474,11 +474,11 @@ After each update of transforEmotion, run the login-node lines once more, so tha
 
 On clusters with Apptainer, you can also use the Docker image (see [Apptainer](#apptainer)). The image needs no writable cache folder. After an update of transforEmotion, pull the new image instead of preparing the cache again.
 
-You can also run the lines above in the image, for example to add models. `setup_cache()` then keeps the Python environment of the image. It sets the model folder to `<path>/huggingface/hub`, so the models of the image are not used, and `setup_modules()` downloads the default models (about 1 GB) into the cache. Two changes are necessary on the login node. First, leave out `extras`, because the published image has only the core feature set (see [What is in the image](#what-is-in-the-image)). For example, `extras = "rag"` stops with "ModuleNotFoundError: No module named 'nltk'". Second, add `--env HF_HUB_OFFLINE=0` (`-e HF_HUB_OFFLINE=0` in Docker). The image sets `HF_HUB_OFFLINE=1`, and `setup_cache()` without `offline = TRUE` does not change it. Without the flag, `setup_modules()` prints "HF_HUB_OFFLINE is set; skipping model downloads." and downloads nothing. `gpu` has no effect in the image.
+You can also run the lines above in the image, for example to add models. `setup_cache()` then keeps the Python environment of the image. It sets the model folder to `<path>/huggingface/hub`, so the models of the image are not used, and `setup_modules()` downloads the default models (about 1 GB) into the cache. On the login node, leave out `extras`, because the published image has only the core feature set (see [What is in the image](#what-is-in-the-image)). For example, `extras = "rag"` stops with "ModuleNotFoundError: No module named 'nltk'". The image sets `HF_HUB_OFFLINE=1`; `setup_cache()` without `offline = TRUE` unsets it, so `setup_modules()` can download. `gpu` has no effect in the image.
 
 ```bash
 # Once, on a login node (with internet access)
-apptainer exec --env HF_HUB_OFFLINE=0 transforemotion_main.sif Rscript -e \
+apptainer exec transforemotion_main.sif Rscript -e \
   'library(transforEmotion); setup_cache("/project/mylab/transforEmotion-cache"); setup_modules(models = "facebook/bart-large-mnli")'
 ```
 

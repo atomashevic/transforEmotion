@@ -66,6 +66,8 @@ o CHANGE: the image sets `HF_HUB_CACHE`, `SENTENCE_TRANSFORMERS_HOME`, `RETICULA
 
 o FIX: in a read-only image, transformers printed two warnings in each session: "You are offline and the cache for model files in Transformers v4.22.0 has been updated", and that it could not write to the cache folder. The models loaded correctly. The image now has the cache version file that transformers reads
 
+o FIX: `setup_cache()` without `offline = TRUE` left `UV_OFFLINE` and `HF_HUB_OFFLINE` as they were. In the Docker image, which sets `HF_HUB_OFFLINE=1`, or with one of these variables in `.Renviron`, the preparation with network access then downloaded nothing: `setup_modules()` printed "HF_HUB_OFFLINE is set; skipping model downloads." `setup_cache(offline = FALSE)`, the default, now unsets both variables
+
 # Changes in version 0.1.9
 
 o ADD: `rag()` and `rag_sentemo()` support Qwen 2.5 Instruct (`transformer = "Qwen2.5-1.5B"` or `"Qwen2.5-3B"`), including structured outputs (`output = "json"`, `"table"`, `"csv"`). The Qwen models are not gated, so no Hugging Face token is needed, and they load with the transformers version the package installs (Gemma 3 needs transformers >= 4.50)

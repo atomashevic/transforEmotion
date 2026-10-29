@@ -10,8 +10,12 @@ setup_cache(path, offline = FALSE, gpu = NULL)
 \item{path}{Folder for the caches, for example on project or scratch storage
 shared by login and compute nodes. It needs several GB and must be writable.}
 
-\item{offline}{Logical. Use only what is already in the cache, with no
-network access (sets \code{UV_OFFLINE} and \code{HF_HUB_OFFLINE}).}
+\item{offline}{Logical. \code{TRUE} uses only what is already in the
+cache, with no network access (sets \code{UV_OFFLINE} and
+\code{HF_HUB_OFFLINE}). \code{FALSE}, the default, unsets both variables,
+so that \code{setup_modules()} can fill the cache, also when the
+environment turns offline mode on (the Docker image sets
+\code{HF_HUB_OFFLINE}, or a \code{.Renviron} file can set either).}
 
 \item{gpu}{Logical or \code{NULL}. Choose the CUDA (\code{TRUE}) or CPU
 (\code{FALSE}) build of PyTorch instead of detecting the GPU. Login nodes
