@@ -637,3 +637,51 @@ textsymbol <- function(symbol = c("alpha", "beta", "chi", "delta",
 .te_is_youtube_url <- function(x) {
   grepl("^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)(/|$)", x, ignore.case = TRUE)
 }
+
+#' @noRd
+# transformers raises "... requires the protobuf library but it was not found
+# in your environment" when it converts a SentencePiece tokenizer in a Python
+# environment without protobuf. Its message does not say which Python is
+# meant. Called with the error of a failed model load; returns FALSE for any
+# other error. The Python is running when this error occurs, so py_config()
+# only reads the configuration and starts nothing.
+.te_stop_if_no_protobuf <- function(err) {
+  if (!isTRUE(grepl("requires the protobuf library", paste(err, collapse = "\n"),
+                    fixed = TRUE))) {
+    return(invisible(FALSE))
+  }
+  python <- Sys.getenv("TRANSFOREMOTION_PYTHON", unset = "")
+  fixed <- nzchar(python)
+  # The shell does not expand "~" inside the quotes of the printed command
+  if (fixed) python <- normalizePath(python, winslash = "/", mustWork = FALSE)
+  reason <- NULL
+  if (!fixed && isTRUE(reticulate::py_available(initialize = FALSE))) {
+    config <- tryCatch(reticulate::py_config(), error = function(e) NULL)
+    if (is.character(config$python)) python <- config$python
+    reason <- config$forced
+  }
+  stop(
+    "The tokenizer of this model needs the Python package protobuf, which ",
+    if (nzchar(python)) {
+      paste0("this Python does not have: ", python, "\nInstall it there, for ",
+             "example with: uv pip install --python \"", python,
+             "\" \"protobuf>=3.20,<8\"\n")
+    } else {
+      "the Python environment that reticulate uses does not have.\n"
+    },
+    if (fixed) {
+      paste0("This is the environment that TRANSFOREMOTION_PYTHON points to. ",
+             "You can also rebuild it from python_requirements(); for a ",
+             "read-only image, see ?python_requirements.")
+    } else {
+      paste0("reticulate selected this Python",
+             if (is.character(reason) && length(reason) == 1L) paste0(" (", reason, ")"),
+             ", so transforEmotion did not install its packages. To let ",
+             "transforEmotion manage Python, remove that selection ",
+             "(RETICULATE_PYTHON, VIRTUAL_ENV, use_python(), use_virtualenv(), ",
+             "a venv, .venv, virtualenv or .virtualenv folder in the working ",
+             "directory, or ~/.virtualenvs/r-reticulate) and restart R.")
+    },
+    call. = FALSE
+  )
+}

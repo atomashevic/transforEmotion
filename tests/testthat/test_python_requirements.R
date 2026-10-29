@@ -34,6 +34,9 @@ test_that("feature sets are defined and core excludes heavy unused packages", {
   expect_true(any(grepl("^transformers", core)))
   expect_true(any(grepl("^opencv-python-headless", core)))
   expect_false(any(grepl("tensorflow|bitsandbytes|llama-index|pytubefix", core)))
+  # transformers needs protobuf to convert SentencePiece tokenizers
+  expect_true(any(grepl("^protobuf", core)))
+  expect_true("google.protobuf" %in% transforEmotion:::.te_feature_modules$core)
 
   for (feature in c("rag", "youtube", "audio", "findingemo", "gpu")) {
     expect_type(transforEmotion:::.te_py_requirements(feature), "character")
@@ -125,6 +128,14 @@ test_that("a running Python that already has the packages is used as is", {
   )
   expect_error(transforEmotion:::.te_require("core"), "Python packages for 'core'")
   expect_false("core" %in% state$features)
+
+  # protobuf is checked too
+  state$features <- character()
+  local_mocked_bindings(
+    py_module_available = function(module) module != "google.protobuf",
+    .package = "reticulate"
+  )
+  expect_error(transforEmotion:::.te_require("core"), "Python packages for 'core'")
 })
 
 test_that("every package of a feature set is checked by its import name", {
@@ -171,4 +182,77 @@ test_that("C compilers can find Python.h once Python starts (Triton on CUDA)", {
     sep = "\n"
   ))
   expect_equal(reticulate::py$`_te_rc`, 0L)
+})
+
+test_that("a missing protobuf is reported with the Python to fix", {
+  err <- paste0(
+    "Error in py_call_impl(callable, call_args$unnamed, call_args$named) : \n",
+    "  ImportError: \n requires the protobuf library but it was not found in ",
+    "your environment. Checkout the instructions on the\ninstallation page of its repo"
+  )
+  # A fixed environment, given with "~", which the printed command must expand
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = "~/te-venv/bin/python")
+  python <- normalizePath("~/te-venv/bin/python", winslash = "/", mustWork = FALSE)
+  expect_false(startsWith(python, "~"))
+  expect_error(transforEmotion:::.te_stop_if_no_protobuf(err),
+               paste0("uv pip install --python \"", python, "\""), fixed = TRUE)
+  expect_error(transforEmotion:::.te_stop_if_no_protobuf(err),
+               "TRANSFOREMOTION_PYTHON points to", fixed = TRUE)
+
+  # A Python that reticulate selected, for example a ./venv folder
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  local_mocked_bindings(
+    py_available = function(...) TRUE,
+    py_config = function() list(
+      python = "/work/venv/bin/python",
+      forced = "'./venv' existing in the current working directory"
+    ),
+    .package = "reticulate"
+  )
+  expect_error(transforEmotion:::.te_stop_if_no_protobuf(err),
+               "this Python does not have: /work/venv/bin/python", fixed = TRUE)
+  expect_error(transforEmotion:::.te_stop_if_no_protobuf(err),
+               "('./venv' existing in the current working directory)", fixed = TRUE)
+
+  # Any other error is left to the caller
+  expect_false(transforEmotion:::.te_stop_if_no_protobuf("OSError: x is not a valid model identifier"))
+})
+
+test_that("transformer_scores() reports a missing protobuf for a custom model", {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  local_mocked_bindings(ensure_te_py_env = function() invisible(TRUE))
+  fail <- function(...) stop("ImportError: \n requires the protobuf library but it was not found in your environment.")
+  local_mocked_bindings(
+    py_run_string = function(...) invisible(NULL),
+    import = function(module, ...) list(pipeline = fail),
+    py_available = function(...) FALSE,
+    .package = "reticulate"
+  )
+  expect_error(
+    transformer_scores("x", c("a", "b"), transformer = "owner/name", device = "cpu"),
+    "needs the Python package protobuf"
+  )
+})
+
+test_that("transformer_scores() reports a missing protobuf in the CPU retry", {
+  withr::local_envvar(TRANSFOREMOTION_PYTHON = NA)
+  local_mocked_bindings(ensure_te_py_env = function() invisible(TRUE))
+  # The first load fails on device_map, the CPU retry on the tokenizer
+  calls <- 0
+  fail <- function(...) {
+    calls <<- calls + 1
+    if (calls == 1) stop("ValueError: device_map is not supported")
+    stop("ImportError: \n requires the protobuf library but it was not found in your environment.")
+  }
+  local_mocked_bindings(
+    py_run_string = function(...) invisible(NULL),
+    import = function(module, ...) list(pipeline = fail),
+    py_available = function(...) FALSE,
+    .package = "reticulate"
+  )
+  expect_error(
+    transformer_scores("x", c("a", "b"), transformer = "owner/name", device = "cpu"),
+    "needs the Python package protobuf"
+  )
+  expect_equal(calls, 2)
 })

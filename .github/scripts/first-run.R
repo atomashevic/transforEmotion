@@ -42,6 +42,19 @@ if (phase == "first") {
     check(names(which.max(s[[1]])) == "joy", "top class is not joy")
   })
 
+  step("tokenizer converted from SentencePiece (needs protobuf)", {
+    # joeddav/xlm-roberta-large-xnli has no tokenizer.json, so transformers
+    # converts its SentencePiece model, which needs protobuf. Only the
+    # tokenizer files are downloaded (about 5 MB), not the 2.2 GB weights.
+    check(reticulate::py_module_available("google.protobuf"), "protobuf is not installed")
+    tok <- reticulate::import("transformers")$AutoTokenizer$from_pretrained(
+      "joeddav/xlm-roberta-large-xnli")
+    ids <- as.integer(unlist(tok$encode("Estoy muy contento de verte hoy")))
+    check(isTRUE(tok$is_fast), "not a fast tokenizer")
+    check(identical(ids, c(0L, 157607L, 3591L, 10941L, 31L, 8L, 38715L, 12119L, 2L)),
+          "unexpected token ids")
+  })
+
   step("torch device", {
     torch <- reticulate::import("torch")
     message("torch ", torch$`__version__`,

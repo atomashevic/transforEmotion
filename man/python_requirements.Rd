@@ -38,6 +38,16 @@ When \code{TRANSFOREMOTION_PYTHON} is set to a Python executable,
 transforEmotion uses that interpreter and does not install anything. This is
 the route for read-only environments such as Apptainer images, where uv
 cannot write to its cache.
+
+A fixed environment does not change when transforEmotion is updated, and a
+new version can add Python packages. After an update, rebuild the
+environment or the image from \code{python_requirements()}, or install the
+new packages into it. For a read-only image that you cannot rebuild,
+install a missing package into a writable folder on a machine with network
+access, for example
+\code{uv pip install --python <python> --target <folder> "protobuf>=3.20,<8"},
+and start R with the environment variable \code{PYTHONPATH} set to that
+folder.
 }
 \examples{
 # Requirements for a CPU environment with the rag() packages
