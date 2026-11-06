@@ -51,11 +51,16 @@ manual uv installation is needed; reticulate downloads uv when it is not
 on the PATH.
 
 PyTorch is installed as a CPU-only build unless an NVIDIA GPU is detected.
+For a GPU of compute capability 10.0 or higher (Blackwell: GeForce RTX 50
+series, B200), the CUDA 13.0 build is installed, which needs NVIDIA driver
+R580 or later. For other GPUs, the CUDA 12.6 build is installed, which
+needs driver R525 or later. \code{nvidia-smi} reports the compute
+capability.
 Set \code{TE_FORCE_CPU=1} to always use the CPU build, or
-\code{TRANSFOREMOTION_USE_GPU=1} to always use the CUDA build. The choice is
-made when the package is loaded, so set either variable in
-\code{.Renviron} or before \code{library(transforEmotion)}, in a new R
-session.
+\code{TRANSFOREMOTION_USE_GPU=1} to always use the CUDA build. The build
+cannot change after Python starts, at the first analysis of the session,
+so set either variable before it. To set it for every session, add it to
+\code{.Renviron}.
 
 When \code{TRANSFOREMOTION_PYTHON} is set, \code{setup_modules()} installs
 nothing. It compares the packages in that environment with the

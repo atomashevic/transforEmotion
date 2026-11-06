@@ -27,6 +27,14 @@
     if (reticulate::py_available(initialize = FALSE)) {
         .te_import_torch_own_blas()
     }
+
+    # Where symlinks cannot be made (Windows without Developer Mode), a model
+    # download can fail with WinError 1314 without this. After the torch
+    # import above, so nothing loads a BLAS before torch.
+    setHook("reticulate.onPyInit", .te_lock_symlink_check)
+    if (reticulate::py_available(initialize = FALSE)) {
+        .te_lock_symlink_check()
+    }
 }
 
 .onAttach <- function(libname, pkgname)

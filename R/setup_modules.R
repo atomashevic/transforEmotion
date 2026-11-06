@@ -75,11 +75,16 @@ check_nvidia_gpu <- function() {
 #' on the PATH.
 #'
 #' PyTorch is installed as a CPU-only build unless an NVIDIA GPU is detected.
+#' For a GPU of compute capability 10.0 or higher (Blackwell: GeForce RTX 50
+#' series, B200), the CUDA 13.0 build is installed, which needs NVIDIA driver
+#' R580 or later. For other GPUs, the CUDA 12.6 build is installed, which
+#' needs driver R525 or later. \code{nvidia-smi} reports the compute
+#' capability.
 #' Set \code{TE_FORCE_CPU=1} to always use the CPU build, or
-#' \code{TRANSFOREMOTION_USE_GPU=1} to always use the CUDA build. The choice is
-#' made when the package is loaded, so set either variable in
-#' \code{.Renviron} or before \code{library(transforEmotion)}, in a new R
-#' session.
+#' \code{TRANSFOREMOTION_USE_GPU=1} to always use the CUDA build. The build
+#' cannot change after Python starts, at the first analysis of the session,
+#' so set either variable before it. To set it for every session, add it to
+#' \code{.Renviron}.
 #'
 #' When \code{TRANSFOREMOTION_PYTHON} is set, \code{setup_modules()} installs
 #' nothing. It compares the packages in that environment with the
@@ -128,7 +133,7 @@ setup_modules <- function(extras = character(), download_models = TRUE,
   if (isFALSE(cuda)) .te_torch_device("auto")
 
   # NLTK data llama-index would otherwise download on first import
-  if ("rag" %in% extras && !.te_hf_offline()) .te_download_nltk_data()
+  if ("rag" %in% extras && !.te_hf_offline()) .te_use_nltk_cache()
 
   defaults <- if (isTRUE(download_models)) .te_setup_models(extras)
   # Face recognition model for detect_faces() (not on the Hugging Face Hub)
