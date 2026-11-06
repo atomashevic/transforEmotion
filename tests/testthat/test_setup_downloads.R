@@ -69,6 +69,13 @@ local_build_state <- function(use_gpu, python_started = FALSE, env = parent.fram
     },
     .package = "reticulate", .env = env
   )
+  # One name per build, also on macOS, where both builds are plain torch
+  local_mocked_bindings(
+    .te_torch_requirements = function(use_gpu = FALSE, ...) {
+      if (isTRUE(use_gpu)) "torch-cuda" else "torch-cpu"
+    },
+    .env = env
+  )
   calls
 }
 
@@ -84,10 +91,8 @@ test_that("TE_FORCE_CPU set after loading switches the build before Python start
   Sys.setenv(TE_FORCE_CPU = "1")
   expect_true(transforEmotion:::.te_follow_gpu_env())
   expect_false(state$use_gpu)
-  expect_equal(calls$require[[1]]$action, "remove")
-  expect_true(all(grepl("cu130", calls$require[[1]]$packages, fixed = TRUE)))
-  expect_equal(calls$require[[2]]$action, "add")
-  expect_false(any(grepl("cu1", calls$require[[2]]$packages, fixed = TRUE)))
+  expect_equal(calls$require[[1]], list(action = "remove", packages = "torch-cuda"))
+  expect_equal(calls$require[[2]], list(action = "add", packages = "torch-cpu"))
 
   # Each change is acted on once
   expect_false(transforEmotion:::.te_follow_gpu_env())
