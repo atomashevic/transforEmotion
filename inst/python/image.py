@@ -28,6 +28,20 @@ try:
 except Exception:
     FACE_CASCADE = None
 
+def _te_torch_device():
+    """Device for the models of this module.
+
+    torch.cuda.is_available() is TRUE also when the PyTorch build has no
+    kernels for the GPU. transforEmotion's R code checks for kernels
+    (.te_torch_device() in R/torch_device.R) and passes its choice in
+    TRANSFOREMOTION_TORCH_DEVICE.
+    """
+    device = os.environ.get("TRANSFOREMOTION_TORCH_DEVICE")
+    if not device:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    return torch.device(device)
+
+
 # ============================================================================
 # Vision Model Adapter Architecture
 # ============================================================================
@@ -44,7 +58,7 @@ class VisionModelAdapter(ABC):
         self.local_model_path = local_model_path
         self.model = None
         self.processor = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = _te_torch_device()
         self._initialized = False
     
     @abstractmethod

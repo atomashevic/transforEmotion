@@ -124,10 +124,13 @@ setup_modules <- function(extras = character(), download_models = TRUE,
 
   # Start Python so a failed resolution is reported here, not on first use
   torch <- reticulate::import("torch")
+  cuda <- .te_cuda_supported()
   message(
     "Python environment ready: torch ", torch$`__version__`,
-    if (isTRUE(torch$cuda$is_available())) " (CUDA)" else " (CPU)"
+    if (is.na(cuda)) " (CPU)" else if (cuda) " (CUDA)" else " (CUDA, unsupported GPU)"
   )
+  # Says once per session why the GPU is not used and how to fix it
+  if (isFALSE(cuda)) .te_torch_device("auto")
 
   # NLTK data llama-index would otherwise download on first import
   if ("rag" %in% extras && !.te_hf_offline()) .te_use_nltk_cache()

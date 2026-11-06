@@ -246,12 +246,10 @@ transformer_scores <- function(
   }
 
   # Ask PyTorch rather than check_nvidia_gpu(): the CPU build of PyTorch
-  # (TE_FORCE_CPU, setup_cache(gpu = FALSE)) or a hidden GPU
-  # (CUDA_VISIBLE_DEVICES="") cannot use an NVIDIA GPU that is present
-  if(device == "auto"){
-    torch <- reticulate::import("torch")
-    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
-  }
+  # (TE_FORCE_CPU, setup_cache(gpu = FALSE)), a hidden GPU
+  # (CUDA_VISIBLE_DEVICES="") or a build without kernels for the GPU cannot
+  # use an NVIDIA GPU that is present
+  device <- .te_torch_device(device)
 
   # Suppress Python logging and warnings
   reticulate::py_run_string("

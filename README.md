@@ -438,7 +438,7 @@ register_vision_model(
 
 ## GPU Support
 
-When an NVIDIA GPU is detected on Linux or Windows, a CUDA build of PyTorch is installed; otherwise the CPU-only build is used. Blackwell GPUs (GeForce RTX 50 series, B200) get the CUDA 13.0 build, which needs NVIDIA driver R580 or newer. Other GPUs get the CUDA 12.6 build, which needs driver R525 or newer. On macOS, transforEmotion runs on the CPU, also on Apple Silicon: `device = "auto"` chooses CUDA or the CPU and never the Apple GPU (MPS). The CUDA libraries come with PyTorch, so no CUDA Toolkit or compiler is required.
+When an NVIDIA GPU is detected on Linux or Windows, a CUDA build of PyTorch is installed; otherwise the CPU-only build is used. Blackwell GPUs (GeForce RTX 50 series, B200) get the CUDA 13.0 build, which needs NVIDIA driver R580 or newer. Other GPUs get the CUDA 12.6 build, which needs driver R525 or newer. If the installed build has no kernels for the GPU, for example a fixed environment or a Docker image with the CUDA 12.6 build on a Blackwell GPU, `device = "auto"` uses the CPU, and a message says how to install a build for the GPU. On macOS, transforEmotion runs on the CPU, also on Apple Silicon: `device = "auto"` chooses CUDA or the CPU and never the Apple GPU (MPS). The CUDA libraries come with PyTorch, so no CUDA Toolkit or compiler is required.
 
 To override the detection, set an environment variable before the first analysis of the session. The PyTorch build cannot change after Python starts. To set the variable for every session, add it to `.Renviron` (`usethis::edit_r_environ()` opens the file).
 
@@ -606,7 +606,7 @@ docker run --rm ghcr.io/atomashevic/transforemotion:main cat /opt/transforEmotio
 docker run --rm ghcr.io/atomashevic/transforemotion:main cat /opt/transforEmotion/models.txt
 ```
 
-`BUILD_INFO` gives the package version, the transforEmotion commit of the build (`revision`), the build date, the versions of R, Python, PyTorch and uv, and the build arguments `SNAPSHOT_DATE`, `EXTRAS`, `GPU` and `MODELS`. `python-packages.txt` lists each Python package with its version. It lists PyTorch and torchvision by the URL of the wheel, and `BUILD_INFO` gives the PyTorch version. `models.txt` lists each model with its revision and its size in bytes. The label `org.opencontainers.image.revision` also gives the commit. In Apptainer, use `apptainer exec transforemotion_main.sif cat /opt/transforEmotion/BUILD_INFO`.
+`BUILD_INFO` gives the package version, the transforEmotion commit of the build (`revision`), the build date, the versions of R, Python, PyTorch and uv, and the build arguments `SNAPSHOT_DATE`, `EXTRAS`, `GPU`, `CUDA` and `MODELS`. `python-packages.txt` lists each Python package with its version. It lists PyTorch and torchvision by the URL of the wheel, and `BUILD_INFO` gives the PyTorch version. `models.txt` lists each model with its revision and its size in bytes. The label `org.opencontainers.image.revision` also gives the commit. In Apptainer, use `apptainer exec transforemotion_main.sif cat /opt/transforEmotion/BUILD_INFO`.
 
 `packageVersion("transforEmotion")` does not identify an image, because builds of the GitHub version report the number of the last CRAN release. Images built from an older `docker/Dockerfile` have the labels of the base image, rocker/r-ver, and no `BUILD_INFO`. For these images, use `docker run --rm IMAGE uv pip list --python /opt/transforEmotion/venv/bin/python`.
 
@@ -621,7 +621,7 @@ docker build -f docker/Dockerfile --build-arg GPU=1 -t transforemotion:cuda .  #
 docker run --rm -it -v "$PWD":/work transforemotion
 ```
 
-`EXTRAS` adds optional feature sets, separated by commas: `rag`, `youtube`, `audio`, `findingemo` and `gpu`. `rag` also adds the models of `rag()` (about 2.3 GB), and `audio` the model of `speech_scores()` (about 800 MB). `MODELS` adds Hugging Face models, separated by commas, for example `--build-arg MODELS=joeddav/xlm-roberta-large-xnli`. `GPU=1` installs the CUDA 12.6 build of PyTorch. `--build-arg REVISION="$(git rev-parse HEAD)"` records the commit in `BUILD_INFO`.
+`EXTRAS` adds optional feature sets, separated by commas: `rag`, `youtube`, `audio`, `findingemo` and `gpu`. `rag` also adds the models of `rag()` (about 2.3 GB), and `audio` the model of `speech_scores()` (about 800 MB). `MODELS` adds Hugging Face models, separated by commas, for example `--build-arg MODELS=joeddav/xlm-roberta-large-xnli`. `GPU=1` installs the CUDA 12.6 build of PyTorch, for NVIDIA GPUs of compute capability 5.0 to 9.0 (driver R525 or later). A Blackwell GPU (GeForce RTX 50 series, B200) needs the CUDA 13.0 build: add `--build-arg CUDA=cu130` (compute capability 7.5 to 12.0, driver R580 or later). In an image with the CUDA 12.6 build, transforEmotion uses the CPU on a Blackwell GPU and says why. `--build-arg REVISION="$(git rev-parse HEAD)"` records the commit in `BUILD_INFO`.
 
 To use a local image in Apptainer, convert it with `apptainer build transforemotion.sif docker-daemon://transforemotion:latest`. Apptainer images are read-only, which is why the image uses a fixed environment rather than uv's cache. On an arm64 machine, the build gives an arm64 image. This image also holds the CUDA 13 libraries of PyTorch (about 2.5 GB to download), because transforEmotion selects the CPU build of PyTorch only on x86_64.
 

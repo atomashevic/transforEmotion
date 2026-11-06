@@ -298,6 +298,7 @@ face_scores <- function(faces, classes, model = "oai-base", local_model_path = N
   paths <- as.character(paths)
 
   reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
+  .te_python_device()
   # Rows of one image are scored together, so each image is read once
   order_rows <- order(paths)
   scores <- without_hf_token({

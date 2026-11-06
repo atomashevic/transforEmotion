@@ -86,6 +86,8 @@ image_scores <- function(image, classes, face_selection = "largest", model = "oa
     setup_modules(download_models = FALSE)
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
+  # GPU or CPU for the models of image.py
+  .te_python_device()
 
   # check if image has image file extension
   if (!grepl("\\.(jpg|jpeg|png|bmp)$", image)) {
@@ -291,6 +293,7 @@ image_scores_dir <- function(dir,
     setup_modules(download_models = FALSE)
     reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
   }
+  .te_python_device()
 
   # Call batch classifier in Python (avoid sending tokens for non-gated models)
   df <- without_hf_token({

@@ -112,6 +112,9 @@ speech_scores <- function(audio, classes, nsegments = 100, segment_length = 5,
     audio <- te_audio$download_youtube_audio(audio, dir, "audio")
   }
 
+  # GPU or CPU for the CLAP model. Here and not in .te_audio_py(), because
+  # the audio helpers of te_audio.py do not need torch
+  .te_python_device()
   res <- without_hf_token(
     te_audio$speech_analyze(
       path = normalizePath(audio, mustWork = TRUE),

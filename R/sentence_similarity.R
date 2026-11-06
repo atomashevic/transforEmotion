@@ -123,6 +123,7 @@ sentence_similarity <- function(
     sentence_transformers <- reticulate::import("sentence_transformers")
 
     # Move the classifier to a device that the user sets
+    if(device != "auto") device <- .te_torch_device(device)
     if(device != "auto" && !identical(classifier$device$type, device)){
       classifier$to(device)
     }
@@ -144,10 +145,7 @@ sentence_similarity <- function(
 
     # SentenceTransformer() takes "cpu" or "cuda", not "auto". Ask PyTorch,
     # as transformer_scores() does
-    if(device == "auto"){
-      torch <- reticulate::import("torch")
-      device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
-    }
+    device <- .te_torch_device(device)
 
     # Check for custom transformer
     if(transformer %in% c("all_minilm_l6")){

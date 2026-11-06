@@ -24,11 +24,17 @@ auto_device <- function(device, transformer, verbose = TRUE)
     # Import {torch}
     torch <- reticulate::import("torch")
 
-    # Check for CUDA
-    if(torch$cuda$is_available()){
+    # Check for CUDA and for kernels of the PyTorch build for GPU 0
+    if(identical(.te_torch_device("auto"), "cuda")){
 
-      # Number of GPU devices
-      n_gpu <- torch$cuda$device_count()
+      # Number of GPU devices. device_map = "auto" spreads a model over all
+      # of them, so with a GPU the build cannot run, only GPU 0 is used
+      status <- .te_cuda_status()
+      n_gpu <- if (NROW(status$devices) && !all(status$devices$supported)) {
+        1
+      } else {
+        torch$cuda$device_count()
+      }
 
       # Branch for number of GPUs
       if(n_gpu == 1){
@@ -55,6 +61,11 @@ auto_device <- function(device, transformer, verbose = TRUE)
       }
 
     }else{device <- "cpu"}
+
+  } else if (grepl("^cuda", device)) {
+
+    # Stop with an explanation if the PyTorch build has no kernels for the GPU
+    device <- .te_torch_device(device)
 
   }
 
