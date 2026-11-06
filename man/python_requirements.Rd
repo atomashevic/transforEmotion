@@ -16,7 +16,10 @@ python_requirements(
 \code{\link{setup_modules}}.}
 
 \item{gpu}{Logical. Use the CUDA build of PyTorch (Linux and Windows)
-instead of the CPU build.}
+instead of the CPU build. The CUDA build is the one for the NVIDIA GPU of
+the current machine (see Details of \code{\link{setup_modules}}), and the
+CUDA 12.6 build when \code{nvidia-smi} cannot report the GPU, for example
+in a Docker build.}
 
 \item{sysname, machine}{Target operating system and architecture, as
 returned by \code{Sys.info()}. Default to the current machine.}

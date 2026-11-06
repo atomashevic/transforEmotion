@@ -46,9 +46,97 @@ te_should_use_gpu <- function() {
 }
 
 #' @noRd
+# The variables that override te_should_use_gpu(), as they are set now
+.te_gpu_env <- function() {
+  Sys.getenv(c("TRANSFOREMOTION_FORCE_CPU", "TE_FORCE_CPU", "TRANSFOREMOTION_USE_GPU"),
+             unset = "")
+}
+
+#' @noRd
+# Apply TE_FORCE_CPU or TRANSFOREMOTION_USE_GPU when the user sets or changes
+# it after the PyTorch build was chosen, which happens when the package loads.
+# library() does nothing for a loaded package, so Sys.setenv() before
+# library() is too late after an earlier library() call in the session.
+# Before Python starts, the declared build is switched. After that, it cannot change,
+# and a warning says so. Each change is acted on once.
+.te_follow_gpu_env <- function() {
+  env <- .te_gpu_env()
+  old <- .te_py_state$gpu_env
+  if (is.null(old) || identical(env, old)) return(invisible(FALSE))
+  .te_py_state$gpu_env <- env
+
+  use_gpu <- te_should_use_gpu()
+  if (identical(use_gpu, isTRUE(.te_py_state$use_gpu))) return(invisible(FALSE))
+  if (!reticulate::py_available(initialize = FALSE)) {
+    .te_set_torch_flavor(use_gpu)
+    return(invisible(TRUE))
+  }
+  changed <- names(env)[env != old]
+  warning(
+    paste(changed, collapse = " and "), " was set after Python started with the ",
+    if (isTRUE(.te_py_state$use_gpu)) "CUDA" else "CPU", " build of PyTorch, ",
+    "and the build cannot change while Python runs. Restart R, set the ",
+    "variable before the first analysis (or in .Renviron), and run the ",
+    "analysis again.",
+    call. = FALSE
+  )
+  invisible(FALSE)
+}
+
+#' @noRd
+# Compute capability of each NVIDIA GPU of this machine, from nvidia-smi
+# (drivers from R510 on report it). NA when nvidia-smi is missing or does not
+# report it, for example on an HPC login node or in a Docker build.
+.te_gpu_compute_capability <- function() {
+  if (!nzchar(Sys.which("nvidia-smi"))) return(NA_real_)
+  out <- tryCatch(
+    suppressWarnings(system2("nvidia-smi", c("--query-gpu=compute_cap", "--format=csv,noheader"),
+                             stdout = TRUE, stderr = FALSE)),
+    error = function(e) character()
+  )
+  capability <- suppressWarnings(as.numeric(trimws(out)))
+  capability <- capability[!is.na(capability)]
+  if (length(capability)) capability else NA_real_
+}
+
+#' @noRd
+# The CUDA build of PyTorch 2.14 for GPUs with these compute capabilities
+# (one value per GPU, NA when unknown). The PyTorch index has these builds:
+#   cu126  compute capability 5.0 to 9.0 (Maxwell to Hopper), NVIDIA driver
+#          R525 or later
+#   cu130  compute capability 7.5 to 12.0 (Turing to Blackwell), driver R580
+#          or later
+#   cu132  as cu130, with a newer driver
+# The cu126 build has no kernels for Blackwell GPUs (10.0 and 12.0: B200,
+# GeForce RTX 50 series). torch.cuda.is_available() is TRUE there, and the
+# first CUDA operation fails with "no kernel image is available for execution
+# on the device". The cu130 build cannot run on Maxwell, Pascal and Volta GPUs
+# (below 7.5). PyTorch 2.15 publishes no cu126 build.
+.te_cuda_build_for <- function(capability) {
+  # One build serves all GPUs of the machine. No build serves a Blackwell GPU
+  # together with a GPU below 7.5; cu130 serves the Blackwell GPU, which CUDA
+  # numbers first by default (CUDA_DEVICE_ORDER=FASTEST_FIRST), so cuda:0
+  if (any(capability >= 10, na.rm = TRUE)) "cu130" else "cu126"
+}
+
+#' @noRd
+# The CUDA build of PyTorch for the NVIDIA GPUs of this machine. nvidia-smi
+# runs once per session, so every requirement declared in the session names
+# the same build.
+.te_cuda_build <- function() {
+  if (is.null(.te_py_state$cuda_build)) {
+    .te_py_state$cuda_build <- .te_cuda_build_for(.te_gpu_compute_capability())
+  }
+  .te_py_state$cuda_build
+}
+
+#' @noRd
+# `cuda` is evaluated only for a CUDA build, so nvidia-smi does not run for
+# the CPU build
 .te_torch_requirements <- function(use_gpu = FALSE,
                                    sysname = Sys.info()[["sysname"]],
-                                   machine = Sys.info()[["machine"]]) {
+                                   machine = Sys.info()[["machine"]],
+                                   cuda = .te_cuda_build()) {
   x86_64 <- machine %in% c("x86_64", "x86-64", "AMD64")
 
   # PyTorch stopped publishing Intel macOS wheels after 2.2
@@ -59,12 +147,12 @@ te_should_use_gpu <- function() {
   # PyPI's Linux x86_64 torch bundles about 2.5 GB of CUDA libraries, and its
   # Windows torch is CPU-only. The other builds exist only on the PyTorch
   # index; direct wheel URLs avoid adding that index, which would shadow PyPI
-  # for every other package. CUDA 12.6 builds run on older NVIDIA drivers than
-  # the CUDA 13 builds on PyPI.
+  # for every other package. The CUDA build depends on the GPU
+  # (.te_cuda_build_for()).
   flavor <- if (identical(sysname, "Linux") && x86_64) {
-    if (isTRUE(use_gpu)) "cu126" else "cpu"
+    if (isTRUE(use_gpu)) cuda else "cpu"
   } else if (identical(sysname, "Windows") && x86_64 && isTRUE(use_gpu)) {
-    "cu126"
+    cuda
   }
 
   if (is.null(flavor)) {
@@ -169,7 +257,10 @@ te_should_use_gpu <- function() {
 #' @param extras Character vector of optional feature sets to include; see
 #' \code{\link{setup_modules}}.
 #' @param gpu Logical. Use the CUDA build of PyTorch (Linux and Windows)
-#' instead of the CPU build.
+#' instead of the CPU build. The CUDA build is the one for the NVIDIA GPU of
+#' the current machine (see Details of \code{\link{setup_modules}}), and the
+#' CUDA 12.6 build when \code{nvidia-smi} cannot report the GPU, for example
+#' in a Docker build.
 #' @param sysname,machine Target operating system and architecture, as
 #' returned by \code{Sys.info()}. Default to the current machine.
 #'
@@ -226,7 +317,7 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 #' @noRd
 # Whether the torch of the running Python is a CUDA build, from its package
 # metadata, so torch is not imported. NA when torch is not installed. The
-# PyTorch index marks its CUDA builds with "+cu126"; the CUDA build on PyPI
+# PyTorch index marks its CUDA builds with "+cu126" or "+cu130"; the CUDA build on PyPI
 # (Linux x86_64) has a plain version and requires the nvidia-* packages.
 .te_torch_is_cuda <- function(metadata = reticulate::import("importlib.metadata")) {
   torch <- tryCatch(as.character(metadata$version("torch")), error = function(e) NA_character_)
@@ -421,10 +512,14 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   }
 
   features <- unique(c("core", features))
+  if ("core" %in% .te_py_state$features) .te_follow_gpu_env()
   todo <- setdiff(features, .te_py_state$features)
 
   # Only the core set depends on the GPU (it picks the PyTorch build)
-  if ("core" %in% todo) .te_py_state$use_gpu <- te_should_use_gpu()
+  if ("core" %in% todo) {
+    .te_py_state$use_gpu <- te_should_use_gpu()
+    .te_py_state$gpu_env <- .te_gpu_env()
+  }
   # Once Python runs, reticulate installs additions at once and only warns
   # when it cannot: offline, or when a package is already declared with
   # another version constraint (Python started before transforEmotion was
@@ -605,6 +700,7 @@ python_requirements <- function(extras = character(), gpu = FALSE,
     return(isTRUE(.te_torch_is_cuda()))
   }
   if (!"core" %in% .te_py_state$features) return(te_should_use_gpu())
+  .te_follow_gpu_env()
   isTRUE(.te_py_state$use_gpu)
 }
 
@@ -618,6 +714,8 @@ python_requirements <- function(extras = character(), gpu = FALSE,
   if (!"core" %in% .te_py_state$features) {
     .te_require("core", check_cache = FALSE)
   }
+  # A variable set before this call does not undo the choice made here
+  .te_py_state$gpu_env <- .te_gpu_env()
   if (identical(.te_py_state$use_gpu, use_gpu)) return(invisible(TRUE))
   if (reticulate::py_available(initialize = FALSE)) {
     stop("Python has already started in this session. Restart R and set ",
@@ -686,6 +784,37 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 }
 
 #' @noRd
+# Where a user cannot create symbolic links (Windows without Developer Mode or
+# administrator rights, or a FAT or exFAT drive), huggingface_hub copies each
+# file into the snapshot folder of its cache instead. It finds this out once
+# per model folder with are_symlinks_supported(), which records the folder as
+# supporting symlinks before it runs its test. snapshot_download() fetches
+# files in 8 threads, so a thread that asks while the test runs gets that
+# provisional answer, and its os.symlink() fails, on Windows with "[WinError
+# 1314] A required privilege is not held by the client". The lock makes the
+# other threads wait for the result of the test. Best effort: without
+# huggingface_hub nothing is changed.
+.te_lock_symlink_check <- function() {
+  tryCatch(
+    reticulate::py_run_string(local = TRUE, paste(
+      "import threading",
+      "from huggingface_hub import file_download",
+      "if not getattr(file_download.are_symlinks_supported, '_te_locked', False):",
+      "    def are_symlinks_supported(cache_dir=None,",
+      "                               _check=file_download.are_symlinks_supported,",
+      "                               _lock=threading.Lock()):",
+      "        with _lock:",
+      "            return _check(cache_dir)",
+      "    are_symlinks_supported._te_locked = True",
+      "    file_download.are_symlinks_supported = are_symlinks_supported",
+      sep = "\n"
+    )),
+    error = function(e) invisible(NULL)
+  )
+  invisible(TRUE)
+}
+
+#' @noRd
 # The package's cache folder. tools::R_user_dir() exists from R 4.0; on older
 # R, use the folder it returns on Linux
 .te_user_cache_dir <- function(r_version = getRversion()) {
@@ -699,28 +828,78 @@ python_requirements <- function(extras = character(), gpu = FALSE,
 # llama-index downloads NLTK data into each Python environment on first
 # import. A single folder in the package cache lets data downloaded once (for
 # example by setup_modules(extras = "rag")) serve every environment and
-# offline sessions. An NLTK_DATA set by the user takes precedence.
-.te_use_nltk_cache <- function() {
+# offline sessions. An NLTK_DATA set by the user takes precedence. Data that
+# is missing is downloaded here unless HF_HUB_OFFLINE is set, so llama-index
+# does not download it (see .te_download_nltk_data()).
+.te_use_nltk_cache <- function(download = !.te_hf_offline()) {
   nltk_dir <- file.path(.te_user_cache_dir(), "nltk_data")
   reticulate::py_run_string(sprintf(
     "import os; os.environ.setdefault('NLTK_DATA', %s)",
     encodeString(normalizePath(nltk_dir, winslash = "/", mustWork = FALSE), quote = "'")
   ))
+  if (isTRUE(download)) {
+    .te_download_nltk_data(reticulate::import("os")$environ[["NLTK_DATA"]])
+  }
   invisible(TRUE)
 }
 
+# The NLTK data llama-index looks for, with the folder of each package in an
+# NLTK data directory. rag() does not use it: only llama-index's keyword-table
+# indices do, and its sentence splitter needs no data. But llama-index checks
+# for these packages on import and tries to download the missing ones, which
+# prints an error for each and tries the network also offline. llama-index
+# 0.10 checks for "punkt" but downloads "punkt_tab", so without "punkt" it
+# tries again on every import.
+.te_nltk_packages <- c(stopwords = "corpora", punkt = "tokenizers", punkt_tab = "tokenizers")
+.te_nltk_data_url <- "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages"
+
 #' @noRd
-# Download the NLTK data llama-index looks for. llama-index 0.10 checks for
-# "punkt" but downloads "punkt_tab", so without "punkt" it tries to download
-# again on every import, which fails offline.
-.te_download_nltk_data <- function() {
-  .te_use_nltk_cache()
-  os <- reticulate::import("os")
-  nltk <- reticulate::import("nltk")
-  for (pkg in c("stopwords", "punkt", "punkt_tab")) {
-    nltk$download(pkg, download_dir = os$environ[["NLTK_DATA"]], quiet = TRUE)
+# Download the missing NLTK data of .te_nltk_packages into the NLTK data
+# directory `dir`, in the layout that nltk.download() makes: the zip file and
+# the folder unzipped from it. R downloads the files, not nltk.download().
+# NLTK 3.10 refuses to connect to a host that resolves to an address outside
+# the public internet. A proxy client in fake-IP mode (Clash, for example,
+# resolves every host name into 198.18.0.0/15) makes every host resolve to
+# such an address, so nltk.download() stops with "SSRF attempt to restricted
+# IP". A package is unzipped into a temporary folder first, so an
+# interrupted download does not leave a folder that looks complete.
+.te_download_nltk_data <- function(dir, base_url = .te_nltk_data_url) {
+  installed <- dir.exists(file.path(dir, .te_nltk_packages, names(.te_nltk_packages)))
+  todo <- .te_nltk_packages[!installed]
+  if (!length(todo)) return(invisible(TRUE))
+
+  # The timeout applies to the whole file, and punkt is 14 MB
+  old <- options(timeout = max(600, getOption("timeout")))
+  on.exit(options(old), add = TRUE)
+  urls <- sprintf("%s/%s/%s.zip", base_url, todo, names(todo))
+  message("Downloading NLTK data for llama-index: ", paste(names(todo), collapse = ", "), " ...")
+  failed <- integer()
+  for (i in seq_along(todo)) {
+    pkg <- names(todo)[[i]]
+    folder <- file.path(dir, todo[[i]])
+    part <- file.path(folder, paste0(pkg, ".part"))
+    zip <- file.path(part, paste0(pkg, ".zip"))
+    dir.create(part, recursive = TRUE, showWarnings = FALSE)
+    ok <- tryCatch(
+      utils::download.file(urls[[i]], zip, mode = "wb", quiet = TRUE) == 0 &&
+        length(utils::unzip(zip, exdir = part)) > 0 &&
+        dir.exists(file.path(part, pkg)),
+      error = function(e) FALSE, warning = function(w) FALSE
+    )
+    ok <- ok && file.rename(file.path(part, pkg), file.path(folder, pkg))
+    if (ok) file.rename(zip, file.path(folder, basename(zip)))
+    unlink(part, recursive = TRUE)
+    if (!ok) failed <- c(failed, i)
   }
-  invisible(TRUE)
+  if (length(failed)) {
+    message(
+      "Could not download NLTK data. rag() works without it, but llama-index ",
+      "prints an error for each missing package when it loads. To add it, ",
+      "download each file and unzip it into its folder:\n",
+      paste0("  ", urls[failed], " -> ", file.path(dir, todo[failed]), collapse = "\n")
+    )
+  }
+  invisible(!length(failed))
 }
 
 #' @noRd

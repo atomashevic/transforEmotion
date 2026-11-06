@@ -5,7 +5,7 @@ test_that("Linux x86_64 uses CPU PyTorch wheels unless a GPU is used", {
   expect_match(cpu[1], "^torch @ .*manylinux_2_28_x86_64\\.whl$")
   expect_match(cpu[2], "^torchvision @ ")
 
-  gpu <- transforEmotion:::.te_torch_requirements(TRUE, "Linux", "x86_64")
+  gpu <- transforEmotion:::.te_torch_requirements(TRUE, "Linux", "x86_64", cuda = "cu126")
   expect_true(all(grepl("/whl/cu126/", gpu, fixed = TRUE)))
 })
 
@@ -14,7 +14,7 @@ test_that("Windows uses PyPI torch on CPU and CUDA wheels on GPU", {
     transforEmotion:::.te_torch_requirements(FALSE, "Windows", "x86-64"),
     c("torch==2.14.0", "torchvision==0.29.0")
   )
-  gpu <- transforEmotion:::.te_torch_requirements(TRUE, "Windows", "x86-64")
+  gpu <- transforEmotion:::.te_torch_requirements(TRUE, "Windows", "x86-64", cuda = "cu126")
   expect_true(all(grepl("cu126-cp312-cp312-win_amd64.whl", gpu, fixed = TRUE)))
 })
 
@@ -54,6 +54,7 @@ test_that("setup code does not modify the Python environment with pip", {
 })
 
 test_that("python_requirements() combines core and extras for a target platform", {
+  local_mocked_bindings(.te_cuda_build = function() "cu126")
   reqs <- python_requirements(extras = "rag", gpu = TRUE, sysname = "Windows", machine = "x86-64")
   expect_true(all(grepl("cu126-cp312-cp312-win_amd64.whl", reqs[1:2], fixed = TRUE)))
   expect_true(any(grepl("^llama-index-core", reqs)))
