@@ -11,6 +11,7 @@
 #   docker build -f docker/Dockerfile -t transforemotion .
 #   docker build -f docker/Dockerfile --build-arg EXTRAS=rag -t transforemotion:rag .
 #   docker build -f docker/Dockerfile --build-arg GPU=1 -t transforemotion:cuda .
+#   docker build -f docker/Dockerfile --build-arg GPU=1 --build-arg CUDA=cu130 -t transforemotion:cu130 .
 #   docker build -f docker/Dockerfile --build-arg REVISION="$(git rev-parse HEAD)" -t transforemotion .
 #
 # Build arguments:
@@ -18,7 +19,14 @@
 #                  ("rag" also downloads the rag() models, about 2.3 GB, and
 #                  "audio" the speech_scores() model, about 800 MB)
 #   MODELS         comma-separated extra Hugging Face model IDs to include
-#   GPU            1 for the CUDA 12.6 build of PyTorch (run with --gpus all)
+#   GPU            1 for the CUDA build of PyTorch (run with --gpus all)
+#   CUDA           the CUDA build for GPU=1. The build machine has no GPU, so
+#                  it cannot choose for the GPU where the image runs.
+#                  cu126 (default): compute capability 5.0 to 9.0 (Maxwell
+#                  to Hopper, also V100 and P100), NVIDIA driver R525 or later.
+#                  cu130: compute capability 7.5 to 12.0 (Turing to
+#                  Blackwell: GeForce RTX 50 series, B200), driver R580 or
+#                  later. A Blackwell GPU needs cu130
 #   SNAPSHOT_DATE  YYYY-MM-DD: install the R packages from the Posit Package
 #                  Manager snapshot of that date and resolve the Python
 #                  packages with uv --exclude-newer that date. Empty: latest.
@@ -83,6 +91,7 @@ RUN --mount=type=bind,source=.,target=/tmp/transforEmotion,rw \
 # declared just before the first step that reads it
 ARG EXTRAS=""
 ARG GPU=0
+ARG CUDA=cu126
 
 # Fixed Python environment built from the package's own requirements. uv
 # cannot run from a read-only cache, so the image uses a plain virtual
@@ -97,9 +106,12 @@ ARG GPU=0
 RUN Rscript -e ' \
       extras <- trimws(strsplit(Sys.getenv("EXTRAS"), ",")[[1]]); \
       gpu <- Sys.getenv("GPU") == "1"; \
+      cuda <- Sys.getenv("CUDA"); \
+      if (!cuda %in% c("cu126", "cu130")) stop("CUDA must be cu126 or cu130, not ", cuda); \
       if (gpu) extras <- c(extras, "gpu"); \
-      writeLines(transforEmotion::python_requirements(extras = extras, gpu = gpu), \
-                 file.path(Sys.getenv("TE_HOME"), "requirements.in"))' \
+      req <- transforEmotion::python_requirements(extras = extras, gpu = gpu); \
+      if (gpu) req <- gsub("cu1[0-9][0-9]", cuda, req); \
+      writeLines(req, file.path(Sys.getenv("TE_HOME"), "requirements.in"))' \
  && uv venv --no-cache --python 3.12 ${TE_HOME}/venv \
  && uv pip compile --no-cache --no-header --only-binary :all: \
       ${SNAPSHOT_DATE:+--exclude-newer "${SNAPSHOT_DATE}"} \
@@ -122,7 +134,7 @@ ENV TRANSFOREMOTION_PYTHON=${TE_HOME}/venv/bin/python \
 
 # Every Python module of the requested feature sets must import through R and
 # reticulate, as transforEmotion imports them; a missing package fails the
-# build. A GPU build must also have the CUDA build of PyTorch.
+# build. A GPU build must also have the CUDA build of PyTorch that CUDA names.
 RUN Rscript -e ' \
       extras <- trimws(strsplit(Sys.getenv("EXTRAS"), ",")[[1]]); \
       gpu <- Sys.getenv("GPU") == "1"; \
@@ -132,8 +144,12 @@ RUN Rscript -e ' \
       failed <- unlist(lapply(modules, function(m) tryCatch( \
         { reticulate::import(m); NULL }, \
         error = function(e) paste0(m, ": ", conditionMessage(e))))); \
-      if (gpu && is.null(reticulate::import("torch")$version$cuda)) \
+      torch_cuda <- reticulate::import("torch")$version$cuda; \
+      if (gpu && is.null(torch_cuda)) \
         failed <- c(failed, "torch: the CPU build is installed, but GPU=1"); \
+      if (gpu && !is.null(torch_cuda) && \
+          gsub("[.]", "", torch_cuda) != sub("^cu", "", Sys.getenv("CUDA"))) \
+        failed <- c(failed, paste0("torch: CUDA ", torch_cuda, " is installed, but CUDA=", Sys.getenv("CUDA"))); \
       if (length(failed)) { \
         message("Python modules that do not import:\n", paste(failed, collapse = "\n")); \
         quit(status = 1) \
@@ -224,6 +240,7 @@ RUN te=$(Rscript -e 'cat(format(packageVersion("transforEmotion")))') \
       "uv=${uv}" \
       "extras=${EXTRAS}" \
       "gpu=${GPU}" \
+      "cuda=$([ "${GPU}" = 1 ] && echo "${CUDA}")" \
       "models=${MODELS}" \
       > ${TE_HOME}/BUILD_INFO \
  && chmod a+r ${TE_HOME}/BUILD_INFO \

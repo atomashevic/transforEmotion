@@ -100,6 +100,8 @@ video_scores <- function(video, classes, nframes = 100, face_selection = "larges
     image_module <- reticulate::source_python(system.file("python", "image.py", package = "transforEmotion"))
     video_module <- reticulate::source_python(system.file("python", "video.py", package = "transforEmotion"))
   }
+  # GPU or CPU for the models of image.py
+  .te_python_device()
 
   # check if classes is a character vector
   if(!is.character(classes)){

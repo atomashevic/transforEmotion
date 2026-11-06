@@ -171,5 +171,8 @@ speech_scores <- function(audio, classes, nsegments = 100, segment_length = 5,
 
 #' @noRd
 .te_audio_py <- function() {
-  reticulate::import_from_path("te_audio", system.file("python", package = "transforEmotion"))
+  te_audio <- reticulate::import_from_path("te_audio", system.file("python", package = "transforEmotion"))
+  # GPU or CPU for the CLAP model
+  .te_python_device()
+  te_audio
 }

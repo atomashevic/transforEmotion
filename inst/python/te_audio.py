@@ -148,7 +148,12 @@ def _clap(model_name, local_model_path=None):
     key = (model_name, local_model_path)
     if key not in _models:
         source = local_model_path or model_name
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # transforEmotion's R code checks that the PyTorch build has kernels
+        # for the GPU (.te_torch_device() in R/torch_device.R)
+        device = os.environ.get("TRANSFOREMOTION_TORCH_DEVICE")
+        if not device:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = torch.device(device)
         processor = ClapProcessor.from_pretrained(source)
         model = ClapModel.from_pretrained(source).to(device).eval()
         _models[key] = (model, processor, device)

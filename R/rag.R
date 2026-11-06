@@ -1512,10 +1512,7 @@ release_llm <- function(llama_index)
 # Settings.llm and an empty one would load llama-index's default (OpenAI).
 use_retrieval_only_settings <- function(llama_index, device)
 {
-  if (identical(device, "auto")) {
-    torch <- reticulate::import("torch")
-    device <- if (isTRUE(torch$cuda$is_available())) "cuda" else "cpu"
-  }
+  device <- .te_torch_device(device)
   needs <- reticulate::py_run_string(local = TRUE, paste(
     "from llama_index.core import Settings",
     "from llama_index.core.llms.mock import MockLLM",

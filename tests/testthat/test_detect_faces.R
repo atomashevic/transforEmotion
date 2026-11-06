@@ -9,6 +9,7 @@ mock_face_python <- function(scores) {
   local_mocked_bindings(
     ensure_te_py_env = function() invisible(TRUE),
     without_hf_token = function(expr) scores,
+    .te_python_device = function() invisible("cpu"),
     .env = parent.frame()
   )
   local_mocked_bindings(source_python = function(...) invisible(NULL),
@@ -172,6 +173,7 @@ test_that("video_scores refuses a faces table from another video", {
   faces <- fake_faces(sources = c("other.mp4", "other.mp4"))
   local_mocked_bindings(ensure_te_py_env = function() invisible(TRUE))
   local_mocked_bindings(source_python = function(...) invisible(NULL), .package = "reticulate")
+  local_mocked_bindings(.te_python_device = function() invisible("cpu"))
   expect_error(
     suppressMessages(video_scores(video, c("a", "b"), face_selection = faces,
                                   save_dir = dir)),
@@ -235,6 +237,7 @@ test_that("image_scores_dir warns when images share a file name", {
                                                  a = 0.5, b = 0.5)
   )
   local_mocked_bindings(source_python = function(...) invisible(NULL), .package = "reticulate")
+  local_mocked_bindings(.te_python_device = function() invisible("cpu"))
   expect_warning(
     out <- suppressMessages(image_scores_dir(dir, c("a", "b"), recursive = TRUE)),
     "share a file name.*x.png"

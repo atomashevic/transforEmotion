@@ -29,6 +29,7 @@ run_video_scores <- function(save_dir, video_name = "temp", nframes = 3,
     without_hf_token = fake_yt_analyze(save_dir, video_name, nframes, fail, mp4)
   )
   local_mocked_bindings(source_python = function(...) invisible(NULL), .package = "reticulate")
+  local_mocked_bindings(.te_python_device = function() invisible("cpu"))
   suppressMessages(video_scores(
     video, classes = c("a", "b"), nframes = nframes, face_selection = "none",
     save_dir = save_dir, video_name = video_name,
