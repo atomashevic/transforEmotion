@@ -42,6 +42,7 @@ test_that("only http(s) URLs on YouTube hosts count as YouTube videos", {
   required <- NULL
   local_mocked_bindings(
     .te_require = function(features) required <<- features,
+    .te_python_device = function() invisible("cpu"),
     .te_audio_py = function() list(
       download_youtube_audio = function(...) stop("downloaded"),
       speech_analyze = function(...) list(start = list(0), end = list(5),
@@ -69,6 +70,7 @@ test_that("speech_scores maps the model name and builds one row per segment", {
   sent <- NULL
   local_mocked_bindings(
     .te_require = function(...) invisible(TRUE),
+    .te_python_device = function() invisible("cpu"),
     .te_audio_py = function() list(speech_analyze = function(...) {
       sent <<- list(...)
       list(start = list(0, 5), end = list(5, 8),
